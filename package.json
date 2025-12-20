@@ -7,7 +7,12 @@
     "dev:api": "pnpm --filter ./apps/api start:dev",
     "test:api": "pnpm --filter ./apps/api test",
     "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck"
+    "lint:fix": "pnpm -r lint:fix",
+    "format": "pnpm -r format",
+    "format:check": "pnpm -r format:check",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:api": "pnpm --filter ./apps/api test"
   },
   "keywords": [],
   "author": "",
