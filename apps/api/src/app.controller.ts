@@ -1,10 +1,10 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
-import { DbService } from './db.service';
+import { PrismaService } from './prisma/prisma.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService, private readonly dbService: DbService) {}
+  constructor(private readonly appService: AppService, private readonly prisma: PrismaService) {}
 
   @Get()
   getHello(): string {
@@ -13,12 +13,15 @@ export class AppController {
 
   @Get('message')
   async getMessage() {
-    const message = await this.dbService.getHelloMessage();
-    return { message: message || 'missing'}
+    const message = await this.prisma.message.findFirst({
+      orderBy: {id: 'desc'}
+    });
+    return { message: message?.hello || 'No message found' };
   }
 
-  @Get('health')
-  checkHealth(): { status: string } {
-    return { status: 'OK' };
+  @Get('/db-health')
+  async dbHealth() {
+    await this.prisma.$queryRaw`SELECT 1`;
+    return { ok: true };
   }
 }

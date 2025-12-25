@@ -4,15 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "pnpm -r --parallel run start:dev --filter ./apps/api --filter ./apps/web",
     "dev:api": "pnpm --filter ./apps/api start:dev",
     "test:api": "pnpm --filter ./apps/api test",
+    "dev:web": "pnpm --filter ./apps/web start:dev",
+    "build:web": "pnpm --filter ./apps/web build",
     "lint": "pnpm -r lint",
     "lint:fix": "pnpm -r lint:fix",
     "format": "pnpm -r format",
     "format:check": "pnpm -r format:check",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test",
-    "test:api": "pnpm --filter ./apps/api test"
+    "test": "pnpm -r test"
   },
   "keywords": [],
   "author": "",
