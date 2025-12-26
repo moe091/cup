@@ -1,12 +1,6 @@
-import {
-  Controller,
-  Get,
-  Req,
-  Res,
-  UnauthorizedException,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
 import type { AuthedRequest } from './auth.types';
+import type { Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
@@ -30,16 +24,17 @@ export class AuthController {
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
-  async googleCallback(@Req() req: AuthedRequest, @Res() res) {
+  async googleCallback(@Req() req: AuthedRequest, @Res() res: Response) {
     console.log('AuthController.googleCallback called, req.user = ', req.user);
 
     if (!req.user) {
       throw new UnauthorizedException();
     }
 
+    // prettier-ignore
     await new Promise<void>((resolve, reject) => {
-      (req as any).logIn(req.user, (err: unknown) =>
-        err ? reject(err) : resolve(),
+      (req).logIn(req.user!, (err: Error) =>
+        err ? reject(err) : resolve(err),
       );
     });
 
