@@ -9,6 +9,7 @@
     "test:api": "pnpm --filter ./apps/api test",
     "dev:web": "pnpm --filter ./apps/web start:dev",
     "build:web": "pnpm --filter ./apps/web build",
+    "build:types": "pnpm --filter ./packages/shared build",
     "lint": "pnpm -r lint",
     "lint:fix": "pnpm -r lint:fix",
     "format": "pnpm -r format",
