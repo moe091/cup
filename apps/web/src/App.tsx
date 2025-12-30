@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import type { SessionUser } from '@cup/shared-types';
+import { connectBouncer } from '@cup/bouncer-client';
+
+
+function connectGame() {
+  const bouncerConnection = connectBouncer('http://localhost:4001');
+  console.log('Bouncer connection established:', bouncerConnection);
+}
 
 function Home() {
   return (
@@ -63,6 +70,7 @@ function Game() {
       <div>message = {msg}</div>
       <a href="/api/auth/google">Sign in with Google</a>
       <h3>Username = {user?.displayName}</h3>
+      <button onClick={connectGame}>Start Game!</button>
     </div>
   );
 }

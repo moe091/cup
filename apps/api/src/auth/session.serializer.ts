@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PassportSerializer } from '@nestjs/passport';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SessionUser } from '@cup/shared-types';
+import type { SessionUser } from '@cup/shared-types';
 
 // NOTE: serialize by user id only. deserialize automatically uses id to find user in db and return id, email, and displayName. Can add more fields to deserialize later if needed
 @Injectable()

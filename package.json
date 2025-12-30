@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "pnpm -r --parallel run start:dev --filter ./apps/api --filter ./apps/web",
+    "dev": "pnpm -r --parallel run start:dev --filter ./apps/api --filter ./apps/web --filter ./games/bouncer/server",
     "dev:api": "pnpm --filter ./apps/api start:dev",
     "test:api": "pnpm --filter ./apps/api test",
     "dev:web": "pnpm --filter ./apps/web start:dev",

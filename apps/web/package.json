@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@cup/bouncer-client": "workspace:*",
     "@cup/shared-types": "workspace:*",
     "@vitejs/plugin-react": "^5.1.2",
     "react": "^19.2.0",
