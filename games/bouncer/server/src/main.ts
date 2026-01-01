@@ -10,12 +10,12 @@ const httpServer = http.createServer((req, res) => {
 const ioServer = new Server(httpServer, {
   cors: {
     origin: '*', // TODO-PROD:: restrict this once I know my prod domain
-  },
+  }, 
 });
 
 ioServer.on('connection', (socket) => {
   console.log('New client connected, socket id:', socket.id);
-  socket.emit('hello_event', 'Hello Message from Socket.IO!');
+  socket.emit('hello_event', 'Hello, you are connected to match #' + socket.handshake.auth.matchId);
 
   socket.on('disconnect', () => {
     console.log('Client disconnected, socket id:', socket.id);

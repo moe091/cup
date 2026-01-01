@@ -4,9 +4,9 @@ export type BouncerConnection = {
   disconnect: () => void;
 };
 
-export function connectBouncer(url: string): BouncerConnection {
-  const socket = io(url, { transports: ['websocket'] });
-
+export function connectBouncer(url: string, matchId: string): BouncerConnection {
+  const socket = io(url, { transports: ['websocket'], auth: { matchId: matchId } });
+    
   socket.on('connect', () => {
     console.log('Connected to server with socket id:', socket.id);
   });
@@ -25,3 +25,4 @@ export function connectBouncer(url: string): BouncerConnection {
 
   return { disconnect: () => void socket.disconnect() };
 }
+ 

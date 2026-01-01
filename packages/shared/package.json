@@ -14,7 +14,8 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsc -p tsconfig.build.json"
+    "build": "tsc -p tsconfig.build.json",
+    "start:dev": "tsc -p tsconfig.build.json -w"
   },
   "keywords": [],
   "author": "",

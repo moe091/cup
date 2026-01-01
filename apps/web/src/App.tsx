@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import type { SessionUser } from '@cup/shared-types';
 import { connectBouncer } from '@cup/bouncer-client';
+import { BouncerGameRoute } from './routes/game/bouncer/BouncerGameRoute';
 
 
 function connectGame() {
-  const bouncerConnection = connectBouncer('http://localhost:4001');
+  const bouncerConnection = connectBouncer('http://localhost:4001', '10000');
   console.log('Bouncer connection established:', bouncerConnection);
 }
 
@@ -70,7 +71,8 @@ function Game() {
       <div>message = {msg}</div>
       <a href="/api/auth/google">Sign in with Google</a>
       <h3>Username = {user?.displayName}</h3>
-      <button onClick={connectGame}>Start Game!</button>
+      <button onClick={connectGame}>Test Bouncer Socket</button>
+      <Link to="/game/bouncer/12345">Create Bouncer Match</Link>
     </div>
   );
 }
@@ -81,6 +83,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/game" element={<Game />} />
+      <Route path="/game/bouncer/:matchId" element={<BouncerGameRoute />} />
     </Routes>
   );
 }

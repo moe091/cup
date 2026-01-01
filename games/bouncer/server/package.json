@@ -6,7 +6,9 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "start:dev": "node dist/main.js",
+    "build:watch": "tsc -p tsconfig.json -w",
+    "start:watch": "node --watch dist/main.js",
+    "start:dev": "pnpm run build:watch & pnpm run start:watch",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "pnpm run typecheck",
     "format": "prettier --config ../../../apps/api/.prettierrc --write \"src/**/*.ts\"",

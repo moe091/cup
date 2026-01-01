@@ -40,3 +40,7 @@ Simple react, SPA style. No SSR or anything fancy needed. UI will be ver minimal
 - Ticket is short-lived, signed, and includes at least: userId, gameId/namespace, matchId, and any other data that exists outside the game itself(e.g. titles or cosmetics the player has earned on the site which are wearable in games).
 - On socket connect: verify ticket -> set socket.data.matchId -> socket.join(matchId) -> route all inputs to that lobby instance.
 - Game server reports match result to API via a standardized results endpoint (server-authenticated).
+
+
+
+TODO :: Add watchers to auto-compile typescript to bouncer client and server projects, include them in base 'dev' command.
