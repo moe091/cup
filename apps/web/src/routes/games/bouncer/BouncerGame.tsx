@@ -4,11 +4,11 @@ import { connectBouncer } from '@cup/bouncer-client';
 
 type Params = { matchId: string };
 
-export function BouncerGameRoute() {
+export function BouncerGame() {
     const { matchId } = useParams<Params>();
 
     if (!matchId) {
-        return <div>Missing matchId</div>
+        return <div>Missing matchId</div>;
     }
 
     useEffect(() => {
@@ -16,13 +16,13 @@ export function BouncerGameRoute() {
         console.log("Got bouncerConnection:", bouncerConnection);
 
         return () => bouncerConnection.disconnect();
-    }, []);
+    }, [matchId]);
 
     return (
         <div>
             <h1>Bouncer</h1>
             <div>Match ID: {matchId}</div>
-            <Link to="/game">Back</Link>
+            <Link to="/games/bouncer">Back</Link>
         </div>
     )
 

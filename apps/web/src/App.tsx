@@ -2,19 +2,22 @@ import { useEffect, useState } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import type { SessionUser } from '@cup/shared-types';
 import { connectBouncer } from '@cup/bouncer-client';
-import { BouncerGameRoute } from './routes/game/bouncer/BouncerGameRoute';
+import { BouncerGame } from './routes/games/bouncer/BouncerGame';
+import { BouncerLanding } from './routes/games/bouncer/BouncerLanding';
+import BouncerLayout from './routes/games/bouncer/BouncerLayout';
+import './assets/games.css';
 
 
 function connectGame() {
   const bouncerConnection = connectBouncer('http://localhost:4001', '10000');
   console.log('Bouncer connection established:', bouncerConnection);
 }
-
+ 
 function Home() {
   return (
     <div>
       <h1>Home</h1>
-      <Link to="/game">Go to /game</Link>
+      <Link to="/games">Go to /games</Link>
     </div>
   );
 }
@@ -72,7 +75,7 @@ function Game() {
       <a href="/api/auth/google">Sign in with Google</a>
       <h3>Username = {user?.displayName}</h3>
       <button onClick={connectGame}>Test Bouncer Socket</button>
-      <Link to="/game/bouncer/12345">Create Bouncer Match</Link>
+      <Link to="/games/bouncer">Bouncer!</Link>
     </div>
   );
 }
@@ -82,8 +85,11 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/game" element={<Game />} />
-      <Route path="/game/bouncer/:matchId" element={<BouncerGameRoute />} />
+      <Route path="/games" element={<Game />} />
+      <Route path="/games/bouncer" element={<BouncerLayout />}>
+        <Route index element={<BouncerLanding />} />
+        <Route path=":matchId" element={<BouncerGame />} />
+      </Route>
     </Routes>
   );
 }
