@@ -1,8 +1,10 @@
 import { Controller, Get, Param, Post } from '@nestjs/common';
+import { LobbyService } from '../lobby/lobby.service';
+import { LobbyJoinResponse } from '../lobby/lobby.types';
 
 @Controller('games/bouncer')
 export class BouncerController {
-    constructor() {}
+    constructor(private readonly lobbyService: LobbyService) {}
 
     @Post('join/:matchId')
     joinMatch(@Param('matchId') matchId: string) {
@@ -12,13 +14,12 @@ export class BouncerController {
     }
 
     @Post('create')
-    createMatch() {
-        const matchInfo = {
-            matchId: '111',
-            endpoint: 'http://localhost:4001/bouncer' //TODO:: possibly remove this, don't think it's needed here
-        }
-
-        return matchInfo;
+    async createMatch(): Promise<LobbyJoinResponse> {
+        return this.lobbyService.createLobby({
+            gameId: 'bouncer',
+            socketUrl: 'http://localhost:4001/bouncer',
+            maxPlayers: 4,
+        });
     }
 }
 
