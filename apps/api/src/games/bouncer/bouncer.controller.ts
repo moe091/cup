@@ -1,19 +1,21 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param, Post } from '@nestjs/common';
 
 @Controller('games/bouncer')
 export class BouncerController {
     constructor() {}
 
-    @Get('join')
-    getHello(): string {
-        return 'This should return bouncer join info';
+    @Post('join/:matchId')
+    joinMatch(@Param('matchId') matchId: string) {
+        // do a bunch of stuff to check if match exists, is full, etc.
+
+        return { matchId }; // add ticket to this eventually
     }
 
-    @Get('create')
+    @Post('create')
     createMatch() {
         const matchInfo = {
             matchId: '111',
-            endpoint: 'http://localhost:4001/bouncer'
+            endpoint: 'http://localhost:4001/bouncer' //TODO:: possibly remove this, don't think it's needed here
         }
 
         return matchInfo;
