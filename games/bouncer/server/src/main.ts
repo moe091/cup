@@ -11,6 +11,7 @@ const ioServer = new Server(httpServer, {
   cors: {
     origin: '*', // TODO-PROD:: restrict this once I know my prod domain
   }, 
+  path: '/gameserver/bouncer/socket.io',
 });
 
 ioServer.on('connection', (socket) => {

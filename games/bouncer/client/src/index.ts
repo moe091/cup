@@ -5,7 +5,7 @@ export type BouncerConnection = {
 };
 
 export function connectBouncer(url: string, matchId: string): BouncerConnection {
-  const socket = io(url, { transports: ['websocket'], auth: { matchId: matchId } });
+  const socket = io(url, { transports: ['websocket'], auth: { matchId: matchId }, path: '/gameserver/bouncer/socket.io' });
     
   socket.on('connect', () => {
     console.log('Connected to server with socket id:', socket.id);

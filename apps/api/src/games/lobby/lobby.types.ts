@@ -1,8 +1,7 @@
-// create a 'lobbyInfo' type here to represent data needed for a lobby
 import type { Lobby, Prisma } from 'src/generated/prisma/client';
+//enum LobbyStatus {OPEN, IN_PROGRESS, ENDED, EXPIRED} - for
 
-
-export type LobbyJoinResponse = Pick<Lobby, 'matchId' | 'socketUrl'>;
+export type { LobbyJoinResponse } from '@cup/shared-types';
 
 export type CreateLobbyInput = Pick<
   Prisma.LobbyUncheckedCreateInput,
