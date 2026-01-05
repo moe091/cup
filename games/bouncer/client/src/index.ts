@@ -15,10 +15,14 @@ export function connectBouncer(url: string, matchId: string): BouncerConnection 
     console.log('Received message from server:', message);
   });
 
+  socket.on('match_joined', (message) => {
+    console.log('match_joined: ', message);
+  });
+
   socket.on('disconnect', () => {
     console.log('Disconnected from server');
   });
-
+ 
   socket.on('connect_error', (err) => {
     console.error('Connection error:', err);
   });
