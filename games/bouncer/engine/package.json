@@ -1,14 +1,14 @@
 {
-  "name": "@cup/bouncer-server",
+  "name": "@cup/bouncer-engine",
   "version": "1.0.0",
   "description": "",
   "type": "module",
-  "main": "index.js",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "build:watch": "tsc -p tsconfig.json -w",
-    "start:watch": "node --watch dist/main.js",
-    "start:dev": "pnpm run build:watch & pnpm run start:watch",
+    "start:dev": "pnpm run build:watch",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "pnpm run typecheck",
     "format": "prettier --config ../../../apps/api/.prettierrc --check \"src/**/*.ts\"",
@@ -20,11 +20,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.26.1",
   "devDependencies": {
-    "@types/node": "^25.0.3",
     "prettier": "^3.4.2",
     "typescript": "^5.9.3"
-  },
-  "dependencies": {
-    "socket.io": "^4.8.3"
   }
 }

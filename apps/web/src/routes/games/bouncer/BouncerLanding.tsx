@@ -1,7 +1,4 @@
-import { use } from 'react';
-import { Link, Navigate } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-
 
 
 export function BouncerLanding() {

@@ -5,8 +5,12 @@ export type BouncerConnection = {
 };
 
 export function connectBouncer(url: string, matchId: string): BouncerConnection {
-  const socket = io(url, { transports: ['websocket'], auth: { matchId: matchId }, path: '/gameserver/bouncer/socket.io' });
-    
+  const socket = io(url, {
+    transports: ['websocket'],
+    auth: { matchId: matchId },
+    path: '/gameserver/bouncer/socket.io',
+  });
+
   socket.on('connect', () => {
     console.log('Connected to server with socket id:', socket.id);
   });
@@ -22,11 +26,10 @@ export function connectBouncer(url: string, matchId: string): BouncerConnection 
   socket.on('disconnect', () => {
     console.log('Disconnected from server');
   });
- 
+
   socket.on('connect_error', (err) => {
     console.error('Connection error:', err);
   });
 
   return { disconnect: () => void socket.disconnect() };
 }
- 

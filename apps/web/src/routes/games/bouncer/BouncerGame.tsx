@@ -8,13 +8,9 @@ type Params = { matchId: string };
 export function BouncerGame() {
     const { matchId } = useParams<Params>();
 
-    if (!matchId) {
-        return <div>Missing matchId</div>;
-    }
-
-
-
     useEffect(() => {
+        if (!matchId) return; // can't have this check earlier because useEffect shouldn't be called conditionally. Just return instantly if no matchId
+
         function connectToLobby(lobbyInfo: LobbyJoinResponse): BouncerConnection {
             const bouncerConnection = connectBouncer(lobbyInfo.socketUrl, lobbyInfo.matchId);
             console.log("Got bouncerConnection:", bouncerConnection);
@@ -51,6 +47,11 @@ export function BouncerGame() {
             if (conn) conn.disconnect();
         };
     }, [matchId]);
+    
+    
+    if (!matchId) {
+        return <div>Missing matchId</div>;
+    }
 
     return (
         <div>

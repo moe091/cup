@@ -4,6 +4,6 @@ import { LobbyService } from './lobby/lobby.service';
 
 @Module({
   imports: [BouncerModule],
-  providers: [LobbyService]
+  providers: [LobbyService],
 })
 export class GamesModule {}
