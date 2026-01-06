@@ -1,4 +1,4 @@
-import type { Lobby, Prisma } from 'src/generated/prisma/client';
+import type { Prisma } from 'src/generated/prisma/client';
 //enum LobbyStatus {OPEN, IN_PROGRESS, ENDED, EXPIRED} - for
 
 export type { LobbyJoinResponse } from '@cup/shared-types';

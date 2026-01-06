@@ -11,8 +11,8 @@
     "start:dev": "pnpm run build:watch",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "pnpm run typecheck",
-    "format": "prettier --config ../../../apps/api/.prettierrc --write \"src/**/*.ts\"",
-    "format:check": "prettier --config ../../../apps/api/.prettierrc --check \"src/**/*.ts\"",
+    "format": "prettier --config ../../../apps/api/.prettierrc --check \"src/**/*.ts\"",
+    "format:fix": "prettier --config ../../../apps/api/.prettierrc --write \"src/**/*.ts\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

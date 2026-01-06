@@ -39,7 +39,7 @@ jobs:
         run: pnpm typecheck
 
       - name: Format check
-        run: pnpm format:check
+        run: pnpm format
 
       - name: Test
         run: pnpm test
