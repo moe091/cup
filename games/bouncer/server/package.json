@@ -25,6 +25,8 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@cup/bouncer-engine": "workspace:*",
+    "@cup/bouncer-shared": "workspace:*",
     "socket.io": "^4.8.3"
   }
 }
