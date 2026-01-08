@@ -8,7 +8,7 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    max-width: 1200px;
+    /* max-width: 1200px; */
 }
 
 .gameHeader {
@@ -32,11 +32,10 @@
 
 .gameStage {
     width: min(900px, 100%);
-    max-width: 1200px;
+    /* max-width: 1200px; */
     display: flex;
     flex: 1;
     justify-content: center;
-    background-color: #333333;
     min-height: 80vh;
 }
 
@@ -55,4 +54,10 @@
     flex-direction: column-reverse;
     text-align:end;
     margin: 10px;
+}
+
+#bouncer_client_container {
+    width: 100%;
+    max-width: 960px; /* I'll add breakpoints for this later, if width is over 1280 I'll go to 1200, over 1700 I'll go to 1600, etc, up to 1920 at least */
+    text-align: center;
 }

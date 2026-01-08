@@ -1,14 +1,9 @@
 {
-  "name": "@cup/bouncer-client",
+  "name": "@cup/bouncer-shared",
   "version": "1.0.0",
   "description": "",
   "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
-  },
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -24,11 +19,6 @@
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.26.1",
-  "dependencies": {
-    "@cup/bouncer-shared": "workspace:*",
-    "phaser": "^3.90.0",
-    "socket.io-client": "^4.8.3"
-  },
   "devDependencies": {
     "prettier": "^3.4.2",
     "typescript": "^5.9.3"

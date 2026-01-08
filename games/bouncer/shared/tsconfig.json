@@ -5,8 +5,7 @@
     "outDir": "dist",
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true,
-    "lib": ["ES2023", "DOM"]
+    "sourceMap": true
   },
   "include": ["src/**/*.ts"]
 }
