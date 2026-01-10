@@ -1,5 +1,5 @@
 {
-  "name": "@cup/bouncer-engine",
+  "name": "@cup/template-engine",
   "version": "1.0.0",
   "description": "",
   "type": "module",
@@ -29,6 +29,6 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@cup/bouncer-shared": "workspace:*"
+    "@cup/template-shared": "workspace:*"
   }
 }

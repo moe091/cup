@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 import { BouncerClient } from './BouncerClient';
-import type { MatchStatus, MatchCountdown, TickSnapshot } from '@cup/bouncer-shared';
+import type { MatchStatus, MatchCountdown, TickSnapshot } from '@cup/bouncer-shared'; //TODO:: RENAME ALL IMPORTS TO TEMPLATE/
 
 /*
  * Entry point for Bouncer client. Will be imported in react frontend.

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { Socket } from 'socket.io-client';
 import { GameplayScene } from './scenes/Gameplay';
-import { MatchCountdown, MatchStatus, TickSnapshot } from '@cup/bouncer-shared';
+import { loadLevel, MatchCountdown, MatchStatus, TickSnapshot } from '@cup/bouncer-shared';
 
 /**
  * The root of the actual bouncer game client. This class is created after all the
@@ -46,6 +46,11 @@ export class BouncerClient {
     const me = data.players.find((p) => p.playerId === this.socket.id);
 
     if (me?.ready) this.gameplayScene?.hideReadyButton();
+  }
+
+  async onLoadLevel(levelName: string) {
+    const level = await loadLevel(levelName);
+    this.gameplayScene?.loadLevel(level);
   }
 
   onMatchCountdownUpdate(data: MatchCountdown) {

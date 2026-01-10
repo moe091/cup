@@ -53,7 +53,7 @@ function getOrCreateMatch(matchId: string): Match {
     const broadcast = (name: string, payload: unknown) => {
       ioServer.to(matchId).emit(name, payload);
     };
-    match = new Match(matchId, broadcast);
+    match = new Match(matchId, broadcast, 'level1');
     matches.set(matchId, match);
   }
   return match;

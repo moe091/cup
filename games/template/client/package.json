@@ -1,5 +1,5 @@
 {
-  "name": "@cup/bouncer-client",
+  "name": "@cup/template-client",
   "version": "1.0.0",
   "description": "",
   "type": "module",
@@ -25,7 +25,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.26.1",
   "dependencies": {
-    "@cup/bouncer-shared": "workspace:*",
+    "@cup/template-shared": "workspace:*",
     "phaser": "^3.90.0",
     "socket.io-client": "^4.8.3"
   },

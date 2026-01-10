@@ -16,17 +16,19 @@ import { Simulation } from './gameplay/simulation.js';
 export class Match {
   private players = new Map<PlayerId, PlayerSession>(); // players keyed by PlayerId. Will map to Player class once(if?) implemented
   private phase: MatchPhase = 'WAITING';
-  private minPlayers: number = 2;
-  private countdownSeconds = 5;
+  private minPlayers: number = 1;
+  private countdownSeconds = 3;
   private simulation: Simulation;
 
 
   constructor(
     public matchId: string,
     private broadcast: Broadcast,
+    private levelName: string
   ) {
-    console.log('Match created with ID:', matchId);
+    console.log(`Match created for level "${this.levelName}" with matchId: ${matchId}`);
     this.simulation = new Simulation(this.broadcastSnapshot.bind(this));
+    this.simulation.loadLevel(this.levelName);
   }
 
 
@@ -44,6 +46,7 @@ export class Match {
       this.simulation.spawnPlayer(player.playerId); //TODO:: check return type of spawnPlayer, if false then display error message
     });
 
+    this.broadcast('load_level', this.levelName);
     this.broadcast('initialize_world', this.simulation.getSnapshot());
   }
 

@@ -1,11 +1,13 @@
 import type { Ball, TickSnapshot, InputVector } from '@cup/bouncer-shared';
 import { InputController } from '../logic/InputController';
+import { LevelDefinition } from '../../../shared/dist/level';
 
 export class GameplayScene extends Phaser.Scene {
   private readyText: Phaser.GameObjects.Text | undefined; //placeholder ready button
   private readyBg: Phaser.GameObjects.Rectangle | undefined;
   private balls: Map<string, Phaser.GameObjects.Arc>;
   private inputController: InputController = new InputController();
+  private levelRects: Phaser.GameObjects.Rectangle[] = [];
 
   constructor(private readonly emit: (name: string, data: unknown) => void) {
     super('gameplay');
@@ -26,7 +28,6 @@ export class GameplayScene extends Phaser.Scene {
   }
 
   handleDragInput(inputVector: InputVector) {
-    console.log("DRAG: ", inputVector);
     this.emit('input', inputVector);
   }
 
@@ -41,7 +42,6 @@ export class GameplayScene extends Phaser.Scene {
   applySnapshot(snapshot: TickSnapshot) {
     snapshot.balls.forEach((ball) => {
       if (this.balls.has(ball.id)) {
-        console.log('UPDATING BALL: ', ball);
         this.balls.get(ball.id)?.setPosition(ball.x, ball.y);
       } else {
         console.log('CREATING BALL: ', ball);
@@ -50,6 +50,24 @@ export class GameplayScene extends Phaser.Scene {
       }
     });
   }
+
+  loadLevel(level: LevelDefinition) {
+    for (const rect of this.levelRects) rect.destroy();
+    this.levelRects = [];
+
+    level.objects.forEach(go => {
+      const rect = this.add.rectangle(go.x, go.y, go.width, go.height, 0x775570)
+        .setOrigin(0.5);
+
+      rect.setStrokeStyle(2, 0xBBB0B5);
+      rect.setDepth(-10);
+
+      this.levelRects.push(rect);
+    });
+  }
+
+  
+
 
   onDestroy() {
     this.inputController.dispose();

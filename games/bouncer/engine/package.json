@@ -29,6 +29,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@cup/bouncer-shared": "workspace:*"
+    "@cup/bouncer-shared": "workspace:*",
+    "planck": "^1.4.2"
   }
 }

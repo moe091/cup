@@ -1,7 +1,13 @@
 import { type BroadcastSnapshot, type PlayerId } from "../types.js";
 import { Engine } from '@cup/bouncer-engine';
-import { InputVector, PlayerInputVector, TickSnapshot } from "@cup/bouncer-shared";
+import { InputVector, PlayerInputVector, TickSnapshot, loadLevel } from "@cup/bouncer-shared";
 import { performance as perf } from 'node:perf_hooks';
+
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+console.log('Resolved @cup/bouncer-engine to:', require.resolve('@cup/bouncer-engine'));
+
+
 /**
  * Simulation will import and wrap Engine. It will be wrapped by Match.
  * 
@@ -28,7 +34,7 @@ export class Simulation {
     //NOTE: if I want to implement rollback later I'll have to add tick to inputs(can just add as they are applied, as long as re-apply them on the same tick it will be fine)
 
     constructor(private snapshotCallback: BroadcastSnapshot) {
-        this.engine = new Engine();
+        this.engine = new Engine(this.tickMs / 1000); //planck wants seconds
     }
 
     addInput(playerId: PlayerId, inputVector: InputVector) { 
@@ -81,6 +87,11 @@ export class Simulation {
 
     getSnapshot(): TickSnapshot {
         return this.engine.getSnapshot();
+    }
+
+    async loadLevel(levelName: string) {
+        const level = await loadLevel(levelName);
+        this.engine.loadLevel(level);
     }
 
 

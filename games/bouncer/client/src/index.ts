@@ -1,6 +1,7 @@
 import { io } from 'socket.io-client';
 import { BouncerClient } from './BouncerClient';
 import type { MatchStatus, MatchCountdown, TickSnapshot } from '@cup/bouncer-shared';
+import { LevelDefinition } from '../../shared/dist/level';
 
 /*
  * Entry point for Bouncer client. Will be imported in react frontend.
@@ -33,6 +34,10 @@ export function connectBouncer(url: string, matchId: string, containerEl: HTMLEl
 
   socket.on('match_status', (data: MatchStatus) => {
     bouncerClient?.onMatchStatusUpdate(data);
+  });
+
+  socket.on('load_level', (data: string) => {
+    bouncerClient?.onLoadLevel(data);
   });
 
   socket.on('countdown', (data: MatchCountdown) => {
