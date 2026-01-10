@@ -10,12 +10,3 @@ export type Point = {
     x: number;
     y: number;
 }
-
-export type WorldState = {
-    balls: Array<Ball>;
-}
-
-export type Snapshot = {
-  tick: number;
-  state: WorldState;
-}

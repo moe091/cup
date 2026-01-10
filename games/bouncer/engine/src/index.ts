@@ -1,23 +1,24 @@
 import { World } from "./world.js";
-import type { WorldState, Snapshot } from './types.js';
+import type { PlayerInputVector, TickSnapshot } from "@cup/bouncer-shared";
 
 export class Engine {
   private world = new World();
   private tick: number = 0;
 
-  step() {
+  step(inputs: PlayerInputVector[]) {
     this.tick++;
     this.world.step();
   }
 
-  getSnapshot(): Snapshot {
-    return {
-      tick: this.tick,
-      state: this.world.getSnapshot()
-    }
+  getSnapshot(): TickSnapshot {
+    return this.world.getSnapshot(this.tick);
   }
 
   spawnPlayer(playerId: string) {
     return this.world.spawnPlayer(playerId);
   }
 }
+
+
+export type { Ball, Point } from './types.js';
+

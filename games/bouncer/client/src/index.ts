@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 import { BouncerClient } from './BouncerClient';
-import type { MatchStatus, MatchCountdown } from '@cup/bouncer-shared';
+import type { MatchStatus, MatchCountdown, TickSnapshot } from '@cup/bouncer-shared';
 
 /*
  * Entry point for Bouncer client. Will be imported in react frontend.
@@ -28,7 +28,7 @@ export function connectBouncer(url: string, matchId: string, containerEl: HTMLEl
   });
 
   socket.on('match_joined', (message) => {
-    console.log('match_joined: ', message);
+    console.log('match_joined: ', message); //TODO:: remove this when done. keeping it for debugging rn
   });
 
   socket.on('match_status', (data: MatchStatus) => {
@@ -38,9 +38,18 @@ export function connectBouncer(url: string, matchId: string, containerEl: HTMLEl
   socket.on('countdown', (data: MatchCountdown) => {
     bouncerClient?.onMatchCountdownUpdate(data);
   });
-  
+
+  socket.on('initialize_world', (data: TickSnapshot) => {
+    console.log('[initialize_world] Snapshot received: ', data);
+    bouncerClient?.onInitializeWorld(data);
+  });
+
   socket.on('start_match', () => {
     bouncerClient?.onMatchStart();
+  });
+
+  socket.on('snapshot', (data: TickSnapshot) => {
+    bouncerClient?.onSnapshot(data);
   });
 
   socket.on('disconnect', () => {

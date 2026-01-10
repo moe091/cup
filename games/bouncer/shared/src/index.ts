@@ -1,4 +1,4 @@
-export type MatchPhase = 'WAITING' | 'IN_PROGRESS' | 'COUNTDOWN';
+export type MatchPhase = 'WAITING' | 'IN_PROGRESS' | 'PAUSED';
 
 export type MatchStatus = {
   matchId: string;
@@ -8,7 +8,7 @@ export type MatchStatus = {
 };
 
 export type MatchCountdown = {
-  secondsLeft: number;    
+  secondsLeft: number;
 }
 
 export type TickSnapshot = {
@@ -19,3 +19,22 @@ export type TickSnapshot = {
     y: number;
   }>;
 }
+
+export type Ball = {
+    id: string;
+    x: number;
+    y: number;
+    xVel?: number;
+    yVel?: number;
+}
+
+export type InputVector = {
+  x: number;
+  y: number;
+}
+
+export type PlayerInputVector = {
+    playerId: string;
+    x: number;
+    y: number;
+};

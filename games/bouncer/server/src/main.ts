@@ -30,7 +30,7 @@ ioServer.on('connection', (socket) => {
   const match = getOrCreateMatch(matchId);
   match.onJoin(socket);
 
-  socket.on('update', (data) => match.onUpdate(socket, data));
+  socket.on('input', (data) => match.onInput(socket.data.playerId, data));
 
   socket.on('set_ready', (data) => match.onSetReady(socket, data));
 
@@ -51,7 +51,6 @@ function getOrCreateMatch(matchId: string): Match {
 
   if (!match) {
     const broadcast = (name: string, payload: unknown) => {
-      console.log(`BROADCASTING MESSAGE [${name}]: `, payload);
       ioServer.to(matchId).emit(name, payload);
     };
     match = new Match(matchId, broadcast);

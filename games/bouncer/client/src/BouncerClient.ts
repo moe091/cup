@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { Socket } from 'socket.io-client';
 import { GameplayScene } from './scenes/Gameplay';
-import { MatchCountdown, MatchStatus } from '@cup/bouncer-shared';
+import { MatchCountdown, MatchStatus, TickSnapshot } from '@cup/bouncer-shared';
 
 /**
  * The root of the actual bouncer game client. This class is created after all the
@@ -18,8 +18,6 @@ export class BouncerClient {
   constructor(socket: Socket, containerEl: HTMLElement) {
     this.socket = socket;
     this.game = this.createPhaserGame(containerEl, 960, 540);
-
-    console.log('Created new game: ', this.game);
   }
 
   createPhaserGame(containerEl: HTMLElement, width: number, height: number): Phaser.Game {
@@ -55,7 +53,16 @@ export class BouncerClient {
     //Display a big countdown on screen
   }
 
+  onInitializeWorld(snapshot: TickSnapshot) {
+    this.gameplayScene?.applySnapshot(snapshot);
+  }
+
+  onSnapshot(snapshot: TickSnapshot) {
+    this.gameplayScene?.applySnapshot(snapshot);
+  }
+
   onMatchStart() {
+    //TODO:: Display a UI message or something here
     console.log(`[BouncerClient.onMatchStart]: Starting Match!`);
   }
 

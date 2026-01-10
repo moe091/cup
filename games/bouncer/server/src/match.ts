@@ -1,8 +1,8 @@
 import type { Socket } from 'socket.io';
 import type { PlayerId, SocketId, PlayerSession, Broadcast } from './types.js';
-import type { MatchStatus, MatchPhase, MatchCountdown } from '@cup/bouncer-shared';
-import { Engine } from '@cup/bouncer-engine';
-import { performance } from 'node:perf_hooks';
+import type { MatchStatus, MatchPhase, MatchCountdown, TickSnapshot, InputVector } from '@cup/bouncer-shared';
+import { Simulation } from './gameplay/simulation.js';
+
 
 
 /**
@@ -16,12 +16,9 @@ import { performance } from 'node:perf_hooks';
 export class Match {
   private players = new Map<PlayerId, PlayerSession>(); // players keyed by PlayerId. Will map to Player class once(if?) implemented
   private phase: MatchPhase = 'WAITING';
-  private minPlayers: number = 1;
-  private engine = new Engine();
-  private countdownTimer: NodeJS.Timeout | null = null;
-  private tickTimer: NodeJS.Timeout | null = null;
-  private tickMs = 33;
+  private minPlayers: number = 2;
   private countdownSeconds = 5;
+  private simulation: Simulation;
 
 
   constructor(
@@ -29,17 +26,29 @@ export class Match {
     private broadcast: Broadcast,
   ) {
     console.log('Match created with ID:', matchId);
+    this.simulation = new Simulation(this.broadcastSnapshot.bind(this));
   }
 
 
+  broadcastSnapshot(snapshot: TickSnapshot) {
+    this.broadcast('snapshot', snapshot);
+  }
 
   startGame() {
-    //start up the engine, spawn in players, etc.
-    this.broadcast('start_match', {});
-    console.log("GAME STARTED!!!!!!!!!!!!!!!!!!");
+    this.broadcast('start_match', {}); //TODO:: make this display some UI message on client
+    this.simulation.start();
+  }
+
+  spawnPlayers() {    
+    this.players.forEach(player => {
+      this.simulation.spawnPlayer(player.playerId); //TODO:: check return type of spawnPlayer, if false then display error message
+    });
+
+    this.broadcast('initialize_world', this.simulation.getSnapshot());
   }
 
   startCountdown() {
+    this.spawnPlayers();
     this.phase = "IN_PROGRESS";
     let countdownTimer = this.countdownSeconds;
 
@@ -85,7 +94,11 @@ export class Match {
         
       }
     } else if (this.phase == 'IN_PROGRESS') {
-      // check if match is over
+      if (this.players.size < this.minPlayers) { //Somebody left, no longer enough players to play!
+        this.phase = 'PAUSED'; 
+        this.simulation.stop();
+        console.warn("[Match::updateStatus] Someone left the match, not enough players. Pausing!");
+      }
     }
   }
 
@@ -134,8 +147,9 @@ export class Match {
   }
 
   //not used yet TODO:: remove this if I don't end up using 'update' events
-  onUpdate(socket: Socket, data: unknown): void {
-    console.log(`Received update from socket ${socket.id} in match ${this.matchId}:`, data);
+  onInput(playerId: PlayerId, inputVector: InputVector): void {
+    console.log(`Received update from player ${playerId} in match ${this.matchId}:`, inputVector);
+    this.simulation.addInput(playerId, inputVector);
   }
 
   //called on socket disconnect
@@ -146,3 +160,4 @@ export class Match {
     this.broadcastStatus();
   }
 }
+ 

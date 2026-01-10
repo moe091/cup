@@ -1,8 +1,12 @@
-import type { Ball, Point, WorldState } from './types.js';
+import { TickSnapshot } from '@cup/bouncer-shared';
+import type { Ball, Point } from './types.js';
 
 export class World {
     private balls: Map<string, Ball> = new Map<string, Ball>();
     private spawnPoints: Point[] = [{x: 400, y: 100}, {x: 560, y: 400}];
+
+
+    
 
     spawnPlayer(playerId: string): boolean {
         for (var i = 0; i < this.spawnPoints.length; i++) {
@@ -17,7 +21,7 @@ export class World {
             });
 
             if (!occupied) {
-                this.balls.set(playerId, {id: playerId, x: spawn.x, y: spawn.y});
+                this.balls.set(playerId, {id: playerId, x: spawn.x, y: spawn.y, yVel: 2});
                 return true; // successfully spawned
             }
         }
@@ -25,8 +29,9 @@ export class World {
         return false; // unable to find an open spawn point.
     }
 
-    getSnapshot(): WorldState {
+    getSnapshot(tick: number): TickSnapshot {
         return {
+            tick: tick,
             balls: [...this.balls.values()]
         }
     }
