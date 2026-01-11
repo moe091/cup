@@ -39,6 +39,7 @@ export type PlayerInputVector = {
     y: number;
 };
 
+export type { LevelDefinition, LevelObject, PlatformDef, SpawnPointDef } from './level.js';
 export { loadLevel } from './level.js';
 
 

@@ -2,12 +2,12 @@ import { TickSnapshot, toPixels, toWorld } from '@cup/bouncer-shared';
 import type { Ball, Point } from './types.js';
 import planck from 'planck';
 import type { Body } from 'planck';
-import { LevelDefinition } from '../../shared/dist/level.js';
+import type { LevelDefinition } from '@cup/bouncer-shared';
 
 export class World {
     private timestep = 1 / 30;
     private balls: Map<string, Body> = new Map<string, Body>();
-    private spawnPoints: Point[] = [{x: 400, y: 100}, {x: 560, y: 400}];
+    private spawnPoints: Point[] = [];
     private physics: planck.World = new planck.World({x: 0, y: 10});
 
     launchBall(ballId: string, dx: number, dy: number) {
@@ -90,15 +90,24 @@ export class World {
     }
 
     loadLevel(level: LevelDefinition) {
-        level.objects.forEach(go => {
-            const body = this.physics.createBody({
-                type: 'static',
-                position: new planck.Vec2(toWorld(go.x), toWorld(go.y)),
-            });
-            body.setUserData(go.name);
-            const box = new planck.Box(toWorld(go.width / 2), toWorld(go.height / 2));
+        this.spawnPoints = [];
 
-            body.createFixture(box, {friction: 0.8, restitution: 0.5});
+        level.objects.forEach((obj) => {
+            if (obj.type === 'platform') {
+                const body = this.physics.createBody({
+                    type: 'static',
+                    position: new planck.Vec2(toWorld(obj.x), toWorld(obj.y)),
+                });
+                body.setUserData(obj.name);
+                const box = new planck.Box(toWorld(obj.width / 2), toWorld(obj.height / 2));
+
+                body.createFixture(box, {friction: 0.8, restitution: 0.5});
+                return;
+            }
+
+            if (obj.type === 'spawnPoint') {
+                this.spawnPoints.push({ x: obj.x, y: obj.y });
+            }
         });
     }
 

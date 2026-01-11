@@ -1,7 +1,10 @@
-import { Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, Param, Post, BadRequestException } from '@nestjs/common';
 import { LobbyService } from '../lobby/lobby.service';
 import { LobbyJoinResponse } from '../lobby/lobby.types';
 import { NotFoundException, GoneException, ConflictException } from '@nestjs/common';
+import type { LevelDefinition } from '@cup/bouncer-shared';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
 
 @Controller('games/bouncer')
 export class BouncerController {
@@ -29,5 +32,19 @@ export class BouncerController {
       socketUrl: socketUrl,
       maxPlayers: 4,
     });
+  }
+
+  @Post('levels')
+  async saveLevel(@Body() level: LevelDefinition): Promise<{ name: string }> {
+    if (!level?.name) {
+      throw new BadRequestException('Level name is required');
+    }
+
+    const dir = path.join(process.cwd(), 'tmp', 'bouncer-levels');
+    await fs.mkdir(dir, { recursive: true });
+    const filePath = path.join(dir, `${level.name}.json`);
+    await fs.writeFile(filePath, JSON.stringify(level, null, 2), 'utf8');
+
+    return { name: level.name };
   }
 }

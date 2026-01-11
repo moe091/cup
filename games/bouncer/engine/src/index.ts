@@ -1,6 +1,5 @@
-import { LevelDefinition } from "../../shared/dist/level.js";
 import { World } from "./world.js";
-import type { PlayerInputVector, TickSnapshot } from "@cup/bouncer-shared";
+import type { LevelDefinition, PlayerInputVector, TickSnapshot } from "@cup/bouncer-shared";
 
 export class Engine {
   private world = new World();
@@ -35,4 +34,3 @@ export class Engine {
 
 
 export type { Ball, Point } from './types.js';
-

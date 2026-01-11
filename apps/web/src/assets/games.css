@@ -48,6 +48,18 @@
     gap: 12px;
 }
 
+.levelEditorSection {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.levelEditorSection h3 {
+    margin: 8px 0 0;
+}
+
 .gameFooter {
     flex: 10;
     display: flex;
@@ -60,4 +72,38 @@
     width: 100%;
     max-width: 960px; /* I'll add breakpoints for this later, if width is over 1280 I'll go to 1200, over 1700 I'll go to 1600, etc, up to 1920 at least */
     text-align: center;
+}
+
+#bouncer_editor_container {
+    width: 100%;
+    max-width: 960px;
+    text-align: center;
+}
+
+.editorPage {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.editorHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.editorTitle {
+    font-weight: 600;
+}
+
+.editorActions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.editorStatus {
+    font-size: 0.9rem;
+    color: #666;
 }

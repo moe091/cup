@@ -1,7 +1,7 @@
 import { io } from 'socket.io-client';
 import { BouncerClient } from './BouncerClient';
-import type { MatchStatus, MatchCountdown, TickSnapshot } from '@cup/bouncer-shared';
-import { LevelDefinition } from '../../shared/dist/level';
+import { BouncerEditorClient } from './BouncerEditorClient';
+import type { LevelDefinition, MatchStatus, MatchCountdown, TickSnapshot } from '@cup/bouncer-shared';
 
 /*
  * Entry point for Bouncer client. Will be imported in react frontend.
@@ -77,3 +77,17 @@ export function connectBouncer(url: string, matchId: string, containerEl: HTMLEl
 export type BouncerConnection = {
   disconnect: () => void;
 };
+
+export type BouncerEditorConnection = {
+  disconnect: () => void;
+  getLevelDefinition: () => LevelDefinition;
+};
+
+export function createBouncerEditor(containerEl: HTMLElement, levelName: string): BouncerEditorConnection {
+  const editor = new BouncerEditorClient(containerEl, levelName);
+
+  return {
+    disconnect: () => editor.destroy(),
+    getLevelDefinition: () => editor.getLevelDefinition(),
+  };
+}

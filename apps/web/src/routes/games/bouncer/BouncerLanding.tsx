@@ -24,11 +24,22 @@ export function BouncerLanding() {
     }
   }
 
+  function createLevel() {
+    const name = window.prompt('Level name?');
+    if (!name) return;
+    navigate(`/games/bouncer/editor?name=${encodeURIComponent(name)}`);
+  }
+
   return (
       <div className="gameMenu">
         <button onClick={createGame}>create game</button>
         
         <button>join game</button>
+        <div className="levelEditorSection">
+          <h3>Level editor</h3>
+          <button onClick={createLevel}>create level</button>
+          <button disabled>edit existing level</button>
+        </div>
       </div>
   );
 }

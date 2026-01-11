@@ -10,6 +10,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@cup/bouncer-shared':
+        specifier: workspace:*
+        version: link:../../games/bouncer/shared
       '@cup/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared

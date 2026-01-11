@@ -21,7 +21,8 @@ export class BouncerClient {
   }
 
   createPhaserGame(containerEl: HTMLElement, width: number, height: number): Phaser.Game {
-    this.gameplayScene = new GameplayScene(this.emitMessage.bind(this));
+    const playerId = this.socket.id || "";
+    this.gameplayScene = new GameplayScene(playerId, this.emitMessage.bind(this));
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
       width: width,

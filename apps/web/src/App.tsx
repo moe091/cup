@@ -4,6 +4,7 @@ import type { SessionUser } from '@cup/shared-types';
 import { connectBouncer } from '@cup/bouncer-client';
 import { BouncerGame } from './routes/games/bouncer/BouncerGame';
 import { BouncerLanding } from './routes/games/bouncer/BouncerLanding';
+import { BouncerEditor } from './routes/games/bouncer/BouncerEditor';
 import BouncerLayout from './routes/games/bouncer/BouncerLayout';
 import './assets/games.css';
 
@@ -88,6 +89,7 @@ export default function App() {
       <Route path="/games" element={<Game />} />
       <Route path="/games/bouncer" element={<BouncerLayout />}>
         <Route index element={<BouncerLanding />} />
+        <Route path="editor" element={<BouncerEditor />} />
         <Route path=":matchId" element={<BouncerGame />} />
       </Route>
     </Routes>

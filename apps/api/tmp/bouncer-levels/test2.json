@@ -1,0 +1,114 @@
+{
+  "name": "test2",
+  "gridSize": 16,
+  "objects": [
+    {
+      "type": "platform",
+      "name": "platform_1768095892441",
+      "x": 720,
+      "y": 2576,
+      "width": 16,
+      "height": 16
+    },
+    {
+      "type": "platform",
+      "name": "platform_1768095897713",
+      "x": 1296,
+      "y": 2968,
+      "width": 768,
+      "height": 48
+    },
+    {
+      "type": "spawnPoint",
+      "name": "spawn_1768095899481",
+      "x": 1040,
+      "y": 2880
+    },
+    {
+      "type": "spawnPoint",
+      "name": "spawn_1768095900535",
+      "x": 1120,
+      "y": 2880
+    },
+    {
+      "type": "platform",
+      "name": "platform_1768095904175",
+      "x": 888,
+      "y": 2760,
+      "width": 48,
+      "height": 464
+    },
+    {
+      "type": "platform",
+      "name": "platform_1768095912581",
+      "x": 1712,
+      "y": 2824,
+      "width": 64,
+      "height": 336
+    },
+    {
+      "type": "platform",
+      "name": "platform_1768095923881",
+      "x": 1712,
+      "y": 2464,
+      "width": 64,
+      "height": 192
+    },
+    {
+      "type": "platform",
+      "name": "platform_1768095931244",
+      "x": 2016,
+      "y": 2688,
+      "width": 16,
+      "height": 16
+    },
+    {
+      "type": "platform",
+      "name": "platform_1768095936027",
+      "x": 1944,
+      "y": 2672,
+      "width": 304,
+      "height": 32
+    },
+    {
+      "type": "platform",
+      "name": "platform_1768095940136",
+      "x": 2136,
+      "y": 2432,
+      "width": 80,
+      "height": 480
+    },
+    {
+      "type": "platform",
+      "name": "platform_1768095950772",
+      "x": 1336,
+      "y": 2336,
+      "width": 816,
+      "height": 64
+    },
+    {
+      "type": "platform",
+      "name": "platform_1768095955699",
+      "x": 640,
+      "y": 2336,
+      "width": 576,
+      "height": 64
+    },
+    {
+      "type": "platform",
+      "name": "platform_1768095958837",
+      "x": 432,
+      "y": 2152,
+      "width": 96,
+      "height": 304
+    },
+    {
+      "type": "platform",
+      "name": "platform_1768095962788",
+      "x": 2144,
+      "y": 2448,
+      "width": 288,
+      "height": 32
+    }
+  ]
+}
