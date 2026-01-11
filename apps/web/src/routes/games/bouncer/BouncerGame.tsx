@@ -59,9 +59,20 @@ export function BouncerGame() {
         return <div>Missing matchId</div>;
     }
 
+    function fullScreen(): void {
+        gameContainerRef.current?.requestFullscreen();
+    }
+
     return (
-        <div ref={gameContainerRef} id="bouncer_client_container">
-            {/*<Link to="/games/bouncer">Back</Link> */}
+        <div className="bouncer_client_wrapper">
+            <div className="bouncer_client_topbar">
+                <button onClick={fullScreen}>
+                    Fullscreen
+                </button>
+            </div> 
+            <div ref={gameContainerRef} id="bouncer_client_container">
+                {/*<Link to="/games/bouncer">Back</Link> */}
+            </div>
         </div>
     )
 

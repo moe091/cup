@@ -22,6 +22,7 @@ class PlatformTool implements EditorTool {
 
     const start = this.scene.snapWorld(pointer.worldX, pointer.worldY);
     this.start = start;
+    console.log("START = ", start);
     this.preview = this.scene.add
       .rectangle(start.x, start.y, this.scene.gridSize, this.scene.gridSize, 0x2f7a4f, 0.5)
       .setOrigin(0.5);
@@ -30,6 +31,9 @@ class PlatformTool implements EditorTool {
   private onPointerMove = (pointer: Phaser.Input.Pointer) => {
     if (!this.scene || !this.start || !this.preview) return;
     const end = this.scene.snapWorld(pointer.worldX, pointer.worldY);
+    if (end.x === this.start.x) end.x+= 32;
+    if (end.y === this.start.y) end.y+= 32;
+    
     const width = Math.max(this.scene.gridSize, Math.abs(end.x - this.start.x));
     const height = Math.max(this.scene.gridSize, Math.abs(end.y - this.start.y));
     const centerX = (this.start.x + end.x) / 2;
@@ -52,13 +56,17 @@ class PlatformTool implements EditorTool {
     const centerX = (this.start.x + end.x) / 2;
     const centerY = (this.start.y + end.y) / 2;
 
+    console.log("END: ", end);
+
+    console.log("CENTER: ", centerX, centerY);
+
     const platform: PlatformDef = {
       type: 'platform',
       name: `platform_${Date.now()}`,
-      x: centerX,
-      y: centerY,
-      width,
-      height,
+      x: this.preview?.x || 0,
+      y: this.preview?.y || 0,
+      width: this.preview?.width || 0,
+      height: this.preview?.height || 0,
     };
 
     this.scene.addObject(platform);
@@ -127,8 +135,8 @@ class SpawnPointTool implements EditorTool {
 }
 
 export class LevelEditorScene extends Phaser.Scene {
-  readonly gridSize = 16;
-  readonly toolbarWidth = 120;
+  readonly gridSize = 32;
+  readonly toolbarWidth = 80;
   private levelName: string;
   private objects: LevelObject[] = [];
   private objectViews: Phaser.GameObjects.GameObject[] = [];
@@ -149,7 +157,6 @@ export class LevelEditorScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.setBackgroundColor('#0b0b0b');
-    this.cameras.main.setBounds(0, 0, 10000, 10000);
     this.input.mouse?.disableContextMenu();
 
     this.drawGrid();
@@ -159,6 +166,8 @@ export class LevelEditorScene extends Phaser.Scene {
     this.scene.bringToTop('level-editor-ui');
 
     this.events.once('destroy', this.onDestroy, this);
+
+    this.drawGrid();
   }
 
   getLevelDefinition(): LevelDefinition {
@@ -210,19 +219,23 @@ export class LevelEditorScene extends Phaser.Scene {
   }
 
   private drawGrid() {
-    const graphics = this.add.graphics();
-    graphics.lineStyle(1, 0x1f1f1f, 1);
+    console.log("Draw Grid");
+    const g = this.gridGraphics || this.add.graphics();
+    this.gridGraphics = g;
 
-    const max = 10000;
-    for (let x = 0; x <= max; x += this.gridSize) {
-      graphics.lineBetween(x, 0, x, max);
-    }
-    for (let y = 0; y <= max; y += this.gridSize) {
-      graphics.lineBetween(0, y, max, y);
-    }
+    const view = this.cameras.main.worldView;
+    const startX = Math.floor(view.x / this.gridSize) * this.gridSize;
+    const endX = Math.ceil((view.x + view.width) / this.gridSize) * this.gridSize;
+    const startY = Math.floor(view.y / this.gridSize) * this.gridSize;
+    const endY = Math.ceil((view.y + view.height) / this.gridSize) * this.gridSize;
 
-    graphics.setDepth(-10);
-    this.gridGraphics = graphics;
+    g.clear();
+    g.lineStyle(1, 0x1f1f1f);
+
+    for (let x = startX; x <= endX; x += this.gridSize) g.lineBetween(x, startY, x, endY);
+    for (let y = startY; y <= endY; y += this.gridSize) g.lineBetween(startX, y, endX, y);
+
+    g.setDepth(-10);
   }
 
   getActiveTool() {
@@ -242,6 +255,7 @@ export class LevelEditorScene extends Phaser.Scene {
     this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _go: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
       const zoom = Phaser.Math.Clamp(cam.zoom - dy * 0.001, 0.25, 2);
       cam.setZoom(zoom);
+      this.drawGrid();
     });
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
@@ -266,6 +280,7 @@ export class LevelEditorScene extends Phaser.Scene {
 
       this.panStartX = pointer.x;
       this.panStartY = pointer.y;
+      this.drawGrid();
     });
   }
 

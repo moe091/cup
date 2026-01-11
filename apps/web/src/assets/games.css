@@ -48,6 +48,11 @@
     gap: 12px;
 }
 
+.bouncer_client_topbar {
+    display: flex;
+    justify-content: flex-end;
+}
+
 .levelEditorSection {
     margin-top: 24px;
     display: flex;
@@ -81,16 +86,35 @@
 }
 
 .editorPage {
+    position: relative;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    width: 100%;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
 }
 
-.editorHeader {
+.editorOverlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 5;
     display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+.editorToolbar {
+    display: flex;
+    flex-direction: row;
     justify-content: space-between;
-    align-items: center;
+    width: 100%;
+    max-width: 960px;
 }
 
 .editorTitle {
@@ -106,4 +130,9 @@
 .editorStatus {
     font-size: 0.9rem;
     color: #666;
+}
+
+.editorCanvas {
+    width: 100%;
+    max-width: 960px;
 }

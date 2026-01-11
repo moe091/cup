@@ -15,11 +15,13 @@ export function BouncerEditor() {
     if (!el || !levelName) return;
 
     editorRef.current?.disconnect();
+    el.replaceChildren();
     editorRef.current = createBouncerEditor(el, levelName);
 
     return () => {
       editorRef.current?.disconnect();
       editorRef.current = null;
+      containerRef.current?.replaceChildren();
     };
   }, [levelName]);
 
@@ -59,18 +61,23 @@ export function BouncerEditor() {
     );
   }
 
+  function fullScreen(): void {
+      containerRef.current?.requestFullscreen();
+  }
+
   return (
     <div className="editorPage">
-      <div className="editorHeader">
+      <div className="editorToolbar">
         <div className="editorTitle">Level Editor: {levelName}</div>
         <div className="editorActions">
+          <button onClick={fullScreen}>Fullscreen</button>
           <button onClick={saveLevel} disabled={isSaving}>
             {isSaving ? 'Saving...' : 'Save Level'}
           </button>
           {saveState && <span className="editorStatus">{saveState}</span>}
         </div>
       </div>
-      <div ref={containerRef} id="bouncer_editor_container" />
+      <div ref={containerRef} id="bouncer_editor_container" className="editorCanvas" />
     </div>
   );
 }
