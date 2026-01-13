@@ -29,7 +29,7 @@ export async function loadLevel(name: string): Promise<LevelDefinition> {
       level = (await import('./levels/level1.js')).default;
       break;
     default:
-      level = (await import('./levels/testLevel.js')).default;
+      level = (await import('./levels/test2.js')).default;
       break;
   }
   return { ...level, name };

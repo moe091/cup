@@ -1,15 +1,7 @@
-import type { LevelDefinition } from "../level.js";
-
-const level: LevelDefinition = {
+{
   "name": "ll",
   "gridSize": 32,
   "objects": [
-    {
-      "type": "spawnPoint",
-      "name": "spawn_1768097015343",
-      "x": 0,
-      "y": 350
-    },
     {
       "type": "platform",
       "name": "platform_1768181635518",
@@ -460,5 +452,3 @@ const level: LevelDefinition = {
     }
   ]
 }
-
-export default level;

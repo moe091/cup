@@ -9,6 +9,7 @@ export class World {
     private balls: Map<string, Body> = new Map<string, Body>();
     private spawnPoints: Point[] = [];
     private physics: planck.World = new planck.World({x: 0, y: 10});
+    private launchPower = 0.6;
 
     launchBall(ballId: string, dx: number, dy: number) {
         const body = this.balls.get(ballId);
@@ -18,7 +19,7 @@ export class World {
             return;
         }
 
-        const impulse = new planck.Vec2(toWorld(dx) / 2, toWorld(dy) / 2);
+        const impulse = new planck.Vec2(toWorld(dx) * this.launchPower, toWorld(dy) * this.launchPower);
 
         body.setAwake(true);
         body.applyLinearImpulse(impulse, body.getWorldCenter(), true);
@@ -43,15 +44,15 @@ export class World {
                 position: spawnPos,
                 fixedRotation: false,
                 bullet: false,
-                linearDamping: 0.2,
-                angularDamping: 0.2,
+                linearDamping: 0.3,
+                angularDamping: 0.3,
             });
             body.setUserData("Ball-" + playerId);
-            const shape = new planck.Circle(0.2);
+            const shape = new planck.Circle(0.26);
 
             body.createFixture({
                 shape,
-                density: 1.0,
+                density: 0.8,
                 friction: 0.4,
                 restitution: 0.3,
             });
@@ -67,12 +68,14 @@ export class World {
         const balls = Array.from(this.balls.entries()).map(([id, body]) => {
             const pos = body.getPosition();
             const vel = body.getLinearVelocity();
+            const angle = body.getAngle();
             //TODO:: Add rotation to tickSnapshot
 
             return {
                 id,
                 x: toPixels(pos.x),
                 y: toPixels(pos.y),
+                angle: angle,
                 xVel: toPixels(vel.x),
                 yVel: toPixels(vel.y),
             }
@@ -118,13 +121,6 @@ export class World {
             const p = body.getPosition();
             const userData =
             typeof body.getUserData === 'function' ? body.getUserData() : undefined;
-
-            console.log('Body', {
-                type: body.getType?.(),
-                x: p.x,
-                y: p.y,
-                userData,
-            });
 
             let fixture = body.getFixtureList();
             while (fixture) {

@@ -17,7 +17,7 @@ export class Match {
   private players = new Map<PlayerId, PlayerSession>(); // players keyed by PlayerId. Will map to Player class once(if?) implemented
   private phase: MatchPhase = 'WAITING';
   private minPlayers: number = 1;
-  private countdownSeconds = 3;
+  private countdownSeconds = 1;
   private simulation: Simulation;
 
 

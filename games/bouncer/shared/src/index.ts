@@ -17,6 +17,7 @@ export type TickSnapshot = {
     id: string; //corresponds to playerId
     x: number;
     y: number;
+    angle: number;
   }>;
 }
 

@@ -25,22 +25,12 @@ PostgreSQL with Prisma for database, because I like postgres, and Prisma seems v
 Simple react, SPA style. No SSR or anything fancy needed. UI will be ver minimal and clean. Frontend will have a /game route that has a gameName arg and actual games will be their own projects which are exported as packages then frontend can just import the correct game package depending on the gamename arg
 
 
+### Bouncer TODOs:
 
-### Game integration
-
-#### WIP - these are my current notes as I think through the system design:
-
-- One long-running game server per game type, each lobby gets it's own room with it's own game instance
-- One Socket.IO namespace per game (e.g. /bouncer); within it, one room per matchId.
-- API owns user identity, party/friends, matchmaking decisions, persistence (history/MMR/cosmetics).
-- (Maybe) create a simple API wrapper project that can be shared by all game servers, which provides helpers for interacting with API backend(will only implement this if it feels needed as I'm working)
-- Game server owns authoritative realtime sim + lobby/match runtime + final outcome.
-- API matchmaking “handoff” object always includes: endpoint, namespace, matchId, ticket.
-- matchId is a UUID (globally unique).
-- Ticket is short-lived, signed, and includes at least: userId, gameId/namespace, matchId, and any other data that exists outside the game itself(e.g. titles or cosmetics the player has earned on the site which are wearable in games).
-- On socket connect: verify ticket -> set socket.data.matchId -> socket.join(matchId) -> route all inputs to that lobby instance.
-- Game server reports match result to API via a standardized results endpoint (server-authenticated).
-
-
-
-TODO :: Add watchers to auto-compile typescript to bouncer client and server projects, include them in base 'dev' command.
+X Add an arrow UI thing when user is clicking/dragging to indicate force and direction
+- add a goal and handle win state
+- add match flow. E.g. rematches, change level, best of 3, etc.
+- Implement ticket system for user verification in matches
+- Implement real level saving
+- Add moving platforms
+- Add some basic animations/sounds for juiciness

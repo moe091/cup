@@ -8,7 +8,8 @@ export class InputController {
     private dragThreshold = 30;
     private disposeDrag: () => void = () => {};
 
-    onDrag(input: Phaser.Input.InputPlugin, handler: PointerHandler) {
+    onDrag(scene: Phaser.Scene, dragHandler: PointerHandler, releaseHandler: PointerHandler, cancelHandler: () => void) {
+        const input = scene.input;
         this.disposeDrag(); // only want 1 drag handler, avoid leaking or stacking
 
         // --------- Track Pointer Down ----------- \\
@@ -28,14 +29,36 @@ export class InputController {
             const dy = pointer.y - this.downY;
 
             if (Math.hypot(dx, dy) > this.dragThreshold) 
-                handler({x: dx, y: dy});
+                releaseHandler({x: dx, y: dy});
+            else
+                cancelHandler();
         };
         input.on('pointerup', pointerUp);
 
+
+        // ----- Draw UI Arrow on mouse move ----- \\
+        const pointerMove = (pointer: Phaser.Input.Pointer) => {
+            if (!this.isPointerDown) return;
+
+            const dx = pointer.x - this.downX;
+            const dy = pointer.y - this.downY;
+
+            dragHandler({x: dx, y: dy});
+        };
+        input.on('pointermove', pointerMove);
+
+        const cancelDrag = () => {
+            this.isPointerDown = false;
+            cancelHandler();
+        }
+        input.on('gameout', cancelDrag);
+
         // ------- Make sure listeners don't leak ------- \\
         const dispose = () => {
-            input.off('pointerdown', pointerDown)
+            input.off('pointerdown', pointerDown);
             input.off('pointerup', pointerUp);
+            input.off('pointermove', pointerMove);
+            input.off('gameout', cancelDrag);
             this.isPointerDown = false;
             this.disposeDrag = () => {};
         }
