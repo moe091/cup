@@ -32,6 +32,11 @@ export type OAuthAccount = Prisma.OAuthAccountModel;
  */
 export type Lobby = Prisma.LobbyModel;
 /**
+ * Model BouncerLevel
+ *
+ */
+export type BouncerLevel = Prisma.BouncerLevelModel;
+/**
  * Model Message
  *
  */

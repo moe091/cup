@@ -51,6 +51,7 @@ export const ModelName = {
   User: 'User',
   OAuthAccount: 'OAuthAccount',
   Lobby: 'Lobby',
+  BouncerLevel: 'BouncerLevel',
   Message: 'Message',
 } as const;
 
@@ -98,6 +99,7 @@ export const LobbyScalarFieldEnum = {
   socketUrl: 'socketUrl',
   maxPlayers: 'maxPlayers',
   createdByUserId: 'createdByUserId',
+  createdByGuestId: 'createdByGuestId',
   meta: 'meta',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
@@ -105,6 +107,19 @@ export const LobbyScalarFieldEnum = {
 } as const;
 
 export type LobbyScalarFieldEnum = (typeof LobbyScalarFieldEnum)[keyof typeof LobbyScalarFieldEnum];
+
+export const BouncerLevelScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  data: 'data',
+  ownerUserId: 'ownerUserId',
+  visibility: 'visibility',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+} as const;
+
+export type BouncerLevelScalarFieldEnum =
+  (typeof BouncerLevelScalarFieldEnum)[keyof typeof BouncerLevelScalarFieldEnum];
 
 export const MessageScalarFieldEnum = {
   id: 'id',
@@ -126,6 +141,12 @@ export const NullableJsonNullValueInput = {
 } as const;
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput];
+
+export const JsonNullValueInput = {
+  JsonNull: 'JsonNull',
+} as const;
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput];
 
 export const QueryMode = {
   default: 'default',

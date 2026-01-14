@@ -16,3 +16,11 @@ export const LobbyStatus = {
 } as const;
 
 export type LobbyStatus = (typeof LobbyStatus)[keyof typeof LobbyStatus];
+
+export const BouncerLevelVisibility = {
+  PRIVATE: 'PRIVATE',
+  PUBLIC: 'PUBLIC',
+  SYSTEM: 'SYSTEM',
+} as const;
+
+export type BouncerLevelVisibility = (typeof BouncerLevelVisibility)[keyof typeof BouncerLevelVisibility];

@@ -188,6 +188,7 @@ export type UserWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<'User'> | Date | string;
   oauthAccounts?: Prisma.OAuthAccountListRelationFilter;
   lobbiesCreated?: Prisma.LobbyListRelationFilter;
+  bouncerLevels?: Prisma.BouncerLevelListRelationFilter;
 };
 
 export type UserOrderByWithRelationInput = {
@@ -199,6 +200,7 @@ export type UserOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder;
   oauthAccounts?: Prisma.OAuthAccountOrderByRelationAggregateInput;
   lobbiesCreated?: Prisma.LobbyOrderByRelationAggregateInput;
+  bouncerLevels?: Prisma.BouncerLevelOrderByRelationAggregateInput;
 };
 
 export type UserWhereUniqueInput = Prisma.AtLeast<
@@ -214,6 +216,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<
     updatedAt?: Prisma.DateTimeFilter<'User'> | Date | string;
     oauthAccounts?: Prisma.OAuthAccountListRelationFilter;
     lobbiesCreated?: Prisma.LobbyListRelationFilter;
+    bouncerLevels?: Prisma.BouncerLevelListRelationFilter;
   },
   'id' | 'email'
 >;
@@ -251,6 +254,7 @@ export type UserCreateInput = {
   updatedAt?: Date | string;
   oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
   lobbiesCreated?: Prisma.LobbyCreateNestedManyWithoutCreatedByInput;
+  bouncerLevels?: Prisma.BouncerLevelCreateNestedManyWithoutOwnerUserInput;
 };
 
 export type UserUncheckedCreateInput = {
@@ -262,6 +266,7 @@ export type UserUncheckedCreateInput = {
   updatedAt?: Date | string;
   oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
   lobbiesCreated?: Prisma.LobbyUncheckedCreateNestedManyWithoutCreatedByInput;
+  bouncerLevels?: Prisma.BouncerLevelUncheckedCreateNestedManyWithoutOwnerUserInput;
 };
 
 export type UserUpdateInput = {
@@ -273,6 +278,7 @@ export type UserUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
   lobbiesCreated?: Prisma.LobbyUpdateManyWithoutCreatedByNestedInput;
+  bouncerLevels?: Prisma.BouncerLevelUpdateManyWithoutOwnerUserNestedInput;
 };
 
 export type UserUncheckedUpdateInput = {
@@ -284,6 +290,7 @@ export type UserUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
   lobbiesCreated?: Prisma.LobbyUncheckedUpdateManyWithoutCreatedByNestedInput;
+  bouncerLevels?: Prisma.BouncerLevelUncheckedUpdateManyWithoutOwnerUserNestedInput;
 };
 
 export type UserCreateManyInput = {
@@ -404,6 +411,25 @@ export type UserUpdateOneWithoutLobbiesCreatedNestedInput = {
   >;
 };
 
+export type UserCreateNestedOneWithoutBouncerLevelsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutBouncerLevelsInput, Prisma.UserUncheckedCreateWithoutBouncerLevelsInput>;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutBouncerLevelsInput;
+  connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneWithoutBouncerLevelsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutBouncerLevelsInput, Prisma.UserUncheckedCreateWithoutBouncerLevelsInput>;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutBouncerLevelsInput;
+  upsert?: Prisma.UserUpsertWithoutBouncerLevelsInput;
+  disconnect?: Prisma.UserWhereInput | boolean;
+  delete?: Prisma.UserWhereInput | boolean;
+  connect?: Prisma.UserWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutBouncerLevelsInput, Prisma.UserUpdateWithoutBouncerLevelsInput>,
+    Prisma.UserUncheckedUpdateWithoutBouncerLevelsInput
+  >;
+};
+
 export type UserCreateWithoutOauthAccountsInput = {
   id?: string;
   email: string;
@@ -412,6 +438,7 @@ export type UserCreateWithoutOauthAccountsInput = {
   createdAt?: Date | string;
   updatedAt?: Date | string;
   lobbiesCreated?: Prisma.LobbyCreateNestedManyWithoutCreatedByInput;
+  bouncerLevels?: Prisma.BouncerLevelCreateNestedManyWithoutOwnerUserInput;
 };
 
 export type UserUncheckedCreateWithoutOauthAccountsInput = {
@@ -422,6 +449,7 @@ export type UserUncheckedCreateWithoutOauthAccountsInput = {
   createdAt?: Date | string;
   updatedAt?: Date | string;
   lobbiesCreated?: Prisma.LobbyUncheckedCreateNestedManyWithoutCreatedByInput;
+  bouncerLevels?: Prisma.BouncerLevelUncheckedCreateNestedManyWithoutOwnerUserInput;
 };
 
 export type UserCreateOrConnectWithoutOauthAccountsInput = {
@@ -448,6 +476,7 @@ export type UserUpdateWithoutOauthAccountsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   lobbiesCreated?: Prisma.LobbyUpdateManyWithoutCreatedByNestedInput;
+  bouncerLevels?: Prisma.BouncerLevelUpdateManyWithoutOwnerUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutOauthAccountsInput = {
@@ -458,6 +487,7 @@ export type UserUncheckedUpdateWithoutOauthAccountsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   lobbiesCreated?: Prisma.LobbyUncheckedUpdateManyWithoutCreatedByNestedInput;
+  bouncerLevels?: Prisma.BouncerLevelUncheckedUpdateManyWithoutOwnerUserNestedInput;
 };
 
 export type UserCreateWithoutLobbiesCreatedInput = {
@@ -468,6 +498,7 @@ export type UserCreateWithoutLobbiesCreatedInput = {
   createdAt?: Date | string;
   updatedAt?: Date | string;
   oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
+  bouncerLevels?: Prisma.BouncerLevelCreateNestedManyWithoutOwnerUserInput;
 };
 
 export type UserUncheckedCreateWithoutLobbiesCreatedInput = {
@@ -478,6 +509,7 @@ export type UserUncheckedCreateWithoutLobbiesCreatedInput = {
   createdAt?: Date | string;
   updatedAt?: Date | string;
   oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
+  bouncerLevels?: Prisma.BouncerLevelUncheckedCreateNestedManyWithoutOwnerUserInput;
 };
 
 export type UserCreateOrConnectWithoutLobbiesCreatedInput = {
@@ -504,6 +536,7 @@ export type UserUpdateWithoutLobbiesCreatedInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
+  bouncerLevels?: Prisma.BouncerLevelUpdateManyWithoutOwnerUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutLobbiesCreatedInput = {
@@ -514,6 +547,67 @@ export type UserUncheckedUpdateWithoutLobbiesCreatedInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
+  bouncerLevels?: Prisma.BouncerLevelUncheckedUpdateManyWithoutOwnerUserNestedInput;
+};
+
+export type UserCreateWithoutBouncerLevelsInput = {
+  id?: string;
+  email: string;
+  displayName: string;
+  passwordHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
+  lobbiesCreated?: Prisma.LobbyCreateNestedManyWithoutCreatedByInput;
+};
+
+export type UserUncheckedCreateWithoutBouncerLevelsInput = {
+  id?: string;
+  email: string;
+  displayName: string;
+  passwordHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
+  lobbiesCreated?: Prisma.LobbyUncheckedCreateNestedManyWithoutCreatedByInput;
+};
+
+export type UserCreateOrConnectWithoutBouncerLevelsInput = {
+  where: Prisma.UserWhereUniqueInput;
+  create: Prisma.XOR<Prisma.UserCreateWithoutBouncerLevelsInput, Prisma.UserUncheckedCreateWithoutBouncerLevelsInput>;
+};
+
+export type UserUpsertWithoutBouncerLevelsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutBouncerLevelsInput, Prisma.UserUncheckedUpdateWithoutBouncerLevelsInput>;
+  create: Prisma.XOR<Prisma.UserCreateWithoutBouncerLevelsInput, Prisma.UserUncheckedCreateWithoutBouncerLevelsInput>;
+  where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutBouncerLevelsInput = {
+  where?: Prisma.UserWhereInput;
+  data: Prisma.XOR<Prisma.UserUpdateWithoutBouncerLevelsInput, Prisma.UserUncheckedUpdateWithoutBouncerLevelsInput>;
+};
+
+export type UserUpdateWithoutBouncerLevelsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.StringFieldUpdateOperationsInput | string;
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
+  lobbiesCreated?: Prisma.LobbyUpdateManyWithoutCreatedByNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutBouncerLevelsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.StringFieldUpdateOperationsInput | string;
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
+  lobbiesCreated?: Prisma.LobbyUncheckedUpdateManyWithoutCreatedByNestedInput;
 };
 
 /**
@@ -523,6 +617,7 @@ export type UserUncheckedUpdateWithoutLobbiesCreatedInput = {
 export type UserCountOutputType = {
   oauthAccounts: number;
   lobbiesCreated: number;
+  bouncerLevels: number;
 };
 
 export type UserCountOutputTypeSelect<
@@ -530,6 +625,7 @@ export type UserCountOutputTypeSelect<
 > = {
   oauthAccounts?: boolean | UserCountOutputTypeCountOauthAccountsArgs;
   lobbiesCreated?: boolean | UserCountOutputTypeCountLobbiesCreatedArgs;
+  bouncerLevels?: boolean | UserCountOutputTypeCountBouncerLevelsArgs;
 };
 
 /**
@@ -562,6 +658,15 @@ export type UserCountOutputTypeCountLobbiesCreatedArgs<
   where?: Prisma.LobbyWhereInput;
 };
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountBouncerLevelsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.BouncerLevelWhereInput;
+};
+
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> =
   runtime.Types.Extensions.GetSelect<
     {
@@ -573,6 +678,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
       updatedAt?: boolean;
       oauthAccounts?: boolean | Prisma.User$oauthAccountsArgs<ExtArgs>;
       lobbiesCreated?: boolean | Prisma.User$lobbiesCreatedArgs<ExtArgs>;
+      bouncerLevels?: boolean | Prisma.User$bouncerLevelsArgs<ExtArgs>;
       _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
     },
     ExtArgs['result']['user']
@@ -624,6 +730,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   {
     oauthAccounts?: boolean | Prisma.User$oauthAccountsArgs<ExtArgs>;
     lobbiesCreated?: boolean | Prisma.User$lobbiesCreatedArgs<ExtArgs>;
+    bouncerLevels?: boolean | Prisma.User$bouncerLevelsArgs<ExtArgs>;
     _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
   };
 export type UserIncludeCreateManyAndReturn<
@@ -639,6 +746,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     objects: {
       oauthAccounts: Prisma.$OAuthAccountPayload<ExtArgs>[];
       lobbiesCreated: Prisma.$LobbyPayload<ExtArgs>[];
+      bouncerLevels: Prisma.$BouncerLevelPayload<ExtArgs>[];
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<
       {
@@ -1134,6 +1242,11 @@ export interface Prisma__UserClient<
     args?: Prisma.Subset<T, Prisma.User$lobbiesCreatedArgs<ExtArgs>>,
   ): Prisma.PrismaPromise<
     runtime.Types.Result.GetResult<Prisma.$LobbyPayload<ExtArgs>, T, 'findMany', GlobalOmitOptions> | Null
+  >;
+  bouncerLevels<T extends Prisma.User$bouncerLevelsArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.User$bouncerLevelsArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    runtime.Types.Result.GetResult<Prisma.$BouncerLevelPayload<ExtArgs>, T, 'findMany', GlobalOmitOptions> | Null
   >;
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1636,6 +1749,32 @@ export type User$lobbiesCreatedArgs<
   take?: number;
   skip?: number;
   distinct?: Prisma.LobbyScalarFieldEnum | Prisma.LobbyScalarFieldEnum[];
+};
+
+/**
+ * User.bouncerLevels
+ */
+export type User$bouncerLevelsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the BouncerLevel
+   */
+  select?: Prisma.BouncerLevelSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the BouncerLevel
+   */
+  omit?: Prisma.BouncerLevelOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BouncerLevelInclude<ExtArgs> | null;
+  where?: Prisma.BouncerLevelWhereInput;
+  orderBy?: Prisma.BouncerLevelOrderByWithRelationInput | Prisma.BouncerLevelOrderByWithRelationInput[];
+  cursor?: Prisma.BouncerLevelWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?: Prisma.BouncerLevelScalarFieldEnum | Prisma.BouncerLevelScalarFieldEnum[];
 };
 
 /**

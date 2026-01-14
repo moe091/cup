@@ -10,6 +10,10 @@ generator client {
   moduleFormat = "cjs"
 }
 
+generator clientBasic {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
 }
@@ -28,6 +32,7 @@ model User {
   oauthAccounts OAuthAccount[]
 
   lobbiesCreated Lobby[] @relation("LobbyCreatedBy")
+  bouncerLevels BouncerLevel[]
 
   @@map("user")
 }
@@ -64,6 +69,8 @@ model Lobby {
   createdByUserId String?
   createdBy User? @relation("LobbyCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
+  createdByGuestId String?
+
   meta Json?
 
   createdAt DateTime @default(now())
@@ -74,6 +81,32 @@ model Lobby {
   @@index([expiresAt])
   @@map("lobby")
 }
+
+
+
+model BouncerLevel {
+  id           String   @id @default(uuid())
+  name         String
+  data         Json
+  ownerUserId  String?
+  visibility   BouncerLevelVisibility @default(PRIVATE)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ownerUser    User?    @relation(fields: [ownerUserId], references: [id])
+
+  @@index([ownerUserId])
+  @@index([visibility])
+  @@unique([ownerUserId, name])
+}
+
+enum BouncerLevelVisibility {
+  PRIVATE
+  PUBLIC
+  SYSTEM
+}
+
+
 
 
 model Message {
