@@ -24,13 +24,9 @@ export type LevelDefinition = {
 
 export async function loadLevel(name: string): Promise<LevelDefinition> {
   let level: LevelDefinition;
-  switch (name) {
-    case 'floor':
-      level = (await import('./levels/level1.js')).default;
-      break;
-    default:
-      level = (await import('./levels/test2.js')).default;
-      break;
-  }
+  
+  level = (await import('./levels/test2.js')).default;
   return { ...level, name };
 }
+
+export const levelNames = ["level1", "test2", "testLevel"]; 

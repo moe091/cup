@@ -1,6 +1,8 @@
 import http from 'node:http';
 import { Server } from 'socket.io';
 import { Match } from './match.js';
+import jwt from 'jsonwebtoken';
+import 'dotenv/config';
 
 //setup server
 const httpServer = http.createServer((req, res) => {
@@ -18,9 +20,36 @@ const matches: Map<string, Match> = new Map();
 
 //wait for connection, create and assign rooms/matches, setup socket handlers.
 ioServer.on('connection', (socket) => {
-  const matchId = String((socket.handshake.auth as { matchId?: unknown }).matchId ?? '');
-  if (!matchId) {
-    console.log('Connection rejected: missing matchId');
+  const ticket = socket.handshake.auth?.ticket;
+  const secret = process.env.GAME_TICKET_SECRET;
+  console.log("[DEBUG] ticket: ", ticket);
+  console.log("[DEBUG] secret: ", secret);
+  if (!ticket || !secret) {
+    if (!secret) console.error("GAME_TICKET_SECRET not set");
+    socket.disconnect(true);
+    return;
+  }
+
+  let payload: jwt.JwtPayload;
+
+  try {
+    payload = jwt.verify(ticket, secret) as jwt.JwtPayload;
+  } catch (err) {
+    console.error("Invalid Ticket", err);
+    socket.disconnect(true);
+    return;
+  }
+
+  const matchId = payload.matchId;
+  const gameId = payload.gameId;
+  const sub = payload.sub;
+  const role = payload.role;
+  const displayName = payload.displayName;
+
+  console.log("[DEBUG] Ticket info: ", matchId, gameId, sub, role, displayName);
+
+  if (!matchId || gameId != 'bouncer') {
+    console.log('Connection rejected: missing matchId or gameId');
     return socket.disconnect(true);
   }
 
@@ -53,7 +82,7 @@ function getOrCreateMatch(matchId: string): Match {
     const broadcast = (name: string, payload: unknown) => {
       ioServer.to(matchId).emit(name, payload);
     };
-    match = new Match(matchId, broadcast, 'level1');
+    match = new Match(matchId, broadcast, 'test2');
     matches.set(matchId, match);
   }
   return match;

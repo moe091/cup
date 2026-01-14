@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { LevelDefinition, LevelObject, PlatformDef, SpawnPointDef } from '@cup/bouncer-shared';
+import { loadLevel } from '@cup/bouncer-shared';
 
 type ToolName = 'platform' | 'spawnPoint';
 
@@ -139,7 +140,8 @@ export class LevelEditorScene extends Phaser.Scene {
   readonly toolbarWidth = 80;
   private levelName: string;
   private objects: LevelObject[] = [];
-  private objectViews: Phaser.GameObjects.GameObject[] = [];
+  private objectViews: Array<{ def: LevelObject; view: Phaser.GameObjects.GameObject }> = [];
+  private selectedIndex: number | null = null;
   private gridGraphics?: Phaser.GameObjects.Graphics;
   private activeTool: ToolName = 'platform';
   private tools: Record<ToolName, EditorTool> = {
@@ -162,6 +164,7 @@ export class LevelEditorScene extends Phaser.Scene {
     this.drawGrid();
     this.tools[this.activeTool].enable(this);
     this.setupCameraControls();
+    this.setupSelectionControls();
     this.scene.launch('level-editor-ui', { toolbarWidth: this.toolbarWidth });
     this.scene.bringToTop('level-editor-ui');
 
@@ -180,12 +183,42 @@ export class LevelEditorScene extends Phaser.Scene {
 
   addObject(obj: LevelObject) {
     this.objects.push(obj);
-    this.drawObject(obj);
+    const view = this.drawObject(obj);
+    if (view) this.objectViews.push({ def: obj, view });
   }
 
   setLevelName(name: string) {
     this.levelName = name;
   }
+
+  async loadLevel(name: string) {
+    const level = await loadLevel(name);
+    console.log("GOT LEVEL DEF: ", level);
+    this.setLevelName(name);
+    this.applyLevel(level);
+  }
+
+  private clearLevel() {
+    this.objects = [];
+    this.objectViews.forEach(({ view }) => view.destroy());
+    this.objectViews = [];
+    this.clearSelection();
+  }
+
+  private applyLevel(def: LevelDefinition) {
+    this.clearLevel();
+
+    // If you want grid size to be optional, ignore or use def.gridSize later
+    for (const obj of def.objects) {
+      this.objects.push(obj);
+      const view = this.drawObject(obj);
+      if (view) this.objectViews.push({ def: obj, view });
+    }
+
+    this.cameras.main.setScroll(0, 0);
+    this.drawGrid();
+  }
+
 
   isPointerOverToolbar(pointer: Phaser.Input.Pointer) {
     return pointer.x <= this.toolbarWidth;
@@ -207,14 +240,13 @@ export class LevelEditorScene extends Phaser.Scene {
       const rect = this.add.rectangle(obj.x, obj.y, obj.width, obj.height, 0x2f7a4f).setOrigin(0.5);
       rect.setStrokeStyle(1, 0x1d4b31);
       rect.setDepth(1);
-      this.objectViews.push(rect);
-      return;
+      return rect;
     }
 
     if (obj.type === 'spawnPoint') {
       const circle = this.add.circle(obj.x, obj.y, 6, 0xffffff).setOrigin(0.5);
       circle.setDepth(2);
-      this.objectViews.push(circle);
+      return circle;
     }
   }
 
@@ -224,10 +256,10 @@ export class LevelEditorScene extends Phaser.Scene {
     this.gridGraphics = g;
 
     const view = this.cameras.main.worldView;
-    const startX = Math.floor(view.x / this.gridSize) * this.gridSize;
-    const endX = Math.ceil((view.x + view.width) / this.gridSize) * this.gridSize;
-    const startY = Math.floor(view.y / this.gridSize) * this.gridSize;
-    const endY = Math.ceil((view.y + view.height) / this.gridSize) * this.gridSize;
+    const startX = Math.floor((view.x - 200) / this.gridSize) * this.gridSize;
+    const endX = Math.ceil((view.x + 200 + view.width) / this.gridSize) * this.gridSize;
+    const startY = Math.floor((view.y - 200) / this.gridSize) * this.gridSize;
+    const endY = Math.ceil((view.y + 200 + view.height) / this.gridSize) * this.gridSize;
 
     g.clear();
     g.lineStyle(1, 0x1f1f1f);
@@ -259,7 +291,8 @@ export class LevelEditorScene extends Phaser.Scene {
     });
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (pointer.rightButtonDown() || pointer.middleButtonDown() || pointer.event?.shiftKey) {
+      if (pointer.rightButtonDown() && this.trySelectAt(pointer)) return;
+      if (pointer.middleButtonDown() || pointer.event?.shiftKey) {
         this.isPanning = true;
         this.panStartX = pointer.x;
         this.panStartY = pointer.y;
@@ -288,7 +321,71 @@ export class LevelEditorScene extends Phaser.Scene {
     this.tools[this.activeTool].disable();
     this.scene.stop('level-editor-ui');
     this.gridGraphics?.destroy();
-    this.objectViews.forEach((obj) => obj.destroy());
+    this.objectViews.forEach(({ view }) => view.destroy());
     this.objectViews = [];
+  }
+
+  private setupSelectionControls() {
+    this.input.keyboard?.on('keydown-BACKSPACE', () => this.deleteSelected());
+  }
+
+  private trySelectAt(pointer: Phaser.Input.Pointer) {
+    if (this.isPointerOverToolbar(pointer)) return false;
+    const x = pointer.worldX;
+    const y = pointer.worldY;
+
+    for (let i = this.objectViews.length - 1; i >= 0; i -= 1) {
+      const { def } = this.objectViews[i];
+      if (def.type !== 'platform') continue;
+      if (this.isPointInPlatform(x, y, def)) {
+        this.setSelectedIndex(i);
+        return true;
+      }
+    }
+
+    this.clearSelection();
+    return false;
+  }
+
+  private isPointInPlatform(x: number, y: number, platform: PlatformDef) {
+    const halfW = platform.width / 2;
+    const halfH = platform.height / 2;
+    return x >= platform.x - halfW && x <= platform.x + halfW && y >= platform.y - halfH && y <= platform.y + halfH;
+  }
+
+  private setSelectedIndex(index: number) {
+    if (this.selectedIndex === index) return;
+    this.clearSelection();
+    this.selectedIndex = index;
+    this.updateSelectionHighlight(true);
+  }
+
+  private clearSelection() {
+    if (this.selectedIndex === null) return;
+    this.updateSelectionHighlight(false);
+    this.selectedIndex = null;
+  }
+
+  private updateSelectionHighlight(selected: boolean) {
+    if (this.selectedIndex === null) return;
+    const entry = this.objectViews[this.selectedIndex];
+    if (!entry || entry.def.type !== 'platform') return;
+    const rect = entry.view as Phaser.GameObjects.Rectangle;
+    if (selected) {
+      rect.setFillStyle(0xdb2b2b);
+      rect.setStrokeStyle(1, 0x8f1f1f);
+    } else {
+      rect.setFillStyle(0x2f7a4f);
+      rect.setStrokeStyle(1, 0x1d4b31);
+    }
+  }
+
+  private deleteSelected() {
+    if (this.selectedIndex === null) return;
+    const { view } = this.objectViews[this.selectedIndex];
+    view.destroy();
+    this.objectViews.splice(this.selectedIndex, 1);
+    this.objects.splice(this.selectedIndex, 1);
+    this.selectedIndex = null;
   }
 }

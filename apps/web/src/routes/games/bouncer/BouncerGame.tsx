@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
 import { connectBouncer, type BouncerConnection } from '@cup/bouncer-client';
 import type { LobbyJoinResponse } from '@cup/shared-types';
@@ -18,7 +18,7 @@ export function BouncerGame() {
 
 
         function connectToLobby(lobbyInfo: LobbyJoinResponse, gameContainerEl: HTMLElement): BouncerConnection {
-            const bouncerConnection = connectBouncer(lobbyInfo.socketUrl, lobbyInfo.matchId, gameContainerEl);
+            const bouncerConnection = connectBouncer(lobbyInfo.socketUrl, lobbyInfo.ticket, gameContainerEl);
             console.log("Got bouncerConnection:", bouncerConnection);
 
             return bouncerConnection;

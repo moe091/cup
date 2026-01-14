@@ -34,3 +34,52 @@ X Add an arrow UI thing when user is clicking/dragging to indicate force and dir
 - Implement real level saving
 - Add moving platforms
 - Add some basic animations/sounds for juiciness
+- Implement name check on save level to make sure it's valid and safe
+- Display "Match Not Found"(and other error msgs) when matchId doesn't exist of ticket is invalid
+- Warn guests that they can't save level if they aren't logged in
+
+
+Obstacle ideas:
+- Bounce blocks / trampoline
+- Wind currents(any direction)
+- Ice Cube(freezes player for ~5 seconds. Destroys the hazard)
+- Grav-flip
+- Dynamic physics objects like a door/plank to knock down, a see-saw(Co-op levels later on???)
+- Spinning platforms(slow ones can block passages, fast ones can launch players)
+- Sticky platforms
+- Boulders(circular, can be rolled around)
+
+
+
+### Bouncer Match Flow and UX Notes:
+Routes + Purpose
+
+/games/bouncer (Landing)
+Buttons:
+Play Now (solo for now; later solo vs matchmaking choice)
+Create Custom Lobby (for friends; generates matchId + share link)
+Level Editor
+Later: “Join Match” panel showing friends/public lobbies
+/games/bouncer/:matchId (Friend lobby)
+Used when someone shares a link.
+Waiting room + ready up + leader controls settings
+Can invite friends by sharing the URL
+/games/bouncer/play (Solo / Matchmaking)
+For now: creates a solo lobby (maxPlayers=1)
+Later: shows Play Solo vs Matchmake
+Matchmaking behavior:
+Join existing open lobby or create a new one
+While waiting for full lobby, place players in a free‑play map
+When lobby fills, reset and start real match
+Match Flow (Friend Lobby)
+
+Waiting room: players list + ready status
+Leader selects level/settings
+Ready‑up with auto‑start when min players ready
+Leader can override “Start now”
+If leader leaves → auto‑assign new leader
+Solo Flow
+
+Start immediately
+If someone joins, reset into a real match
+Later add “play offline” to avoid interruptions (client‑side engine)

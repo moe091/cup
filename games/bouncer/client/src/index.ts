@@ -1,7 +1,8 @@
 import { io } from 'socket.io-client';
 import { BouncerClient } from './BouncerClient';
 import { BouncerEditorClient } from './BouncerEditorClient';
-import type { LevelDefinition, MatchStatus, MatchCountdown, TickSnapshot } from '@cup/bouncer-shared';
+import { type LevelDefinition, type MatchStatus, type MatchCountdown, type TickSnapshot } from '@cup/bouncer-shared';
+import { LevelEditorScene } from './scenes/LevelEditor';
 
 /*
  * Entry point for Bouncer client. Will be imported in react frontend.
@@ -12,12 +13,14 @@ import type { LevelDefinition, MatchStatus, MatchCountdown, TickSnapshot } from 
  * returns a clean 'disconnect' function that cleans everything up, so react(or whoever
  * imports this) can handle disconnecting smoothly before leaving the page or rerendering or anything
  */
-export function connectBouncer(url: string, matchId: string, containerEl: HTMLElement): BouncerConnection {
+export function connectBouncer(url: string, ticket: string, containerEl: HTMLElement): BouncerConnection {
   let bouncerClient: BouncerClient | null = null;
 
+  console.log("[DEBUG] ConnectBouncer called with ticket: ", ticket);
+  console.log("url: ", url);
   const socket = io(url, {
     transports: ['websocket'],
-    auth: { matchId: matchId },
+    auth: { ticket: ticket },
     path: '/gameserver/bouncer/socket.io',
   });
 
@@ -81,6 +84,7 @@ export type BouncerConnection = {
 export type BouncerEditorConnection = {
   disconnect: () => void;
   getLevelDefinition: () => LevelDefinition;
+  loadExistingLevel: (name: string) => void;
 };
 
 export function createBouncerEditor(containerEl: HTMLElement, levelName: string): BouncerEditorConnection {
@@ -89,5 +93,8 @@ export function createBouncerEditor(containerEl: HTMLElement, levelName: string)
   return {
     disconnect: () => editor.destroy(),
     getLevelDefinition: () => editor.getLevelDefinition(),
+    loadExistingLevel: async (name: string) => {
+      editor.loadLevel(name);
+    }
   };
 }

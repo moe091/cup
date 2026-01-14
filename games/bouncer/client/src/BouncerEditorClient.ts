@@ -37,4 +37,8 @@ export class BouncerEditorClient {
   getLevelDefinition(): LevelDefinition {
     return this.editorScene.getLevelDefinition();
   }
+
+  loadLevel(levelName: string) {
+    this.editorScene.loadLevel(levelName);
+  }
 }
