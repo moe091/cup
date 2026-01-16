@@ -1,4 +1,4 @@
-import type { LevelDefinition } from "../level.js";
+import type { LevelDefinition } from '../level.js';
 
 const level: LevelDefinition = {
   name: 'floor',

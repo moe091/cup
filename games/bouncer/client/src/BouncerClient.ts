@@ -1,7 +1,10 @@
 import Phaser from 'phaser';
 import type { Socket } from 'socket.io-client';
 import { GameplayScene } from './scenes/Gameplay';
-import { loadLevel, MatchCountdown, MatchStatus, TickSnapshot } from '@cup/bouncer-shared';
+import { LevelDefinition, MatchCountdown, MatchJoinInfo, MatchStatus, TickSnapshot } from '@cup/bouncer-shared';
+import { WaitingRoomScene } from './scenes/WaitingRoom';
+import { BootScene } from './scenes/Boot';
+import { loadLevelDef } from './api/levels';
 
 /**
  * The root of the actual bouncer game client. This class is created after all the
@@ -14,6 +17,7 @@ export class BouncerClient {
   private game: Phaser.Game;
   private socket: Socket;
   private gameplayScene: GameplayScene | undefined;
+  private waitingRoomScene: WaitingRoomScene | undefined;
 
   constructor(socket: Socket, containerEl: HTMLElement) {
     this.socket = socket;
@@ -21,8 +25,11 @@ export class BouncerClient {
   }
 
   createPhaserGame(containerEl: HTMLElement, width: number, height: number): Phaser.Game {
-    const playerId = this.socket.id || "";
+    const playerId = this.socket.id || '';
     this.gameplayScene = new GameplayScene(playerId, this.emitMessage.bind(this));
+    this.waitingRoomScene = new WaitingRoomScene(playerId, this.emitMessage.bind(this));
+    const boot = new BootScene();
+
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
       width: width,
@@ -32,7 +39,7 @@ export class BouncerClient {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
       },
-      scene: [this.gameplayScene],
+      scene: [boot, this.waitingRoomScene, this.gameplayScene],
     };
 
     return new Phaser.Game(config);
@@ -42,15 +49,17 @@ export class BouncerClient {
     this.game.destroy(true);
   }
 
-  onMatchStatusUpdate(data: MatchStatus) {
-    console.log(`[BouncerClient.onMatchStatusUpdate] (SocketID :: ${this.socket.id}) Match Status = `, data);
-    const me = data.players.find((p) => p.playerId === this.socket.id);
-
-    if (me?.ready) this.gameplayScene?.hideReadyButton();
+  onMatchJoin(info: MatchJoinInfo) {
+    this.waitingRoomScene?.onMatchJoin(info);
   }
 
-  async onLoadLevel(levelName: string) {
-    const level = await loadLevel(levelName);
+  onMatchStatusUpdate(status: MatchStatus) {
+    console.log(`[BouncerClient.onMatchStatusUpdate] (SocketID :: ${this.socket.id}) Match Status = `, status);
+    if (status.phase === 'WAITING') this.startOrContinueWaiting(status);
+    else if (status.phase === 'IN_PROGRESS_QUEUED') this.startOrContinueGameplay(status);
+  }
+
+  async onLoadLevel(level: LevelDefinition) {
     this.gameplayScene?.loadLevel(level);
   }
 
@@ -65,6 +74,23 @@ export class BouncerClient {
 
   onSnapshot(snapshot: TickSnapshot) {
     this.gameplayScene?.applySnapshot(snapshot);
+  }
+
+  // ------------- Scene Helpers -------------- \\
+  startOrContinueWaiting(status: MatchStatus) {
+    if (!this.game.scene.isActive('waitingRoom')) {
+      this.game.scene.stop('gameplay');
+      this.game.scene.start('waitingRoom');
+    }
+    this.waitingRoomScene?.statusUpdate(status);
+  }
+
+  startOrContinueGameplay(status: MatchStatus) {
+    if (!this.game.scene.isActive('gameplay')) {
+      this.game.scene.stop('waitingRoom');
+      this.game.scene.start('gameplay');
+    }
+    this.gameplayScene?.statusUpdate(status);
   }
 
   onMatchStart() {

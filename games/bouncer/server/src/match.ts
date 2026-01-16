@@ -1,9 +1,8 @@
 import type { Socket } from 'socket.io';
 import type { PlayerId, SocketId, PlayerSession, Broadcast } from './types.js';
-import type { MatchStatus, MatchPhase, MatchCountdown, TickSnapshot, InputVector } from '@cup/bouncer-shared';
+import type { MatchStatus, MatchPhase, MatchCountdown, TickSnapshot, InputVector, LevelDefinition } from '@cup/bouncer-shared';
 import { Simulation } from './gameplay/simulation.js';
-
-
+import { loadLevelDef } from './api/helpers.js';
 
 /**
  * Match class handles a single room or lobby. It keeps track of players, game
@@ -19,18 +18,26 @@ export class Match {
   private minPlayers: number = 1;
   private countdownSeconds = 1;
   private simulation: Simulation;
-
+  private lastSeen = Date.now(); //TODO:: add idle cleanup if a match hasn't done anything in a couple hours
+  private awaitingAcks = new Set<PlayerId>();
+  private afterAcks: (() => void) | null = null;
+  private levelDef: LevelDefinition | null = null;
 
   constructor(
     public matchId: string,
     private broadcast: Broadcast,
-    private levelName: string
+    private levelId: string,
   ) {
-    console.log(`Match created for level "${this.levelName}" with matchId: ${matchId}`);
+    console.log(`Match created for level "${this.levelId}" with matchId: ${matchId}`);
+
     this.simulation = new Simulation(this.broadcastSnapshot.bind(this));
-    this.simulation.loadLevel(this.levelName);
+    this.loadLevel();
   }
 
+  async loadLevel() {
+    this.levelDef = await loadLevelDef(this.levelId);
+    this.simulation.loadLevel(this.levelDef);
+  }
 
   broadcastSnapshot(snapshot: TickSnapshot) {
     this.broadcast('snapshot', snapshot);
@@ -41,74 +48,34 @@ export class Match {
     this.simulation.start();
   }
 
-  spawnPlayers() {    
-    this.players.forEach(player => {
+  async spawnPlayers() {
+    this.players.forEach((player) => {
       this.simulation.spawnPlayer(player.playerId); //TODO:: check return type of spawnPlayer, if false then display error message
     });
 
-    this.broadcast('load_level', this.levelName);
+    
+    this.broadcast('load_level', this.levelDef);
     this.broadcast('initialize_world', this.simulation.getSnapshot());
   }
 
   startCountdown() {
-    this.spawnPlayers();
-    this.phase = "IN_PROGRESS";
     let countdownTimer = this.countdownSeconds;
 
     const countdownSecond = () => {
       if (countdownTimer <= 0) {
         this.startGame();
       } else {
-        this.broadcast('countdown', {secondsLeft: countdownTimer} as MatchCountdown);
+        this.broadcast('countdown', { secondsLeft: countdownTimer } as MatchCountdown);
         countdownTimer--;
         setTimeout(() => countdownSecond(), 1000);
       }
-    }
+    };
 
     countdownSecond();
   }
 
-
-
-  /**************************************************************************
-    .................            GAME STATUS               ..................
-   **************************************************************************/
-  //updates status by checking minPlayers and playerList to make sure everyone is here and ready. BroadcastStatus should be called to update players
-  updateStatus() {
-    if (this.phase == 'WAITING') {
-      let ready = true; //assume ready is true, will be set to false if not enough players, or if any players haven't readied up
-
-      if (this.players.size < this.minPlayers) {
-        //check if enough players
-        ready = false;
-      } else {
-        for (const [pid, session] of this.players) {
-          //if any player isn't ready, set ready is false
-          if (!session.ready) {
-            ready = false;
-            break;
-          }
-        }
-      }
-
-      if (ready) {
-        //if everyone is here and ready, then start the match
-        this.startCountdown();
-        
-      }
-    } else if (this.phase == 'IN_PROGRESS') {
-      if (this.players.size < this.minPlayers) { //Somebody left, no longer enough players to play!
-        this.phase = 'PAUSED'; 
-        this.simulation.stop();
-        console.warn("[Match::updateStatus] Someone left the match, not enough players. Pausing!");
-      }
-    }
-  }
-
   //Evaluates the current match status and then broadcasts it to all connected players
   broadcastStatus() {
-    this.updateStatus();
-
     const status: MatchStatus = {
       matchId: this.matchId,
       phase: this.phase,
@@ -117,50 +84,99 @@ export class Match {
         playerId: player.playerId,
         displayName: player.displayName,
         ready: player.ready,
+        role: player.role,
       })),
     };
 
     this.broadcast('match_status', status);
   }
 
-
   /**************************************************************************
     ...............           SOCKET HANDLERS               .................
    **************************************************************************/
-    //called when a new player joins this match
+  //called when a new player joins this match
   onJoin(socket: Socket) {
     socket.data.playerId = socket.id as PlayerId; // TODO:: use real playerIds, will come from tickets once implemented. Also maybe add a createPlayerSession function to clean up the join handler
     const playerId = socket.data.playerId;
-    const displayName = `player-${socket.id.slice(0, 6)}`;
+    const displayName = socket.data.displayName;
+    const role = socket.data.role;
 
-    this.players.set(playerId, { playerId, socketId: socket.id as SocketId, displayName, ready: false });
+    this.players.set(playerId, { playerId, socketId: socket.id as SocketId, displayName, role, ready: false });
 
     console.log(`Socket ${socket.id} joined match ${this.matchId}`);
-    socket.emit('match_joined', `Welcome to room ${this.matchId}`);
+    socket.emit('match_joined', { role, displayName });
 
-    this.broadcastStatus();
+    setTimeout(() => this.broadcastStatus(), 1000);
+  }
+
+  getPhase() {
+    return this.phase;
+  }
+
+  setPhase(val: MatchPhase) {
+    if (this.phase == 'WAITING' && val == 'IN_PROGRESS') {
+      this.phase = 'IN_PROGRESS_QUEUED';
+      this.awaitingAcks.clear();
+
+      //After all player acknowledge they are ready for new phase, call setCountdown
+      this.players.forEach(p => {
+        this.awaitingAcks.add(p.playerId);
+        this.afterAcks = () => this.startGameplay();
+      });
+      this.broadcastStatus();
+    } else {
+      this.phase = val;
+    }
+  }
+
+  startGameplay() {
+    this.setPhase('IN_PROGRESS');
+    this.spawnPlayers();
+    this.startCountdown();
+  }
+
+  onClientReady(socket: Socket) {
+    this.awaitingAcks.delete(socket.data.playerId);
+
+    if (this.awaitingAcks.size === 0 && this.afterAcks) {
+      this.afterAcks();
+    }
   }
 
   //client sends this message when ready button is clicked
   onSetReady(socket: Socket, data: { ready: boolean }) {
-    const player = this.players.get(socket.data.playerId);
-    if (player) player.ready = data.ready;
+    // if leader, then it's actually the Start button. Set phase to inProgress, gives clients 1s to load, then start match countdown
+    if (socket.data.role === 'creator') {
+      this.setPhase('IN_PROGRESS');
+    } else {
+      const player = this.players.get(socket.data.playerId);
+      if (player) player.ready = data.ready;
 
-    this.broadcastStatus();
+      this.broadcastStatus();
+    }
   }
 
   //not used yet TODO:: remove this if I don't end up using 'update' events
   onInput(playerId: PlayerId, inputVector: InputVector): void {
-    console.log(`Received update from player ${playerId} in match ${this.matchId}:`, inputVector);
     this.simulation.addInput(playerId, inputVector);
   }
 
   //called on socket disconnect
   onLeave(socket: Socket) {
     console.log(`Socket ${socket.id} left match ${this.matchId}`);
-    if (socket.data.playerId) this.players.delete(socket.data.playerId);
-
+    if (socket.data.playerId) {
+      this.players.delete(socket.data.playerId);
+      this.awaitingAcks.delete(socket.data.playerId);
+    }
+    
     this.broadcastStatus();
   }
+
+  isEmpty() {
+    return this.players.size === 0;
+  }
+
+  destroy() {
+    this.simulation.stop();
+  }
 }
- 

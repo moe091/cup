@@ -41,7 +41,7 @@ export class BouncerController {
     else if (lobby.status !== 'OPEN') throw new ConflictException('Lobby is not open for joining');
 
     const userId = req.user?.id || req.cookies?.guestId || randomUUID(); //TODO:: add getOrCreateGuestId to users service once I make one
-    const ticket = await this.lobbyService.getTicket('bouncer', matchId, userId, req.user?.displayName || 'Guest');
+    const ticket = await this.lobbyService.getTicket(lobby, userId, req.user?.displayName || 'Guest');
 
     return { matchId: lobby.matchId, socketUrl: lobby.socketUrl, ticket };
   }
@@ -70,7 +70,7 @@ export class BouncerController {
       socketUrl: socketUrl,
       maxPlayers: 4,
       createdByUserId: req.user?.id,
-      createdByGuestId: guestId,
+      createdByGuestId: req.user?.id ? undefined : guestId,
     });
   }
 
@@ -100,25 +100,31 @@ export class BouncerController {
   // list all system levels, plus all levels created by the user if logged in
   @Get('levels')
   async listLevels(@Req() req: AuthedRequest) {
-    let levels = req.user
+    const levels = req.user
       ? await this.bouncerService.listLevelsByUser(req.user.id, true)
       : await this.bouncerService.listSystemLevels();
-      
+
     return levels;
   }
 
+  @Get('levels/:id')
+  async getLevelById(@Param('id') id: string) {
+    if (!id) throw new BadRequestException('Level name must be specified');
+    return this.bouncerService.getLevelById(id);
+  }
+
+  
   @Get('levels/system/:levelName')
   async getSystemLevel(@Param('levelName') levelName: string) {
-    if (!levelName) throw new BadRequestException("Level name must be specified");
+    if (!levelName) throw new BadRequestException('Level name must be specified');
     return this.bouncerService.getSystemLevel(levelName);
   }
 
   @Get('levels/:ownerUserId/:levelName')
   async getLevelByUser(@Param('ownerUserId') userId: string, @Param('levelName') levelName: string) {
-    if (!userId) throw new BadRequestException("UserId must be specified");
-    if (!levelName) throw new BadRequestException("LevelName must be specified");
-    
+    if (!userId) throw new BadRequestException('UserId must be specified');
+    if (!levelName) throw new BadRequestException('LevelName must be specified');
+
     return this.bouncerService.getLevelByUser(userId, levelName);
   }
-
 }

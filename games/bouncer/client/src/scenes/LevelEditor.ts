@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import type { LevelDefinition, LevelObject, PlatformDef, SpawnPointDef } from '@cup/bouncer-shared';
-import { loadLevel } from '@cup/bouncer-shared';
 
 type ToolName = 'platform' | 'spawnPoint';
 
@@ -23,7 +22,6 @@ class PlatformTool implements EditorTool {
 
     const start = this.scene.snapWorld(pointer.worldX, pointer.worldY);
     this.start = start;
-    console.log("START = ", start);
     this.preview = this.scene.add
       .rectangle(start.x, start.y, this.scene.gridSize, this.scene.gridSize, 0x2f7a4f, 0.5)
       .setOrigin(0.5);
@@ -32,9 +30,9 @@ class PlatformTool implements EditorTool {
   private onPointerMove = (pointer: Phaser.Input.Pointer) => {
     if (!this.scene || !this.start || !this.preview) return;
     const end = this.scene.snapWorld(pointer.worldX, pointer.worldY);
-    if (end.x === this.start.x) end.x+= 32;
-    if (end.y === this.start.y) end.y+= 32;
-    
+    if (end.x === this.start.x) end.x += 32;
+    if (end.y === this.start.y) end.y += 32;
+
     const width = Math.max(this.scene.gridSize, Math.abs(end.x - this.start.x));
     const height = Math.max(this.scene.gridSize, Math.abs(end.y - this.start.y));
     const centerX = (this.start.x + end.x) / 2;
@@ -56,10 +54,6 @@ class PlatformTool implements EditorTool {
     const height = Math.max(this.scene.gridSize, Math.abs(end.y - this.start.y));
     const centerX = (this.start.x + end.x) / 2;
     const centerY = (this.start.y + end.y) / 2;
-
-    console.log("END: ", end);
-
-    console.log("CENTER: ", centerX, centerY);
 
     const platform: PlatformDef = {
       type: 'platform',
@@ -147,7 +141,7 @@ export class LevelEditorScene extends Phaser.Scene {
   private tools: Record<ToolName, EditorTool> = {
     platform: new PlatformTool(),
     spawnPoint: new SpawnPointTool(),
-  };
+  }; 
   private isPanning = false;
   private panStartX = 0;
   private panStartY = 0;
@@ -191,10 +185,8 @@ export class LevelEditorScene extends Phaser.Scene {
     this.levelName = name;
   }
 
-  async loadLevel(name: string) {
-    const level = await loadLevel(name);
-    console.log("GOT LEVEL DEF: ", level);
-    this.setLevelName(name);
+  async loadLevel(level: LevelDefinition) {
+    this.setLevelName(level.name);
     this.applyLevel(level);
   }
 
@@ -219,13 +211,14 @@ export class LevelEditorScene extends Phaser.Scene {
     this.drawGrid();
   }
 
-
   isPointerOverToolbar(pointer: Phaser.Input.Pointer) {
     return pointer.x <= this.toolbarWidth;
   }
 
   isPrimaryToolPointer(pointer: Phaser.Input.Pointer) {
-    return pointer.leftButtonDown() && !(pointer.rightButtonDown() || pointer.middleButtonDown() || pointer.event?.shiftKey);
+    return (
+      pointer.leftButtonDown() && !(pointer.rightButtonDown() || pointer.middleButtonDown() || pointer.event?.shiftKey)
+    );
   }
 
   snapWorld(x: number, y: number) {
@@ -251,7 +244,6 @@ export class LevelEditorScene extends Phaser.Scene {
   }
 
   private drawGrid() {
-    console.log("Draw Grid");
     const g = this.gridGraphics || this.add.graphics();
     this.gridGraphics = g;
 
@@ -284,11 +276,14 @@ export class LevelEditorScene extends Phaser.Scene {
 
   private setupCameraControls() {
     const cam = this.cameras.main;
-    this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _go: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
-      const zoom = Phaser.Math.Clamp(cam.zoom - dy * 0.001, 0.25, 2);
-      cam.setZoom(zoom);
-      this.drawGrid();
-    });
+    this.input.on(
+      'wheel',
+      (_pointer: Phaser.Input.Pointer, _go: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
+        const zoom = Phaser.Math.Clamp(cam.zoom - dy * 0.001, 0.2, 5);
+        cam.setZoom(zoom);
+        this.drawGrid();
+      },
+    );
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (pointer.rightButtonDown() && this.trySelectAt(pointer)) return;

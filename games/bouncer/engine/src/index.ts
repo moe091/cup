@@ -1,5 +1,5 @@
-import { World } from "./world.js";
-import type { LevelDefinition, PlayerInputVector, TickSnapshot } from "@cup/bouncer-shared";
+import { World } from './world.js';
+import type { LevelDefinition, PlayerInputVector, TickSnapshot } from '@cup/bouncer-shared';
 
 export class Engine {
   private world = new World();
@@ -12,7 +12,7 @@ export class Engine {
   step(inputs: PlayerInputVector[]) {
     this.tick++;
 
-    inputs.forEach(input => {
+    inputs.forEach((input) => {
       this.world.launchBall(input.playerId, input.x, input.y);
     });
 
@@ -31,6 +31,5 @@ export class Engine {
     this.world.loadLevel(level);
   }
 }
-
 
 export type { Ball, Point } from './types.js';

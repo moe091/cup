@@ -15,9 +15,18 @@ export class BouncerService {
     return level;
   }
 
+async getLevelById(id: string) {
+    const level = await this.prisma.bouncerLevel.findFirst({
+      where: { id },
+    });
+    if (!level) throw new NotFoundException();
+
+    return level;
+  }
+
   async getSystemLevel(name: string) {
     const level = await this.prisma.bouncerLevel.findFirst({
-        where: { name, visibility: 'SYSTEM' }
+      where: { name, visibility: 'SYSTEM' },
     });
     if (!level) throw new NotFoundException();
 

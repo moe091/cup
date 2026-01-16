@@ -22,11 +22,10 @@ export type LevelDefinition = {
   gridSize?: number;
 };
 
-export async function loadLevel(name: string): Promise<LevelDefinition> {
-  let level: LevelDefinition;
-  
-  level = (await import('./levels/test2.js')).default;
-  return { ...level, name };
-}
+export type LevelResponse = {
+  id: string;
+  name: string;
+  ownerUserId: string | null;
+  data: LevelDefinition;
+};
 
-export const levelNames = ["level1", "test2", "testLevel"]; 

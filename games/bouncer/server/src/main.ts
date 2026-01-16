@@ -22,10 +22,8 @@ const matches: Map<string, Match> = new Map();
 ioServer.on('connection', (socket) => {
   const ticket = socket.handshake.auth?.ticket;
   const secret = process.env.GAME_TICKET_SECRET;
-  console.log("[DEBUG] ticket: ", ticket);
-  console.log("[DEBUG] secret: ", secret);
   if (!ticket || !secret) {
-    if (!secret) console.error("GAME_TICKET_SECRET not set");
+    if (!secret) console.error('GAME_TICKET_SECRET not set');
     socket.disconnect(true);
     return;
   }
@@ -35,18 +33,15 @@ ioServer.on('connection', (socket) => {
   try {
     payload = jwt.verify(ticket, secret) as jwt.JwtPayload;
   } catch (err) {
-    console.error("Invalid Ticket", err);
+    console.error('Invalid Ticket', err);
     socket.disconnect(true);
     return;
   }
 
   const matchId = payload.matchId;
   const gameId = payload.gameId;
-  const sub = payload.sub;
   const role = payload.role;
   const displayName = payload.displayName;
-
-  console.log("[DEBUG] Ticket info: ", matchId, gameId, sub, role, displayName);
 
   if (!matchId || gameId != 'bouncer') {
     console.log('Connection rejected: missing matchId or gameId');
@@ -54,20 +49,35 @@ ioServer.on('connection', (socket) => {
   }
 
   socket.data.matchId = matchId;
+  socket.data.displayName = displayName;
+  socket.data.role = role;
+
   socket.join(matchId);
 
   const match = getOrCreateMatch(matchId);
+  if (match.getPhase() !== 'WAITING') {
+    socket.emit('join_error', { reason: 'match_in_progress' }); //TODO:: handle join_error on client side, display message
+    return socket.disconnect(true);
+  }
   match.onJoin(socket);
 
   socket.on('input', (data) => match.onInput(socket.data.playerId, data));
 
   socket.on('set_ready', (data) => match.onSetReady(socket, data));
 
+  socket.on('client_ready', () => match.onClientReady(socket));
+
   console.log('New client connected, socket id:', socket.id);
 
   socket.on('disconnect', () => {
     console.log('Client disconnected, socket id:', socket.id);
     match.onLeave(socket);
+    if (match.isEmpty()) {
+      match.destroy();
+      matches.delete(matchId);
+      console.log('Match ' + match.matchId + ' is empty, destroying it!');
+      //TODO:: Notify API match has ended so it can update database
+    }
   });
 });
 
@@ -82,7 +92,9 @@ function getOrCreateMatch(matchId: string): Match {
     const broadcast = (name: string, payload: unknown) => {
       ioServer.to(matchId).emit(name, payload);
     };
-    match = new Match(matchId, broadcast, 'test2');
+    //TODO:: Inplement real level selection/loading
+    const DEFAULT_LEVEL_ID = 'baed0d97-d1fc-4b85-bf1c-6b6558b03052';
+    match = new Match(matchId, broadcast, DEFAULT_LEVEL_ID);
     matches.set(matchId, match);
   }
   return match;

@@ -1,8 +1,9 @@
 import { io } from 'socket.io-client';
 import { BouncerClient } from './BouncerClient';
 import { BouncerEditorClient } from './BouncerEditorClient';
-import { type LevelDefinition, type MatchStatus, type MatchCountdown, type TickSnapshot } from '@cup/bouncer-shared';
+import { type LevelDefinition, type MatchStatus, type MatchCountdown, type TickSnapshot, MatchJoinInfo } from '@cup/bouncer-shared';
 import { LevelEditorScene } from './scenes/LevelEditor';
+import { loadLevelDef } from './api/levels';
 
 /*
  * Entry point for Bouncer client. Will be imported in react frontend.
@@ -16,8 +17,6 @@ import { LevelEditorScene } from './scenes/LevelEditor';
 export function connectBouncer(url: string, ticket: string, containerEl: HTMLElement): BouncerConnection {
   let bouncerClient: BouncerClient | null = null;
 
-  console.log("[DEBUG] ConnectBouncer called with ticket: ", ticket);
-  console.log("url: ", url);
   const socket = io(url, {
     transports: ['websocket'],
     auth: { ticket: ticket },
@@ -31,15 +30,15 @@ export function connectBouncer(url: string, ticket: string, containerEl: HTMLEle
     else console.warn("connectBouncer() - socket.on('connect') :: bouncerClient already exists! Keeping old client.");
   });
 
-  socket.on('match_joined', (message) => {
-    console.log('match_joined: ', message); //TODO:: remove this when done. keeping it for debugging rn
+  socket.on('match_joined', (data: MatchJoinInfo) => {
+    bouncerClient?.onMatchJoin(data);
   });
 
   socket.on('match_status', (data: MatchStatus) => {
     bouncerClient?.onMatchStatusUpdate(data);
   });
 
-  socket.on('load_level', (data: string) => {
+  socket.on('load_level', (data: LevelDefinition) => {
     bouncerClient?.onLoadLevel(data);
   });
 
@@ -48,7 +47,6 @@ export function connectBouncer(url: string, ticket: string, containerEl: HTMLEle
   });
 
   socket.on('initialize_world', (data: TickSnapshot) => {
-    console.log('[initialize_world] Snapshot received: ', data);
     bouncerClient?.onInitializeWorld(data);
   });
 
@@ -84,7 +82,7 @@ export type BouncerConnection = {
 export type BouncerEditorConnection = {
   disconnect: () => void;
   getLevelDefinition: () => LevelDefinition;
-  loadExistingLevel: (name: string) => void;
+  loadExistingLevel: (id: string) => void;
 };
 
 export function createBouncerEditor(containerEl: HTMLElement, levelName: string): BouncerEditorConnection {
@@ -93,8 +91,9 @@ export function createBouncerEditor(containerEl: HTMLElement, levelName: string)
   return {
     disconnect: () => editor.destroy(),
     getLevelDefinition: () => editor.getLevelDefinition(),
-    loadExistingLevel: async (name: string) => {
-      editor.loadLevel(name);
-    }
+    loadExistingLevel: async (id: string) => {
+      const level = await loadLevelDef(id);
+      editor.loadLevel(level);
+    },
   };
 }

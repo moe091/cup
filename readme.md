@@ -37,6 +37,7 @@ X Add an arrow UI thing when user is clicking/dragging to indicate force and dir
 - Implement name check on save level to make sure it's valid and safe
 - Display "Match Not Found"(and other error msgs) when matchId doesn't exist of ticket is invalid
 - Warn guests that they can't save level if they aren't logged in
+- Implement real level selection/loading on server
 
 
 Obstacle ideas:

@@ -22,14 +22,18 @@ export class LobbyService {
     return lobby;
   }
 
-  async getTicket(gameId: string, matchId: string, userId: string, displayName: string): Promise<string> {
+  async getTicket(lobby: Lobby, userId: string, displayName: string): Promise<string> {
+    const isCreator =
+      (lobby.createdByGuestId && lobby.createdByGuestId === userId) ||
+      (lobby.createdByUserId && lobby.createdByUserId === userId);
     const ticketPayload: LobbyTicketPayload = {
       sub: userId,
-      gameId: gameId,
-      matchId: matchId,
-      role: 'player', //check if user id matches creator id in lobby row
+      gameId: lobby.gameId,
+      matchId: lobby.matchId,
+      role: isCreator ? 'creator' : 'player',
       displayName: displayName,
     };
+
     const secret = process.env.GAME_TICKET_SECRET;
     if (!secret) throw new Error('GAME_TICKET_SECRET not found');
 

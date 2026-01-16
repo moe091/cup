@@ -1,4 +1,4 @@
-import { TickSnapshot } from "@cup/bouncer-shared";
+import { TickSnapshot } from '@cup/bouncer-shared';
 
 type Brand<K, T> = K & { __brand: T };
 
@@ -9,13 +9,12 @@ export type PlayerSession = {
   socketId: SocketId;
   playerId: PlayerId;
   displayName: string;
+  role: string;
   ready: boolean;
 };
-
 
 export type Broadcast = (name: string, payload: unknown) => void;
 export type BroadcastSnapshot = (payload: TickSnapshot) => void;
 
 export const asPlayerId = (s: string) => s as PlayerId;
 export const asSocketId = (s: string) => s as SocketId;
-
