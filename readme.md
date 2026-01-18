@@ -4,11 +4,21 @@ This readme will serve as my own personal notes/documentation for now.
 - Monorepo project with sub-projects:
     - API: Nestjs backend API
     - WEB: React frontend
-    - GAME(todo): The actual game project
+    - GAME(todo): The actual game project(s). (Just bouncer for now)
+        - Engine: Runs the actual simulation using box2d. Accepts play inputs as input and outputs world state. Manually ticked via a step function that runs a physics step
+        - Server: Single server that creates rooms(Match instance) for each lobby(lobby info sent to API and stored in DB). Each Match has it's own Engine instance. Handles syncing clients with game world
+        - Client: Dumb client, visually renders what the server tells it to. Sends inputs and other updates to server, gets world state and match updates from server
+        - Shared: Mostly shared types between client and server. Some util functions like level-loading
     - Shared-Types: a shared project to act as a single source of typescript types between backend/frontend
 
 - CI/CD
     - Will use github actions for CI.
+    - Test, typecheck, format only on merge back into master(for now)
+    - CD not planned yet, will deploy and automate deployment after bouncer is done
+
+Details:
+Nestjs API will talk to postgresql db running in docker. It will handle user info(accounts, friends lists, messages), Game data(levels, lobby info, match histories) for each game
+Static react frontend that 
 
 
 ### API

@@ -25,17 +25,19 @@ async function main() {
       where: { ownerUserId: null, name: level.name },
     });
 
-    if (existing) {
+    if (existing) { //don't wanna overwrite levels rn just in case
       await prisma.bouncerLevel.update({
         where: { id: existing.id },
         data: {
           data: level,
           visibility: 'SYSTEM',
+          id: `seeded-id-${level.name}`,
         },
       });
     } else {
       await prisma.bouncerLevel.create({
         data: {
+          id: `seeded-id-${level.name}`,
           name: level.name,
           data: level,
           visibility: 'SYSTEM',

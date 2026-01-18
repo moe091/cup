@@ -93,7 +93,8 @@ function getOrCreateMatch(matchId: string): Match {
       ioServer.to(matchId).emit(name, payload);
     };
     //TODO:: Inplement real level selection/loading
-    const DEFAULT_LEVEL_ID = 'baed0d97-d1fc-4b85-bf1c-6b6558b03052';
+    //const DEFAULT_LEVEL_ID = 'baed0d97-d1fc-4b85-bf1c-6b6558b03052'; //TODO:: put this line back. Update db seed script to specify ID
+    const DEFAULT_LEVEL_ID = 'seeded-id-test3'; //seeded-id-del is other option
     match = new Match(matchId, broadcast, DEFAULT_LEVEL_ID);
     matches.set(matchId, match);
   }
