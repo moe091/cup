@@ -38,6 +38,7 @@ X Add an arrow UI thing when user is clicking/dragging to indicate force and dir
 - Display "Match Not Found"(and other error msgs) when matchId doesn't exist of ticket is invalid
 - Warn guests that they can't save level if they aren't logged in
 - Implement real level selection/loading on server
+- Add a temp, e.g. start with 2 flicks and each user gets an extra flick every 2s
 
 
 Obstacle ideas:

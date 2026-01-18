@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createBouncerEditor, type BouncerEditorConnection } from '@cup/bouncer-client';
 import { listLevels, type LevelListItem } from '../../../api/bouncer';
+import type { SessionUser } from '@cup/shared-types';
 
 export function BouncerEditor() {
   const editorRef = useRef<BouncerEditorConnection | null>(null);
@@ -10,6 +11,7 @@ export function BouncerEditor() {
   const [saveState, setSaveState] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [userInfo, setUserInfo] = useState<SessionUser | null>(null);
   const levelDetails = useMemo(() => {
     const map = new Map<string, LevelListItem>();
     for (const level of levels) map.set(level.id, level);
@@ -23,8 +25,16 @@ export function BouncerEditor() {
       try {
         const res = await fetch('/api/auth/me', { credentials: 'include' });
         const data = await res.json();
+        if (res.ok) {
+          console.log('[DEBUG] got user info: ', data);
+          setUserInfo(data);
+        } else {
+          console.log('[DEBUG] Not logged in');
+          setUserInfo(null);
+        }
       } catch {
-        console.error("auth/me reqeust failed");
+        console.log('[DEBUG] Auth request failed');
+        setUserInfo(null);
       }
     })();
   }, []);
