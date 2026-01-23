@@ -4,7 +4,6 @@ import { Link, Outlet } from 'react-router-dom';
 export default function BouncerLayout() {
     return (
         <div className="gamePage">
-            <h2 className="gameTitle">Play Bouncer!</h2>
 
             <main className="gameContent">
                 <section className="gameStage">
@@ -12,7 +11,7 @@ export default function BouncerLayout() {
                 </section>
             </main>
             
-            <div className="gameFooter">
+            <div className="gameFooter flex justify-end p-10">
                 <Link to="/games">Back to games</Link>
             </div>
         </div>
