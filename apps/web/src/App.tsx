@@ -8,6 +8,7 @@ import BouncerLayout from './routes/games/bouncer/BouncerLayout';
 import { useAuth } from './auth/AuthContext';
 import TopBar from './panels/TopBar';
 import Browse from './routes/games/Browse';
+import GamesLayout from './routes/games/GamesLayout';
 //import './assets/games.css';
 
  
@@ -182,11 +183,13 @@ export default function App() {
     <Routes>
       <Route element={<AppLayout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/games" element={<Browse />} />
-        <Route path="/games/bouncer" element={<BouncerLayout />}>
-          <Route index element={<BouncerLanding />} />
-          <Route path="editor" element={<BouncerEditor />} />
-          <Route path=":matchId" element={<BouncerGame />} />
+        <Route path="/games" element={<GamesLayout />}>
+          <Route index element={<Browse />} />
+          <Route path="bouncer" element={<BouncerLayout />}>
+            <Route index element={<BouncerLanding />} />
+            <Route path="editor" element={<BouncerEditor />} />
+            <Route path=":matchId" element={<BouncerGame />} />
+          </Route>
         </Route>
       </Route>
     </Routes>
