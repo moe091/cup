@@ -1,13 +1,15 @@
 import { useParams } from 'react-router-dom';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { connectBouncer, type BouncerConnection } from '@cup/bouncer-client';
 import type { LobbyJoinResponse } from '@cup/shared-types';
+import type { LevelListItem } from '../../../api/bouncer';
 
 type Params = { matchId: string };
 
 export function BouncerGame() {
     const { matchId } = useParams<Params>();
     const gameContainerRef = useRef<HTMLDivElement | null>(null);
+    const [levels, setLevels] = useState<LevelListItem[]>([]);
 
     console.log("BEFORE USEEFFECT");
     useEffect(() => {
@@ -64,14 +66,29 @@ export function BouncerGame() {
     }
 
     return (
-        <div className="bouncer_client_wrapper">
-            <div className="bouncer_client_topbar">
-                <button onClick={fullScreen}>
-                    Fullscreen
-                </button>
-            </div> 
-            <div ref={gameContainerRef} id="bouncer_client_container">
-                {/*<Link to="/games/bouncer">Back</Link> */}
+        <div className="mx-auto max-w-6xl px-6 py-10">
+            <div className="rounded-2xl border border-white/10 bg-black/70 p-2   md:p-8 backdrop-blur">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <h2 className="font-['Fugaz_One'] text-2xl sm:text-3xl text-slate-200">Bouncer</h2>
+
+                    <div className="flex gap-3">
+                      <button className="rounded-full border border-white/20 px-4 py-2 text-sm text-slate-200 hover:border-white/50 hover:text-white transition">
+                        Invite Friends
+                      </button>
+                      <button className="rounded-full border border-white/20 px-4 py-2 text-sm text-slate-200 hover:border-white/50 hover:text-white transition">
+                        Copy Join Link
+                      </button>
+                    </div>
+                </div> 
+
+                <div className="" ref={gameContainerRef} id="bouncer_client_container">
+                    {/*<Link to="/games/bouncer">Back</Link> */}
+                </div>
+
+                  <ul className="mt-4 text-sm text-slate-400 leading-relaxed">
+                    <li>- Click + drag to aim, release to launch.</li>
+                    <li>- Press F for fullscreen.</li>
+                  </ul>
             </div>
         </div>
     )

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { Socket } from 'socket.io-client';
 import { GameplayScene } from './scenes/Gameplay';
-import { LevelDefinition, MatchCountdown, MatchJoinInfo, MatchStatus, TickSnapshot } from '@cup/bouncer-shared';
+import { LevelDefinition, LevelListItem, MatchCountdown, MatchJoinInfo, MatchStatus, TickSnapshot } from '@cup/bouncer-shared';
 import { WaitingRoomScene } from './scenes/WaitingRoom';
 import { BootScene } from './scenes/Boot';
 import { loadLevelDef } from './api/levels';
@@ -26,8 +26,8 @@ export class BouncerClient {
 
   createPhaserGame(containerEl: HTMLElement, width: number, height: number): Phaser.Game {
     const playerId = this.socket.id || '';
-    this.gameplayScene = new GameplayScene(playerId, this.emitMessage.bind(this));
-    this.waitingRoomScene = new WaitingRoomScene(playerId, this.emitMessage.bind(this));
+    this.gameplayScene = new GameplayScene(playerId, this.emitMessage.bind(this), containerEl);
+    this.waitingRoomScene = new WaitingRoomScene(playerId, this.emitMessage.bind(this), containerEl);
     const boot = new BootScene();
 
     const config: Phaser.Types.Core.GameConfig = {
@@ -38,6 +38,9 @@ export class BouncerClient {
       scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
+      },
+      dom: {
+        createContainer: true  // Enable DOM element support
       },
       scene: [boot, this.waitingRoomScene, this.gameplayScene],
     };
@@ -57,6 +60,10 @@ export class BouncerClient {
     console.log(`[BouncerClient.onMatchStatusUpdate] (SocketID :: ${this.socket.id}) Match Status = `, status);
     if (status.phase === 'WAITING') this.startOrContinueWaiting(status);
     else if (status.phase === 'IN_PROGRESS_QUEUED') this.startOrContinueGameplay(status);
+  }
+
+  onSetLevel(level: LevelListItem) {
+    this.waitingRoomScene?.setLevelSelection(level);
   }
 
   async onLoadLevel(level: LevelDefinition) {

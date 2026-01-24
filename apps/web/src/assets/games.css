@@ -171,3 +171,15 @@
     gap: 10px;
     margin-top: 20px;
 }
+
+.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  z-index: 9999;
+  background: #000;
+}

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { LevelEditorScene } from './LevelEditor';
+import { ToolName } from './EditorTool';
 
-type ToolName = 'platform' | 'spawnPoint';
 
 export class LevelEditorUiScene extends Phaser.Scene {
   private toolbarWidth = 120;
@@ -45,6 +45,7 @@ export class LevelEditorUiScene extends Phaser.Scene {
     const items: Array<{ tool: ToolName; label: string }> = [
       { tool: 'platform', label: 'Platform' },
       { tool: 'spawnPoint', label: 'Spawn' },
+      { tool: 'polygon', label: 'Polygon' },
     ];
 
     const startY = 40;

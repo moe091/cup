@@ -6,11 +6,11 @@ export default function TopBar() {
   const { user } = useAuth();
 
   return (
-    <div className="fixed top-0 z-10 w-full bg-black/70 backdrop-blur border-b border-white/10">
+    <div className="fixed top-0 z-10 w-full bg-black/70 backdrop-blur border-b border-white/20">
       <div className="mx-auto max-w-6xl px-6 py-3 flex items-center justify-between">
         {/* Left: brand */}
-        <Link to="/" className="font-['Zain'] text-2xl underline text-slate-200 tracking-wide">
-          Nightcrew
+        <Link to="/" className="border-b border-slate-700 px-3 font-['Zain'] text-3xl text-slate-200 tracking-wide">
+          the nite crew
         </Link>
 
         {/* Middle: nav */}

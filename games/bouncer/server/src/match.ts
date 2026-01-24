@@ -1,6 +1,6 @@
 import type { Socket } from 'socket.io';
 import type { PlayerId, SocketId, PlayerSession, Broadcast } from './types.js';
-import type { MatchStatus, MatchPhase, MatchCountdown, TickSnapshot, InputVector, LevelDefinition } from '@cup/bouncer-shared';
+import type { MatchStatus, MatchPhase, MatchCountdown, TickSnapshot, InputVector, LevelDefinition, LevelListItem } from '@cup/bouncer-shared';
 import { Simulation } from './gameplay/simulation.js';
 import { loadLevelDef } from './api/helpers.js';
 
@@ -22,21 +22,25 @@ export class Match {
   private awaitingAcks = new Set<PlayerId>();
   private afterAcks: (() => void) | null = null;
   private levelDef: LevelDefinition | null = null;
+  private levelSelection: LevelListItem | null = null;
 
   constructor(
     public matchId: string,
     private broadcast: Broadcast,
-    private levelId: string,
   ) {
-    console.log(`Match created for level "${this.levelId}" with matchId: ${matchId}`);
-
     this.simulation = new Simulation(this.broadcastSnapshot.bind(this));
-    this.loadLevel();
   }
 
-  async loadLevel() {
-    this.levelDef = await loadLevelDef(this.levelId);
+  async loadLevel(): Promise<LevelDefinition | null> {
+    if (!this.levelSelection) {
+      console.error('[match.loadLevel] loadLevel called with now levelSelection!');
+      return null;
+    }
+
+    this.levelDef = await loadLevelDef(this.levelSelection.id);
     this.simulation.loadLevel(this.levelDef);
+
+    return this.levelDef;
   }
 
   broadcastSnapshot(snapshot: TickSnapshot) {
@@ -106,6 +110,13 @@ export class Match {
     console.log(`Socket ${socket.id} joined match ${this.matchId}`);
     socket.emit('match_joined', { role, displayName });
 
+    if (this.levelSelection) {
+      console.log("PLayer joined, emitting levelSelection: ", this.levelSelection);
+      socket.emit('set_level', this.levelSelection);
+    } else {
+      console.log("[DEBUG} player joined, no levelSelectione xists yet");
+    }
+
     setTimeout(() => this.broadcastStatus(), 1000);
   }
 
@@ -113,6 +124,12 @@ export class Match {
     return this.phase;
   }
 
+  /**setPhase('IN_PROGRESS') is called when leader clicks start game.
+   * When that happens, it queues IN_PROGRESS and sends a status update to 
+   * all clients. The clients respond to the IN_PROGRESS_QUEUED status by sending
+   * an ack message. setPhase waits for all of those ack messages to come in and then
+   * calls startGameplay. This is where we load the level, spawn players, etc.
+   */
   setPhase(val: MatchPhase) {
     if (this.phase == 'WAITING' && val == 'IN_PROGRESS') {
       this.phase = 'IN_PROGRESS_QUEUED';
@@ -129,8 +146,9 @@ export class Match {
     }
   }
 
-  startGameplay() {
+  async startGameplay() {
     this.setPhase('IN_PROGRESS');
+    await this.loadLevel();
     this.spawnPlayers();
     this.startCountdown();
   }
@@ -154,6 +172,12 @@ export class Match {
 
       this.broadcastStatus();
     }
+  }
+
+  onUpdateLevelSelection(socket: Socket, level: LevelListItem) {
+    console.log(`${socket.data.role}-${socket.data.displayName} Updated level selection to: ${level.name}`);
+    this.levelSelection = level;
+    this.broadcast('set_level', level);
   }
 
   //not used yet TODO:: remove this if I don't end up using 'update' events

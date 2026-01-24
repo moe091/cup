@@ -1,8 +1,8 @@
 import { io } from 'socket.io-client';
 import { BouncerClient } from './BouncerClient';
 import { BouncerEditorClient } from './BouncerEditorClient';
-import { type LevelDefinition, type MatchStatus, type MatchCountdown, type TickSnapshot, MatchJoinInfo } from '@cup/bouncer-shared';
-import { LevelEditorScene } from './scenes/LevelEditor';
+import { type LevelDefinition, type MatchStatus, type MatchCountdown, type TickSnapshot, MatchJoinInfo, LevelListItem } from '@cup/bouncer-shared';
+import { LevelEditorScene } from './scenes/LevelEditor/LevelEditor';
 import { loadLevelDef } from './api/levels';
 
 /*
@@ -38,6 +38,12 @@ export function connectBouncer(url: string, ticket: string, containerEl: HTMLEle
     bouncerClient?.onMatchStatusUpdate(data);
   });
 
+  //this event is called when the match leader updates the level selection for next round, but it's not time to load it yet
+  socket.on('set_level', (data: LevelListItem) => {
+    bouncerClient?.onSetLevel(data);
+  });
+
+  //this event actually loads a levelDefinition
   socket.on('load_level', (data: LevelDefinition) => {
     bouncerClient?.onLoadLevel(data);
   });

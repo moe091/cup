@@ -13,4 +13,3 @@ export async function loadLevelDef(id: string) {
   const level = await apiGet<{ data: LevelDefinition }>(`/api/games/bouncer/levels/${id}`);
   return level.data;
 }
- 

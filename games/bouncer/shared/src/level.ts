@@ -7,6 +7,12 @@ export type PlatformDef = {
   height: number;
 };
 
+export type PolygonDef = {
+  type: 'polygon';
+  name: string;
+  vertices: Array<{ x: number; y: number }>;
+};
+
 export type SpawnPointDef = {
   type: 'spawnPoint';
   name?: string;
@@ -14,7 +20,7 @@ export type SpawnPointDef = {
   y: number;
 };
 
-export type LevelObject = PlatformDef | SpawnPointDef;
+export type LevelObject = PlatformDef | PolygonDef | SpawnPointDef;
 
 export type LevelDefinition = {
   name: string;
@@ -29,3 +35,11 @@ export type LevelResponse = {
   data: LevelDefinition;
 };
 
+
+export type LevelListItem = {
+  id: string;
+  name: string;
+  ownerUserId: string | null;
+  visibility: 'SYSTEM' | 'PUBLIC' | 'PRIVATE';
+  updatedAt: string;
+}

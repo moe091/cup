@@ -28,6 +28,8 @@ export class Engine {
   }
 
   loadLevel(level: LevelDefinition) {
+    console.log("[DEBUG] ENGINE LOADING LEVEL DEF: ", level.name);
+    this.world.resetWorld();
     this.world.loadLevel(level);
   }
 }

@@ -11,9 +11,6 @@ export default function BouncerLayout() {
                 </section>
             </main>
             
-            <div className="gameFooter flex justify-end p-10">
-                <Link to="/games">Back to games</Link>
-            </div>
         </div>
     );
 }

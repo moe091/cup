@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { LevelDefinition } from '@cup/bouncer-shared';
-import { LevelEditorScene } from './scenes/LevelEditor';
-import { LevelEditorUiScene } from './scenes/LevelEditorUi';
+import { LevelEditorScene } from './scenes/LevelEditor/LevelEditor';
+import { LevelEditorUiScene } from './scenes/LevelEditor/LevelEditorUi';
 
 export class BouncerEditorClient {
   private game: Phaser.Game;
@@ -9,7 +9,7 @@ export class BouncerEditorClient {
   private editorUiScene: LevelEditorUiScene;
 
   constructor(containerEl: HTMLElement, levelName: string) {
-    this.editorScene = new LevelEditorScene(levelName);
+    this.editorScene = new LevelEditorScene(levelName, containerEl);
     this.editorUiScene = new LevelEditorUiScene();
     this.game = this.createPhaserGame(containerEl, 960, 540);
   }

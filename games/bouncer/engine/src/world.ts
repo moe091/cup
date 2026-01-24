@@ -4,11 +4,13 @@ import planck from 'planck';
 import type { Body } from 'planck';
 import type { LevelDefinition } from '@cup/bouncer-shared';
 
+let gravity = {x: 0, y: 10};
+
 export class World {
   private timestep = 1 / 30;
   private balls: Map<string, Body> = new Map<string, Body>();
   private spawnPoints: Point[] = [];
-  private physics: planck.World = new planck.World({ x: 0, y: 10 });
+  private physics: planck.World = new planck.World(gravity);
   private launchPower = 0.6;
 
   launchBall(ballId: string, dx: number, dy: number) {
@@ -141,5 +143,11 @@ export class World {
 
       body = body.getNext();
     }
+  }
+
+  resetWorld() {
+    this.balls = new Map<string, Body>;
+    this.spawnPoints = [];
+    this.physics = new planck.World(gravity);
   }
 }

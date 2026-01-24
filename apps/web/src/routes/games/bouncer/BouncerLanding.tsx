@@ -53,26 +53,25 @@ export function BouncerLanding() {
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-[0_0_60px_rgba(99,102,241,0.2)]">
           <img src={bouncerScreen} className="rounded border border-white/10 bg-black/40 overflow-hidden shadow-[0_0_60px_rgba(99,102,241,0.2)]"></img>
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 bg-slate-900/30 px-4 py-8 text-center backdrop-blur">
-            <div className="font-['Cardo'] text-2xl tracking-[0.2em] text-slate-200">
-              BOUNCER
+            <div className="font-['Fugaz_One'] text-3xl tracking-[0.2em] text-slate-200">
+              Bouncer!
             </div>
           </div>
         </div>
 
         <div className="space-y-6 text-slate-200">
           <div>
-            <h2 className="font-['Cardo'] text-3xl sm:text-4xl">Bouncer</h2>
-            <p className="mt-3 text-slate-300">
-              If miniature golf was a multiplayer platformer game: Traverse each level by flicking 
+            <h2 className="font-['Manrope'] text-3xl sm:text-4xl mb-4">Bouncer</h2>
+            <p className="mt-3 text-slate-300 mb-5">
+              <b className="text-white/90">If miniature golf was a multiplayer platformer game.</b> Traverse each level by flicking 
               your ball through obstacles and hazards to reach the goal before your opponents.
             </p>
 
-            <ul className="mt-3 text-sm text-slate-400 list-disc list-inside space-y-2">
-              <li><b className="text-white">Controls:</b> Click + drag to aim, release to launch.</li>
+            <ul className="leading-relaxed mt-3 text-sm text-slate-400 list-disc list-inside space-y-2">
+              <li><b className="text-slate-300">Controls:</b> Click + drag to aim, release to launch.</li>
               <li>Each player gets 1 launch per 2 seconds, make them count!</li>
-              <li>Keep an eye out for physics-bending powerups and special platforms that help you speed ahead or slow down your opponents.</li>
-              <li>Choose from dozens (jk it's just 1 rn) levels, ranging from high-speed to technical platforming challenges to physics-based puzzles.</li>
-              <li>Or use the level editor to create and share your own unique level ideas!</li>
+              <li>Dozens of levels full of unique physics-bending obstacles and powerups</li>
+              <li><b className="text-slate-300">Custom Level Editor!</b> Design your own levels and play with friends!</li>
             </ul>
           </div>
 
@@ -92,7 +91,7 @@ export function BouncerLanding() {
             </button>
             <button
               onClick={joinFriends}
-              className="rounded-full bg-violet-500/20 border border-white/20 px-6 py-3 text-sm font-semibold text-slate-200 hover:bg-violet-500/40 hover:border-white/50 hover:text-white transition"
+              className="rounded-full border bg-indigo-400/20 border-white/20 px-6 py-3 text-sm font-semibold text-slate-200 hover:bg-indigo-400/40 hover:border-white/50 hover:text-white transition"
             >
               Join Friends
             </button>

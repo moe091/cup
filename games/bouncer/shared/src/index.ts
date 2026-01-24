@@ -45,7 +45,7 @@ export type PlayerInputVector = {
   y: number;
 };
 
-export type { LevelDefinition, LevelObject, PlatformDef, SpawnPointDef } from './level.js';
+export type { LevelDefinition, LevelResponse, LevelObject, PlatformDef, SpawnPointDef, PolygonDef, LevelListItem } from './level.js';
 
 export const scaleFactor = 100; //pixels per planck.js unit(meter). Const because this needs to be consistent between client and server - nobody can change it anywhere except here
 export const toWorld = (pixels: number) => pixels / scaleFactor;

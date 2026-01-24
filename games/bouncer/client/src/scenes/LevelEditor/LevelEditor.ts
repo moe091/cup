@@ -1,157 +1,45 @@
 import Phaser from 'phaser';
-import type { LevelDefinition, LevelObject, PlatformDef, SpawnPointDef } from '@cup/bouncer-shared';
+import type { LevelDefinition, LevelObject, PlatformDef, PolygonDef, SpawnPointDef } from '@cup/bouncer-shared';
+import EditorTool, { ToolName } from './EditorTool';
+import SpawnPointTool from './SpawnPointTool';
+import PlatformTool from './PlatformTool';
+import PolygonTool from './PolygonTool';
 
-type ToolName = 'platform' | 'spawnPoint';
-
-interface EditorTool {
-  name: ToolName;
-  enable(scene: LevelEditorScene): void;
-  disable(): void;
-}
-
-class PlatformTool implements EditorTool {
-  name: ToolName = 'platform';
-  private scene?: LevelEditorScene;
-  private start?: { x: number; y: number };
-  private preview?: Phaser.GameObjects.Rectangle;
-  private enabled = false;
-
-  private onPointerDown = (pointer: Phaser.Input.Pointer) => {
-    if (!this.scene || !this.scene.isPrimaryToolPointer(pointer)) return;
-    if (this.scene.isPointerOverToolbar(pointer)) return;
-
-    const start = this.scene.snapWorld(pointer.worldX, pointer.worldY);
-    this.start = start;
-    this.preview = this.scene.add
-      .rectangle(start.x, start.y, this.scene.gridSize, this.scene.gridSize, 0x2f7a4f, 0.5)
-      .setOrigin(0.5);
-  };
-
-  private onPointerMove = (pointer: Phaser.Input.Pointer) => {
-    if (!this.scene || !this.start || !this.preview) return;
-    const end = this.scene.snapWorld(pointer.worldX, pointer.worldY);
-    if (end.x === this.start.x) end.x += 32;
-    if (end.y === this.start.y) end.y += 32;
-
-    const width = Math.max(this.scene.gridSize, Math.abs(end.x - this.start.x));
-    const height = Math.max(this.scene.gridSize, Math.abs(end.y - this.start.y));
-    const centerX = (this.start.x + end.x) / 2;
-    const centerY = (this.start.y + end.y) / 2;
-
-    this.preview.setPosition(centerX, centerY);
-    this.preview.setSize(width, height);
-  };
-
-  private onPointerUp = (pointer: Phaser.Input.Pointer) => {
-    if (!this.scene || !this.start) return;
-    if (this.scene.isPointerOverToolbar(pointer)) {
-      this.cleanupPreview();
-      return;
-    }
-
-    const end = this.scene.snapWorld(pointer.worldX, pointer.worldY);
-    const width = Math.max(this.scene.gridSize, Math.abs(end.x - this.start.x));
-    const height = Math.max(this.scene.gridSize, Math.abs(end.y - this.start.y));
-    const centerX = (this.start.x + end.x) / 2;
-    const centerY = (this.start.y + end.y) / 2;
-
-    const platform: PlatformDef = {
-      type: 'platform',
-      name: `platform_${Date.now()}`,
-      x: this.preview?.x || 0,
-      y: this.preview?.y || 0,
-      width: this.preview?.width || 0,
-      height: this.preview?.height || 0,
-    };
-
-    this.scene.addObject(platform);
-    this.cleanupPreview();
-  };
-
-  enable(scene: LevelEditorScene) {
-    if (this.enabled) return;
-    this.enabled = true;
-    this.scene = scene;
-    scene.input.on('pointerdown', this.onPointerDown);
-    scene.input.on('pointermove', this.onPointerMove);
-    scene.input.on('pointerup', this.onPointerUp);
-  }
-
-  disable() {
-    if (!this.scene || !this.enabled) return;
-    this.scene.input.off('pointerdown', this.onPointerDown);
-    this.scene.input.off('pointermove', this.onPointerMove);
-    this.scene.input.off('pointerup', this.onPointerUp);
-    this.enabled = false;
-    this.cleanupPreview();
-    this.scene = undefined;
-  }
-
-  private cleanupPreview() {
-    this.preview?.destroy();
-    this.preview = undefined;
-    this.start = undefined;
-  }
-}
-
-class SpawnPointTool implements EditorTool {
-  name: ToolName = 'spawnPoint';
-  private scene?: LevelEditorScene;
-  private enabled = false;
-
-  private onPointerDown = (pointer: Phaser.Input.Pointer) => {
-    if (!this.scene || !this.scene.isPrimaryToolPointer(pointer)) return;
-    if (this.scene.isPointerOverToolbar(pointer)) return;
-
-    const pos = this.scene.snapWorld(pointer.worldX, pointer.worldY);
-    const spawn: SpawnPointDef = {
-      type: 'spawnPoint',
-      name: `spawn_${Date.now()}`,
-      x: pos.x,
-      y: pos.y,
-    };
-
-    this.scene.addObject(spawn);
-  };
-
-  enable(scene: LevelEditorScene) {
-    if (this.enabled) return;
-    this.enabled = true;
-    this.scene = scene;
-    scene.input.on('pointerdown', this.onPointerDown);
-  }
-
-  disable() {
-    if (!this.scene || !this.enabled) return;
-    this.scene.input.off('pointerdown', this.onPointerDown);
-    this.enabled = false;
-    this.scene = undefined;
-  }
-}
+type ObjectView = { def: LevelObject; view: Phaser.GameObjects.GameObject };
 
 export class LevelEditorScene extends Phaser.Scene {
   readonly gridSize = 32;
   readonly toolbarWidth = 80;
   private levelName: string;
   private objects: LevelObject[] = [];
-  private objectViews: Array<{ def: LevelObject; view: Phaser.GameObjects.GameObject }> = [];
+  private objectViews: Array<ObjectView> = [];
   private selectedIndex: number | null = null;
   private gridGraphics?: Phaser.GameObjects.Graphics;
   private activeTool: ToolName = 'platform';
   private tools: Record<ToolName, EditorTool> = {
     platform: new PlatformTool(),
     spawnPoint: new SpawnPointTool(),
+    polygon: new PolygonTool(),
   }; 
   private isPanning = false;
   private panStartX = 0;
   private panStartY = 0;
 
-  constructor(levelName: string) {
+  constructor(levelName: string, private containerEl: HTMLElement) {
     super('level-editor');
     this.levelName = levelName;
   }
 
+  fullscreenListener() {
+    const fKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.F);
+    fKey.on('down', () => {
+        this.containerEl.requestFullscreen();
+    });
+  }
+
   create() {
+    this.fullscreenListener();
+
     this.cameras.main.setBackgroundColor('#0b0b0b');
     this.input.mouse?.disableContextMenu();
 
@@ -234,6 +122,15 @@ export class LevelEditorScene extends Phaser.Scene {
       rect.setStrokeStyle(1, 0x1d4b31);
       rect.setDepth(1);
       return rect;
+    }
+
+    if (obj.type === 'polygon') {
+      // Convert vertices to flat array for Phaser polygon
+      const points = obj.vertices.flatMap(v => [v.x, v.y]);
+      const polygon = this.add.polygon(0, 0, points, 0x4a90e2).setOrigin(0);
+      polygon.setStrokeStyle(2, 0x2e5a8a);
+      polygon.setDepth(1);
+      return polygon;
     }
 
     if (obj.type === 'spawnPoint') {
@@ -331,15 +228,41 @@ export class LevelEditorScene extends Phaser.Scene {
 
     for (let i = this.objectViews.length - 1; i >= 0; i -= 1) {
       const { def } = this.objectViews[i];
-      if (def.type !== 'platform') continue;
-      if (this.isPointInPlatform(x, y, def)) {
-        this.setSelectedIndex(i);
-        return true;
+      
+      if (def.type === 'platform') {
+        if (this.isPointInPlatform(x, y, def)) {
+          this.setSelectedIndex(i);
+          return true;
+        }
+      } else if (def.type === 'polygon') {
+        if (this.isPointInPolygon(x, y, def)) {
+          this.setSelectedIndex(i);
+          return true;
+        }
       }
     }
 
     this.clearSelection();
     return false;
+  }
+
+  private isPointInPolygon(x: number, y: number, polygon: PolygonDef) {
+    const vertices = polygon.vertices;
+    let inside = false;
+    
+    for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+      const xi = vertices[i].x;
+      const yi = vertices[i].y;
+      const xj = vertices[j].x;
+      const yj = vertices[j].y;
+      
+      const intersect = ((yi > y) !== (yj > y)) &&
+        (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+      
+      if (intersect) inside = !inside;
+    }
+    
+    return inside;
   }
 
   private isPointInPlatform(x: number, y: number, platform: PlatformDef) {
@@ -364,14 +287,26 @@ export class LevelEditorScene extends Phaser.Scene {
   private updateSelectionHighlight(selected: boolean) {
     if (this.selectedIndex === null) return;
     const entry = this.objectViews[this.selectedIndex];
-    if (!entry || entry.def.type !== 'platform') return;
-    const rect = entry.view as Phaser.GameObjects.Rectangle;
-    if (selected) {
-      rect.setFillStyle(0xdb2b2b);
-      rect.setStrokeStyle(1, 0x8f1f1f);
-    } else {
-      rect.setFillStyle(0x2f7a4f);
-      rect.setStrokeStyle(1, 0x1d4b31);
+    if (!entry) return;
+
+    if (entry.def.type === 'platform') {
+      const rect = entry.view as Phaser.GameObjects.Rectangle;
+      if (selected) {
+        rect.setFillStyle(0xdb2b2b);
+        rect.setStrokeStyle(1, 0x8f1f1f);
+      } else {
+        rect.setFillStyle(0x2f7a4f);
+        rect.setStrokeStyle(1, 0x1d4b31);
+      }
+    } else if (entry.def.type === 'polygon') {
+      const poly = entry.view as Phaser.GameObjects.Polygon;
+      if (selected) {
+        poly.setFillStyle(0xdb2b2b);
+        poly.setStrokeStyle(2, 0x8f1f1f);
+      } else {
+        poly.setFillStyle(0x4a90e2);
+        poly.setStrokeStyle(2, 0x2e5a8a);
+      }
     }
   }
 
