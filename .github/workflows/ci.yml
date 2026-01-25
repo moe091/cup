@@ -32,6 +32,9 @@ jobs:
       - name: Build shared types
         run: pnpm build:types
 
+      - name: Generate Prisma client
+        run: pnpm --filter ./apps/api prisma generate
+
       - name: Lint
         run: pnpm lint
 
