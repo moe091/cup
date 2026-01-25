@@ -25,9 +25,11 @@ export class WaitingRoomScene extends Phaser.Scene {
   }
 
   fullscreenListener() {
+    console.log('fullscreen listener setup');
     const fKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.F);
     fKey.on('down', () => {
-        this.containerEl.requestFullscreen();
+      console.log('request full screen: ', this.containerEl);
+      this.containerEl.requestFullscreen();
     });
   }
 

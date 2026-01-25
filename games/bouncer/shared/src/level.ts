@@ -11,6 +11,8 @@ export type PolygonDef = {
   type: 'polygon';
   name: string;
   vertices: Array<{ x: number; y: number }>;
+  friction?: number;
+  restitution?: number;
 };
 
 export type SpawnPointDef = {
