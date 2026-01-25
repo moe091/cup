@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateLobbyInput, LobbyJoinResponse, LobbyTicketPayload } from './lobby.types';
+import { CreateLobbyInput, LobbyTicketPayload } from './lobby.types';
 import type { Lobby } from 'src/generated/prisma/client';
 import { LobbyCreateResponse } from '@cup/shared-types';
 import jwt from 'jsonwebtoken';
@@ -22,7 +22,7 @@ export class LobbyService {
     return lobby;
   }
 
-  async getTicket(lobby: Lobby, userId: string, displayName: string): Promise<string> {
+  getTicket(lobby: Lobby, userId: string, displayName: string): string {
     const isCreator =
       (lobby.createdByGuestId && lobby.createdByGuestId === userId) ||
       (lobby.createdByUserId && lobby.createdByUserId === userId);

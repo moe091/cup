@@ -1,7 +1,14 @@
 import { io } from 'socket.io-client';
 import { BouncerClient } from './BouncerClient';
 import { BouncerEditorClient } from './BouncerEditorClient';
-import { type LevelDefinition, type MatchStatus, type MatchCountdown, type TickSnapshot, MatchJoinInfo, LevelListItem } from '@cup/bouncer-shared';
+import {
+  type LevelDefinition,
+  type MatchStatus,
+  type MatchCountdown,
+  type TickSnapshot,
+  MatchJoinInfo,
+  LevelListItem,
+} from '@cup/bouncer-shared';
 import { LevelEditorScene } from './scenes/LevelEditor/LevelEditor';
 import { loadLevelDef } from './api/levels';
 

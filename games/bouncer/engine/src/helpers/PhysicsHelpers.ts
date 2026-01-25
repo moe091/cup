@@ -9,14 +9,14 @@ export function calculateCentroid(vertices: Array<{ x: number; y: number }>): { 
   let sumX = 0;
   let sumY = 0;
 
-  vertices.forEach(v => {
+  vertices.forEach((v) => {
     sumX += v.x;
     sumY += v.y;
   });
 
   return {
     x: sumX / vertices.length,
-    y: sumY / vertices.length
+    y: sumY / vertices.length,
   };
 }
 
@@ -25,11 +25,11 @@ export function calculateCentroid(vertices: Array<{ x: number; y: number }>): { 
  */
 export function verticesToLocalCoords(
   vertices: Array<{ x: number; y: number }>,
-  centroid: { x: number; y: number }
+  centroid: { x: number; y: number },
 ): Array<{ x: number; y: number }> {
-  return vertices.map(v => ({
+  return vertices.map((v) => ({
     x: v.x - centroid.x,
-    y: v.y - centroid.y
+    y: v.y - centroid.y,
   }));
 }
 
@@ -40,13 +40,13 @@ export function verticesToLocalCoords(
 export function triangulatePolygon(vertices: Array<{ x: number; y: number }>): number[] {
   // Earcut expects a flat array: [x1, y1, x2, y2, ...]
   const flatCoords: number[] = [];
-  vertices.forEach(v => {
+  vertices.forEach((v) => {
     flatCoords.push(v.x, v.y);
   });
 
   // Earcut returns indices into the vertex array, in groups of 3 (triangles)
   const triangleIndices = earcut(flatCoords);
-  
+
   return triangleIndices;
 }
 
@@ -59,7 +59,7 @@ export function createPolygonBody(
   vertices: Array<{ x: number; y: number }>,
   name: string,
   friction: number = 0.8,
-  restitution: number = 0.5
+  restitution: number = 0.5,
 ): planck.Body {
   // 1. Calculate centroid in pixel coordinates
   const centroid = calculateCentroid(vertices);
@@ -70,7 +70,7 @@ export function createPolygonBody(
   // 3. Create body at centroid
   const body = world.createBody({
     type: 'static',
-    position: worldCentroid
+    position: worldCentroid,
   });
   body.setUserData(name);
 
@@ -94,7 +94,7 @@ export function createPolygonBody(
     const planckVerts = [
       new planck.Vec2(toWorld(v1.x), toWorld(v1.y)),
       new planck.Vec2(toWorld(v2.x), toWorld(v2.y)),
-      new planck.Vec2(toWorld(v3.x), toWorld(v3.y))
+      new planck.Vec2(toWorld(v3.x), toWorld(v3.y)),
     ];
 
     // Create polygon fixture (triangle)

@@ -5,24 +5,21 @@ import {
   Post,
   BadRequestException,
   Req,
-  PayloadTooLargeException,
   Res,
   UnauthorizedException,
   Get,
 } from '@nestjs/common';
 import { LobbyService } from '../lobby/lobby.service';
-import { LobbyJoinResponse, LobbyTicketPayload } from '../lobby/lobby.types';
+import { LobbyJoinResponse } from '../lobby/lobby.types';
 import { NotFoundException, GoneException, ConflictException } from '@nestjs/common';
 import type { LevelDefinition } from '@cup/bouncer-shared';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import jwt from 'jsonwebtoken';
 import type { AuthedRequest } from 'src/auth/auth.types';
 import { randomUUID } from 'node:crypto';
 import { LobbyCreateResponse } from '@cup/shared-types';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import { BouncerService } from './bouncer.service';
-import { UserScalarFieldEnum } from 'src/generated/prisma/internal/prismaNamespace';
 
 @Controller('games/bouncer')
 export class BouncerController {
@@ -40,8 +37,8 @@ export class BouncerController {
     else if (lobby.expiresAt && lobby.expiresAt < new Date()) throw new GoneException('Lobby has expired');
     else if (lobby.status !== 'OPEN') throw new ConflictException('Lobby is not open for joining');
 
-    const userId = req.user?.id || req.cookies?.guestId || randomUUID(); //TODO:: add getOrCreateGuestId to users service once I make one
-    const ticket = await this.lobbyService.getTicket(lobby, userId, req.user?.displayName || 'Guest');
+    const userId = (req.user?.id as string) || (req.cookies?.guestId as string) || randomUUID(); //TODO:: add getOrCreateGuestId to users service once I make one
+    const ticket = this.lobbyService.getTicket(lobby, userId, req.user?.displayName || 'Guest');
 
     return { matchId: lobby.matchId, socketUrl: lobby.socketUrl, ticket };
   }
@@ -54,10 +51,10 @@ export class BouncerController {
     const socketUrl = process.env.BOUNCER_SERVER_URL;
     if (!socketUrl) throw new Error('BOUNCER_SERVER_URL is not set');
 
-    let guestId = req.cookies?.guestId;
+    let guestId = req.cookies?.guestId as string;
 
     if (!req.user && !guestId) {
-      guestId = crypto.randomUUID();
+      guestId = randomUUID();
       res.cookie('guestId', guestId, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -69,7 +66,7 @@ export class BouncerController {
       gameId: 'bouncer',
       socketUrl: socketUrl,
       maxPlayers: 4,
-      createdByUserId: req.user?.id,
+      createdByUserId: req.user?.id as string,
       createdByGuestId: req.user?.id ? undefined : guestId,
     });
   }
@@ -94,7 +91,7 @@ export class BouncerController {
     if (!body?.name) throw new BadRequestException('Level name is required');
 
     console.log('Saving Level: ', body.name);
-    const saved = await this.bouncerService.saveLevel(req.user.id, body.name, body);
+    await this.bouncerService.saveLevel(req.user.id, body.name, body);
   }
 
   // list all system levels, plus all levels created by the user if logged in
@@ -113,7 +110,6 @@ export class BouncerController {
     return this.bouncerService.getLevelById(id);
   }
 
-  
   @Get('levels/system/:levelName')
   async getSystemLevel(@Param('levelName') levelName: string) {
     if (!levelName) throw new BadRequestException('Level name must be specified');

@@ -1,7 +1,14 @@
 import Phaser from 'phaser';
 import type { Socket } from 'socket.io-client';
 import { GameplayScene } from './scenes/Gameplay';
-import { LevelDefinition, LevelListItem, MatchCountdown, MatchJoinInfo, MatchStatus, TickSnapshot } from '@cup/bouncer-shared';
+import {
+  LevelDefinition,
+  LevelListItem,
+  MatchCountdown,
+  MatchJoinInfo,
+  MatchStatus,
+  TickSnapshot,
+} from '@cup/bouncer-shared';
 import { WaitingRoomScene } from './scenes/WaitingRoom';
 import { BootScene } from './scenes/Boot';
 import { loadLevelDef } from './api/levels';
@@ -40,7 +47,7 @@ export class BouncerClient {
         autoCenter: Phaser.Scale.CENTER_BOTH,
       },
       dom: {
-        createContainer: true  // Enable DOM element support
+        createContainer: true, // Enable DOM element support
       },
       scene: [boot, this.waitingRoomScene, this.gameplayScene],
     };

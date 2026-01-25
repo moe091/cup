@@ -14,11 +14,7 @@ export class WaitingRoomUI {
   private onReady: () => void;
   private players: PlayerInfo[] = [];
 
-  constructor(
-    scene: Phaser.Scene,
-    isCreator: boolean,
-    onReady: () => void
-  ) {
+  constructor(scene: Phaser.Scene, isCreator: boolean, onReady: () => void) {
     this.scene = scene;
     this.isCreator = isCreator;
     this.onReady = onReady;
@@ -175,7 +171,7 @@ export class WaitingRoomUI {
 
     const element = this.container.node as HTMLElement;
     const readyBtn = element.querySelector('[data-ready-btn]') as HTMLButtonElement;
-    
+
     if (readyBtn) {
       readyBtn.style.display = 'none';
     }
@@ -195,7 +191,7 @@ export class WaitingRoomUI {
 
     let html = '';
 
-    this.players.forEach(player => {
+    this.players.forEach((player) => {
       const ballSprite = player.isMe ? 'ball_green' : 'ball_red';
       const statusClass = player.ready ? 'ready' : 'waiting';
       const statusText = player.ready ? 'READY' : 'Waiting...';

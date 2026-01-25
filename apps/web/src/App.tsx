@@ -1,86 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { Routes, Route, Link, Outlet } from 'react-router-dom';
-import type { SessionUser } from '@cup/shared-types';
-import { BouncerGame } from './routes/games/bouncer/BouncerGame';
-import { BouncerLanding } from './routes/games/bouncer/BouncerLanding';
-import { BouncerEditor } from './routes/games/bouncer/BouncerEditor';
-import BouncerLayout from './routes/games/bouncer/BouncerLayout';
-import { useAuth } from './auth/AuthContext';
-import TopBar from './panels/TopBar';
-import Browse from './routes/games/Browse';
-import GamesLayout from './routes/games/GamesLayout';
+import { Routes, Route, Link, Outlet } from "react-router-dom";
+import type { SessionUser } from "@cup/shared-types";
+import { BouncerGame } from "./routes/games/bouncer/BouncerGame";
+import { BouncerLanding } from "./routes/games/bouncer/BouncerLanding";
+import { BouncerEditor } from "./routes/games/bouncer/BouncerEditor";
+import BouncerLayout from "./routes/games/bouncer/BouncerLayout";
+import { useAuth } from "./auth";
+import TopBar from "./panels/TopBar";
+import Browse from "./routes/games/Browse";
+import GamesLayout from "./routes/games/GamesLayout";
 //import './assets/games.css';
-
- 
-function Home2() {
-  return (
-    <div>
-      <h1>Home</h1>
-      <Link to="/games">Go to /games</Link>
-    </div>
-  );
-}
-
-function Game2() {
-  const [msg, setMsg] = useState('');
-  const [user, setUser] = useState<SessionUser | null>(null);
-
-  useEffect(() => {
-    fetch('/api/message')
-      .then((res) => res.json())
-      .then((data) => setMsg(data.message))
-      .catch((err) => {
-        console.error('Error fetching message:', err);
-        setMsg('Error fetching message');
-    });
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    fetch('/api/auth/me', { credentials: 'include', signal: controller.signal })
-      .then((res) => {
-        if (res.status === 401) {
-          console.log('User is not authenticated');
-          return null;
-        }
-        return res.json();
-      })
-      .then((data: SessionUser | null) => {
-        if (data) {
-          console.log('Authenticated user:', data);
-          setUser(data);
-        } else {
-          console.log('No authenticated user');
-        }
-      })
-      .catch((err) => {
-        if (err.name === 'AbortError') {
-          console.log('Fetch aborted');
-          return;
-        }
-        console.error('Error fetching auth status:', err);
-      });
-
-    return () => controller.abort();
-  }, []);
-
-
-  return (
-    <div>
-      <h1>Game</h1>
-      <p>Auth modal will go here.</p>
-      <div>message = {msg}</div>
-      <a href="/api/auth/google">Sign in with Google</a>
-      <h3>Username = {user?.displayName}</h3>
-      <Link to="/games/bouncer">Bouncer!</Link>
-    </div>
-  );
-}
-
-function Game() {
-  return <h2> game </h2>
-}
 
 function LoggedOutActions() {
   return (
@@ -114,24 +42,31 @@ function LoggedOutActions() {
   );
 }
 
-
 function LoggedInActions() {
   return (
     <div className="text-slate-200 flex flex-col sm:flex-row gap-4 justify-center mt-10 ">
-      <button className="mt-10 px-8 py-4 rounded-full text-lg font-medium border border-white/20 hover:border-white/50 hover:text-white transition">Game</button>
-      <button className="mt-10 px-8 py-4 rounded-full text-lg font-medium border border-white/20 hover:border-white/50 hover:text-white transition">Chill</button>
-      <button className="mt-10 px-8 py-4 rounded-full text-lg font-medium border border-white/20 hover:border-white/50 hover:text-white transition">My Home</button>
+      <button className="mt-10 px-8 py-4 rounded-full text-lg font-medium border border-white/20 hover:border-white/50 hover:text-white transition">
+        Game
+      </button>
+      <button className="mt-10 px-8 py-4 rounded-full text-lg font-medium border border-white/20 hover:border-white/50 hover:text-white transition">
+        Chill
+      </button>
+      <button className="mt-10 px-8 py-4 rounded-full text-lg font-medium border border-white/20 hover:border-white/50 hover:text-white transition">
+        My Home
+      </button>
     </div>
-  )
+  );
 }
 
 function GreetingText(user: SessionUser | null, isLoading: boolean) {
   if (isLoading) return null;
   return (
     <h1 className="font-['Cardo'] text-5xl sm:text-6xl lg:text-7xl font-semibold space-y-8">
-      { user?.displayName ? `Welcome back, ${user?.displayName}` : 'Welcome to the Night Crew.'}
+      {user?.displayName
+        ? `Welcome back, ${user?.displayName}`
+        : "Welcome to the Night Crew."}
     </h1>
-  )
+  );
 }
 
 function BouncerRec() {
@@ -158,13 +93,13 @@ function Home() {
   return (
     <main className="font-['Manrope'] text-slate-200/90 tracking-wide min-h-screen w-full flex items-center justify-center text-slate-100 bg-gradient-to-tl from-neutral-950 via-indigo-950 to-neutral-950">
       <div className="text-center space-y-6">
-        { GreetingText(user, isLoading) }
-        { !user && !isLoading && LoggedOutActions() }
-        { user && !isLoading && LoggedInActions() }
-        { BouncerRec() }
+        {GreetingText(user, isLoading)}
+        {!user && !isLoading && LoggedOutActions()}
+        {user && !isLoading && LoggedInActions()}
+        {BouncerRec()}
       </div>
     </main>
-  )
+  );
 }
 
 export function AppLayout() {
@@ -173,12 +108,10 @@ export function AppLayout() {
       <TopBar />
       <Outlet />
     </>
-  )
+  );
 }
 
-
 export default function App() {
-
   return (
     <Routes>
       <Route element={<AppLayout />}>

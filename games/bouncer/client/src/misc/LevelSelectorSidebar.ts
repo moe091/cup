@@ -20,17 +20,16 @@ export class LevelSelectorSidebar {
     this.scene = scene;
     this.allLevels = levels;
     this.isCreator = isCreator;
-    if (curLevel)
-        this.levelName = curLevel.name;
+    if (curLevel) this.levelName = curLevel.name;
 
     this.onLevelChange = onLevelChange || null;
     this.injectStyles();
-    
+
     // Auto-select a random system level on creation (only if creator)
     if (this.isCreator) {
       this.selectRandomSystemLevel();
     }
-    
+
     this.create();
   }
 
@@ -205,11 +204,10 @@ export class LevelSelectorSidebar {
   }
 
   private createHTML(): string {
-    const currentLevel = this.allLevels.find(l => l.id === this.selectedLevelId);
+    const currentLevel = this.allLevels.find((l) => l.id === this.selectedLevelId);
     if (currentLevel) {
-        this.levelName = currentLevel.name;
+      this.levelName = currentLevel.name;
     }
-    
 
     if (this.isCreator) {
       // Creator view - full level selector
@@ -290,16 +288,16 @@ export class LevelSelectorSidebar {
     const element = this.container.node as HTMLElement;
     const listEl = element.querySelector('[data-list]') as HTMLDivElement;
     if (!listEl) return;
-    
-    const builtIn = levels.filter(l => l.ownerUserId === null);
-    const custom = levels.filter(l => l.ownerUserId !== null);
+
+    const builtIn = levels.filter((l) => l.ownerUserId === null);
+    const custom = levels.filter((l) => l.ownerUserId !== null);
 
     let html = '';
 
     if (builtIn.length > 0) {
       html += '<div class="level-section">';
       html += '<div class="level-section-title">Built-in Levels</div>';
-      builtIn.forEach(level => {
+      builtIn.forEach((level) => {
         html += this.createLevelItemHtml(level);
       });
       html += '</div>';
@@ -308,7 +306,7 @@ export class LevelSelectorSidebar {
     if (custom.length > 0) {
       html += '<div class="level-section">';
       html += '<div class="level-section-title">Custom Levels</div>';
-      custom.forEach(level => {
+      custom.forEach((level) => {
         html += this.createLevelItemHtml(level);
       });
       html += '</div>';
@@ -340,20 +338,20 @@ export class LevelSelectorSidebar {
     this.selectedLevelId = levelId;
     this.renderLevels(this.allLevels);
     this.updateCurrentLevelDisplay();
-    
+
     // Immediately notify that level changed
-    const level = this.allLevels.find(l => l.id === this.selectedLevelId);
+    const level = this.allLevels.find((l) => l.id === this.selectedLevelId);
     if (level && this.onLevelChange) {
       this.onLevelChange(level);
     }
   }
 
   private selectRandomSystemLevel() {
-    const systemLevels = this.allLevels.filter(l => l.ownerUserId === null);
+    const systemLevels = this.allLevels.filter((l) => l.ownerUserId === null);
     if (systemLevels.length > 0) {
       const randomLevel = systemLevels[Math.floor(Math.random() * systemLevels.length)];
       this.selectedLevelId = randomLevel.id;
-      
+
       // Notify about initial selection
       if (this.onLevelChange) {
         this.onLevelChange(randomLevel);
@@ -363,7 +361,7 @@ export class LevelSelectorSidebar {
 
   private setCurrentLevelName(levelName: string) {
     if (!this.container) return;
-    
+
     const element = this.container.node as HTMLElement;
     const nameEl = element.querySelector('[data-current-level-name]') as HTMLElement;
     if (!nameEl) return;
@@ -373,24 +371,22 @@ export class LevelSelectorSidebar {
 
   private updateCurrentLevelDisplay() {
     if (!this.container) return;
-    
+
     const element = this.container.node as HTMLElement;
     const nameEl = element.querySelector('[data-current-level-name]') as HTMLElement;
     if (!nameEl) return;
 
-    const currentLevel = this.allLevels.find(l => l.id === this.selectedLevelId);
+    const currentLevel = this.allLevels.find((l) => l.id === this.selectedLevelId);
     nameEl.textContent = currentLevel ? currentLevel.name : 'None';
   }
 
   private filterLevels(query: string) {
-    const filtered = this.allLevels.filter(l => 
-      l.name.toLowerCase().includes(query.toLowerCase())
-    );
+    const filtered = this.allLevels.filter((l) => l.name.toLowerCase().includes(query.toLowerCase()));
     this.renderLevels(filtered);
   }
 
   getSelectedLevel(): LevelListItem | null {
-    return this.allLevels.find(l => l.id === this.selectedLevelId) || null;
+    return this.allLevels.find((l) => l.id === this.selectedLevelId) || null;
   }
 
   // Allow external updates to the selected level (e.g., from server)

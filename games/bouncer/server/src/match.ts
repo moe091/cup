@@ -1,6 +1,14 @@
 import type { Socket } from 'socket.io';
 import type { PlayerId, SocketId, PlayerSession, Broadcast } from './types.js';
-import type { MatchStatus, MatchPhase, MatchCountdown, TickSnapshot, InputVector, LevelDefinition, LevelListItem } from '@cup/bouncer-shared';
+import type {
+  MatchStatus,
+  MatchPhase,
+  MatchCountdown,
+  TickSnapshot,
+  InputVector,
+  LevelDefinition,
+  LevelListItem,
+} from '@cup/bouncer-shared';
 import { Simulation } from './gameplay/simulation.js';
 import { loadLevelDef } from './api/helpers.js';
 
@@ -57,7 +65,6 @@ export class Match {
       this.simulation.spawnPlayer(player.playerId); //TODO:: check return type of spawnPlayer, if false then display error message
     });
 
-    
     this.broadcast('load_level', this.levelDef);
     this.broadcast('initialize_world', this.simulation.getSnapshot());
   }
@@ -111,10 +118,10 @@ export class Match {
     socket.emit('match_joined', { role, displayName });
 
     if (this.levelSelection) {
-      console.log("PLayer joined, emitting levelSelection: ", this.levelSelection);
+      console.log('PLayer joined, emitting levelSelection: ', this.levelSelection);
       socket.emit('set_level', this.levelSelection);
     } else {
-      console.log("[DEBUG} player joined, no levelSelectione xists yet");
+      console.log('[DEBUG} player joined, no levelSelectione xists yet');
     }
 
     setTimeout(() => this.broadcastStatus(), 1000);
@@ -125,7 +132,7 @@ export class Match {
   }
 
   /**setPhase('IN_PROGRESS') is called when leader clicks start game.
-   * When that happens, it queues IN_PROGRESS and sends a status update to 
+   * When that happens, it queues IN_PROGRESS and sends a status update to
    * all clients. The clients respond to the IN_PROGRESS_QUEUED status by sending
    * an ack message. setPhase waits for all of those ack messages to come in and then
    * calls startGameplay. This is where we load the level, spawn players, etc.
@@ -136,7 +143,7 @@ export class Match {
       this.awaitingAcks.clear();
 
       //After all player acknowledge they are ready for new phase, call setCountdown
-      this.players.forEach(p => {
+      this.players.forEach((p) => {
         this.awaitingAcks.add(p.playerId);
         this.afterAcks = () => this.startGameplay();
       });
@@ -192,7 +199,7 @@ export class Match {
       this.players.delete(socket.data.playerId);
       this.awaitingAcks.delete(socket.data.playerId);
     }
-    
+
     this.broadcastStatus();
   }
 

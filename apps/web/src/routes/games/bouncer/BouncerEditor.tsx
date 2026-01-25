@@ -1,42 +1,25 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { createBouncerEditor, type BouncerEditorConnection } from '@cup/bouncer-client';
-import { listLevels, type LevelListItem } from '../../../api/bouncer';
-import type { SessionUser } from '@cup/shared-types';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  createBouncerEditor,
+  type BouncerEditorConnection,
+} from "@cup/bouncer-client";
+import { listLevels, type LevelListItem } from "../../../api/bouncer";
 
 export function BouncerEditor() {
   const editorRef = useRef<BouncerEditorConnection | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [levels, setLevels] = useState<LevelListItem[]>([]);
-  const [selectedLevel, setSelectedLevel] = useState<string>('');
+  const [selectedLevel, setSelectedLevel] = useState<string>("");
   const [saveState, setSaveState] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [userInfo, setUserInfo] = useState<SessionUser | null>(null);
+
   const levelDetails = useMemo(() => {
     const map = new Map<string, LevelListItem>();
     for (const level of levels) map.set(level.id, level);
 
     return map;
   }, [levels]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch('/api/auth/me', { credentials: 'include' });
-        const data = await res.json();
-        if (res.ok) {
-          console.log('[DEBUG] got user info: ', data);
-          setUserInfo(data);
-        } else {
-          console.log('[DEBUG] Not logged in');
-          setUserInfo(null);
-        }
-      } catch {
-        console.log('[DEBUG] Auth request failed');
-        setUserInfo(null);
-      }
-    })();
-  }, []);
 
   useEffect(() => {
     const updateLevelList = async () => {
@@ -56,17 +39,18 @@ export function BouncerEditor() {
 
     editorRef.current?.disconnect();
     el.replaceChildren();
-    editorRef.current = createBouncerEditor(el, 'Unnamed');
+    editorRef.current = createBouncerEditor(el, "Unnamed");
 
+    const container = containerRef.current;
     return () => {
       editorRef.current?.disconnect();
       editorRef.current = null;
-      containerRef.current?.replaceChildren();
+      container?.replaceChildren();
     };
   }, []);
 
   function getLevelName(id: string): string {
-    return levelDetails.get(id)?.name || '';
+    return levelDetails.get(id)?.name || "";
   }
 
   async function saveLevel() {
@@ -74,16 +58,19 @@ export function BouncerEditor() {
     setIsSaving(true);
     setSaveState(null);
 
-    const raw = window.prompt('Enter level name(letters, numbers, and underscores only): ', getLevelName(selectedLevel));
+    const raw = window.prompt(
+      "Enter level name(letters, numbers, and underscores only): ",
+      getLevelName(selectedLevel),
+    );
     const name = raw?.trim();
 
     try {
       const level = editorRef.current.getLevelDefinition();
       const payload = { ...level, name: name };
 
-      const res = await fetch('/api/games/bouncer/levels', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/games/bouncer/levels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -91,10 +78,10 @@ export function BouncerEditor() {
         throw new Error(`Save failed: ${res.status}`);
       }
 
-      setSaveState('Saved');
+      setSaveState("Saved");
     } catch (err) {
-      console.error('Error saving level:', err);
-      setSaveState('Save failed');
+      console.error("Error saving level:", err);
+      setSaveState("Save failed");
     } finally {
       setIsSaving(false);
     }
@@ -131,7 +118,10 @@ export function BouncerEditor() {
             onChange={(e) => setSelectedLevel(e.target.value)}
           >
             {levels.map((lvl) => (
-              <option key={`${lvl.ownerUserId ?? 'system'}:${lvl.name}`} value={lvl.id}>
+              <option
+                key={`${lvl.ownerUserId ?? "system"}:${lvl.name}`}
+                value={lvl.id}
+              >
                 {lvl.ownerUserId ? lvl.name : `${lvl.name} (System Level)`}
               </option>
             ))}
@@ -156,13 +146,12 @@ export function BouncerEditor() {
     );
   }
 
-
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
       <div className="rounded-2xl border border-white/10 bg-black/70 p-2   md:p-8 backdrop-blur">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <h2 className="font-['Fugaz_One'] text-2xl sm:text-3xl text-slate-200">
-            Level Editor: {getLevelName(selectedLevel) || 'Unnamed'}
+            Level Editor: {getLevelName(selectedLevel) || "Unnamed"}
           </h2>
 
           <div className="flex flex-wrap gap-3">
@@ -183,9 +172,13 @@ export function BouncerEditor() {
               disabled={isSaving}
               className="rounded-full border border-white/20 px-4 py-2 text-sm text-slate-200 hover:border-white/50 hover:text-white transition disabled:opacity-60"
             >
-              {isSaving ? 'Saving...' : 'Save Level'}
+              {isSaving ? "Saving..." : "Save Level"}
             </button>
-            {saveState && <span className="self-center text-sm text-slate-400">{saveState}</span>}
+            {saveState && (
+              <span className="self-center text-sm text-slate-400">
+                {saveState}
+              </span>
+            )}
           </div>
         </div>
 

@@ -1,7 +1,7 @@
-import type { MatchJoinInfo, MatchStatus, LevelListItem } from "@cup/bouncer-shared";
-import { listLevels } from "../api/levels";
-import { LevelSelectorSidebar } from "../misc/LevelSelectorSidebar";
-import { WaitingRoomUI } from "../misc/WaitingRoomUI";
+import type { MatchJoinInfo, MatchStatus, LevelListItem } from '@cup/bouncer-shared';
+import { listLevels } from '../api/levels';
+import { LevelSelectorSidebar } from '../misc/LevelSelectorSidebar';
+import { WaitingRoomUI } from '../misc/WaitingRoomUI';
 
 export class WaitingRoomScene extends Phaser.Scene {
   private role = '';
@@ -12,7 +12,7 @@ export class WaitingRoomScene extends Phaser.Scene {
   private selectedLevel: LevelListItem | null = null;
   private levelList: LevelListItem[] = [];
 
-  constructor( 
+  constructor(
     private playerId: string,
     private readonly emit: (name: string, data: unknown) => void,
     private containerEl: HTMLElement,
@@ -45,7 +45,7 @@ export class WaitingRoomScene extends Phaser.Scene {
     // Load available levels (only for creators)
     if (this.role === 'creator') {
       this.levelList = await listLevels();
-      console.log("GOT LEVEL LIST: ", this.levelList);
+      console.log('GOT LEVEL LIST: ', this.levelList);
     }
 
     // Try to create UI components now that we're ready
@@ -61,11 +61,7 @@ export class WaitingRoomScene extends Phaser.Scene {
 
     // Create waiting room UI (player list + ready button)
     if (!this.waitingRoomUI) {
-      this.waitingRoomUI = new WaitingRoomUI(
-        this,
-        isCreator,
-        this.onReadyClicked.bind(this)
-      );
+      this.waitingRoomUI = new WaitingRoomUI(this, isCreator, this.onReadyClicked.bind(this));
 
       // Update with any pending player status
       if (this.pendingStatus) {
@@ -80,17 +76,11 @@ export class WaitingRoomScene extends Phaser.Scene {
         this.levelList,
         isCreator,
         this.selectedLevel,
-        this.onLevelSelected.bind(this)
+        this.onLevelSelected.bind(this),
       );
     } else if (!this.levelSelector && !isCreator) {
       // Non-creators get empty level list
-      this.levelSelector = new LevelSelectorSidebar(
-        this,
-        [],
-        false,
-        this.selectedLevel,
-        undefined
-      );
+      this.levelSelector = new LevelSelectorSidebar(this, [], false, this.selectedLevel, undefined);
     }
   }
 
@@ -109,7 +99,7 @@ export class WaitingRoomScene extends Phaser.Scene {
       this.levelList,
       isCreator,
       this.selectedLevel,
-      isCreator ? this.onLevelSelected.bind(this) : undefined
+      isCreator ? this.onLevelSelected.bind(this) : undefined,
     );
   }
 
@@ -121,9 +111,9 @@ export class WaitingRoomScene extends Phaser.Scene {
 
   // Message bounced back by the server after leader sets level (or level is auto-set)
   setLevelSelection(level: LevelListItem) {
-    console.log("Updating level to: ", level);
+    console.log('Updating level to: ', level);
     this.selectedLevel = level;
-    
+
     // Update the sidebar display for everyone
     this.levelSelector?.setSelectedLevel(level.name);
   }
@@ -136,11 +126,11 @@ export class WaitingRoomScene extends Phaser.Scene {
   }
 
   private updatePlayerList(status: MatchStatus) {
-    const players = status.players.map(p => ({
+    const players = status.players.map((p) => ({
       playerId: p.playerId,
       displayName: p.displayName,
       ready: p.ready,
-      isMe: p.playerId === this.playerId
+      isMe: p.playerId === this.playerId,
     }));
 
     this.waitingRoomUI?.updatePlayers(players);

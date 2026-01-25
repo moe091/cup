@@ -1,10 +1,10 @@
-    import { PolygonDef } from "@cup/bouncer-shared";
-    import EditorTool, { ToolName } from "./EditorTool";
-    import type { LevelEditorScene } from "./LevelEditor";
+import { PolygonDef } from '@cup/bouncer-shared';
+import EditorTool, { ToolName } from './EditorTool';
+import type { LevelEditorScene } from './LevelEditor';
 
-    export default class PolygonTool implements EditorTool {
-    name: ToolName = 'polygon';
-    private scene?: LevelEditorScene;
+export default class PolygonTool implements EditorTool {
+  name: ToolName = 'polygon';
+  private scene?: LevelEditorScene;
   private vertices: Array<{ x: number; y: number }> = [];
   private vertexCircles: Phaser.GameObjects.Arc[] = [];
   private previewLines?: Phaser.GameObjects.Graphics;
@@ -22,13 +22,13 @@
 
   private onPointerMove = (pointer: Phaser.Input.Pointer) => {
     if (!this.scene || this.vertices.length === 0) return;
-    
+
     this.updateGhostLine(pointer);
   };
 
   private onKeyDown = (event: KeyboardEvent) => {
     if (!this.scene) return;
-    
+
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       this.finalizePoly();
@@ -74,7 +74,7 @@
         this.vertices[i].x,
         this.vertices[i].y,
         this.vertices[i + 1].x,
-        this.vertices[i + 1].y
+        this.vertices[i + 1].y,
       );
     }
 
@@ -83,7 +83,7 @@
       this.previewFill = this.scene.add.graphics();
       this.previewFill.fillStyle(0x4a90e2, 0.3);
       this.previewFill.setDepth(4);
-      
+
       this.previewFill.beginPath();
       this.previewFill.moveTo(this.vertices[0].x, this.vertices[0].y);
       for (let i = 1; i < this.vertices.length; i++) {
@@ -104,7 +104,7 @@
 
     const lastVertex = this.vertices[this.vertices.length - 1];
     const pos = this.getPosition(pointer);
-    
+
     // Line from last vertex to cursor
     this.ghostLine.lineBetween(lastVertex.x, lastVertex.y, pos.x, pos.y);
 
@@ -136,7 +136,7 @@
 
   private cleanup() {
     this.vertices = [];
-    this.vertexCircles.forEach(c => c.destroy());
+    this.vertexCircles.forEach((c) => c.destroy());
     this.vertexCircles = [];
     this.previewLines?.destroy();
     this.previewLines = undefined;

@@ -1,16 +1,13 @@
-import { Link, Outlet } from 'react-router-dom';
-
+import { Outlet } from "react-router-dom";
 
 export default function BouncerLayout() {
-    return (
-        <div className="gamePage">
-
-            <main className="gameContent">
-                <section className="gameStage">
-                    <Outlet />
-                </section>
-            </main>
-            
-        </div>
-    );
+  return (
+    <div className="gamePage">
+      <main className="gameContent">
+        <section className="gameStage">
+          <Outlet />
+        </section>
+      </main>
+    </div>
+  );
 }

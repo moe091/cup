@@ -1,6 +1,6 @@
-import { PlatformDef } from "@cup/bouncer-shared";
-import EditorTool, { ToolName } from "./EditorTool";
-import { LevelEditorScene } from "./LevelEditor";
+import { PlatformDef } from '@cup/bouncer-shared';
+import EditorTool, { ToolName } from './EditorTool';
+import { LevelEditorScene } from './LevelEditor';
 
 export default class PlatformTool implements EditorTool {
   name: ToolName = 'platform';

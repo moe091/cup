@@ -5,7 +5,7 @@ import type { Body } from 'planck';
 import type { LevelDefinition } from '@cup/bouncer-shared';
 import { createPolygonBody } from './helpers/PhysicsHelpers.js';
 
-let gravity = {x: 0, y: 10};
+let gravity = { x: 0, y: 10 };
 
 export class World {
   private timestep = 1 / 30;
@@ -114,7 +114,7 @@ export class World {
       if (obj.type === 'polygon') {
         const friction = obj.friction ?? 0.8;
         const restitution = obj.restitution ?? 0.5;
-        
+
         createPolygonBody(this.physics, obj.vertices, obj.name, friction, restitution);
         return;
       }
@@ -155,7 +155,7 @@ export class World {
   }
 
   resetWorld() {
-    this.balls = new Map<string, Body>;
+    this.balls = new Map<string, Body>();
     this.spawnPoints = [];
     this.physics = new planck.World(gravity);
   }

@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import type { LevelEditorScene } from './LevelEditor';
 import { ToolName } from './EditorTool';
 
-
 export class LevelEditorUiScene extends Phaser.Scene {
   private toolbarWidth = 120;
   private toolbarItems: Array<{

@@ -16,12 +16,12 @@ export class GameplayScene extends Phaser.Scene {
   private levelRects: Phaser.GameObjects.TileSprite[] = [];
   private levelPolygons: Phaser.GameObjects.Container[] = [];
   private bg: Phaser.GameObjects.TileSprite | undefined;
-  private shadowOffset = {x: 8, y: -10};
+  private shadowOffset = { x: 8, y: -10 };
 
   constructor(
     private playerId: string,
     private readonly emit: (name: string, data: unknown) => void,
-    private containerEl: HTMLElement
+    private containerEl: HTMLElement,
   ) {
     super('gameplay');
     this.balls = new Map<string, ShadowSprite>();
@@ -30,13 +30,13 @@ export class GameplayScene extends Phaser.Scene {
   fullscreenListener() {
     const fKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.F);
     fKey.on('down', () => {
-        this.containerEl.requestFullscreen();
+      this.containerEl.requestFullscreen();
     });
   }
 
   create() {
     this.fullscreenListener();
-    
+
     this.cameras.main.setZoom(0.33);
     this.cameras.main.setRoundPixels(true);
 
@@ -59,13 +59,11 @@ export class GameplayScene extends Phaser.Scene {
     );
 
     this.events.once('destroy', this.onDestroy, this);
-    console.log("EMITTING CLIENT READY");
+    console.log('EMITTING CLIENT READY');
     this.emit('client_ready', 'IN_PROGRESS');
   }
 
-  statusUpdate(status: MatchStatus) {
-
-  }
+  statusUpdate(status: MatchStatus) {}
 
   update() {
     if (this.me && this.lastDragInput) {
@@ -154,13 +152,13 @@ export class GameplayScene extends Phaser.Scene {
   }
 
   loadLevel(level: LevelDefinition) {
-    console.log("[DEBUG] loadLevel being called with level definition: ", level.name);
+    console.log('[DEBUG] loadLevel being called with level definition: ', level.name);
     // Clean up existing level objects
     for (const rect of this.levelRects) rect.destroy();
     this.levelRects = [];
     for (const poly of this.levelPolygons) poly.destroy();
     this.levelPolygons = [];
-    
+
     let minX = 0;
     let minY = 0;
     let maxX = 0;
@@ -189,7 +187,7 @@ export class GameplayScene extends Phaser.Scene {
         this.levelPolygons.push(polygonContainer);
 
         // Update bounds for background
-        obj.vertices.forEach(v => {
+        obj.vertices.forEach((v) => {
           if (v.x < minX) minX = v.x;
           if (v.x > maxX) maxX = v.x;
           if (v.y < minY) minY = v.y;
@@ -211,7 +209,7 @@ export class GameplayScene extends Phaser.Scene {
     let maxX = vertices[0].x;
     let maxY = vertices[0].y;
 
-    vertices.forEach(v => {
+    vertices.forEach((v) => {
       if (v.x < minX) minX = v.x;
       if (v.x > maxX) maxX = v.x;
       if (v.y < minY) minY = v.y;

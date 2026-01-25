@@ -15,7 +15,7 @@ export class BouncerService {
     return level;
   }
 
-async getLevelById(id: string) {
+  async getLevelById(id: string) {
     const level = await this.prisma.bouncerLevel.findFirst({
       where: { id },
     });

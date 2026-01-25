@@ -1,6 +1,6 @@
-import { SpawnPointDef } from "@cup/bouncer-shared";
-import EditorTool, { ToolName } from "./EditorTool";
-import { LevelEditorScene } from "./LevelEditor";
+import { SpawnPointDef } from '@cup/bouncer-shared';
+import EditorTool, { ToolName } from './EditorTool';
+import { LevelEditorScene } from './LevelEditor';
 
 export default class SpawnPointTool implements EditorTool {
   name: ToolName = 'spawnPoint';

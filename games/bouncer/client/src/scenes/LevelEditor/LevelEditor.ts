@@ -20,12 +20,15 @@ export class LevelEditorScene extends Phaser.Scene {
     platform: new PlatformTool(),
     spawnPoint: new SpawnPointTool(),
     polygon: new PolygonTool(),
-  }; 
+  };
   private isPanning = false;
   private panStartX = 0;
   private panStartY = 0;
 
-  constructor(levelName: string, private containerEl: HTMLElement) {
+  constructor(
+    levelName: string,
+    private containerEl: HTMLElement,
+  ) {
     super('level-editor');
     this.levelName = levelName;
   }
@@ -33,7 +36,7 @@ export class LevelEditorScene extends Phaser.Scene {
   fullscreenListener() {
     const fKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.F);
     fKey.on('down', () => {
-        this.containerEl.requestFullscreen();
+      this.containerEl.requestFullscreen();
     });
   }
 
@@ -126,7 +129,7 @@ export class LevelEditorScene extends Phaser.Scene {
 
     if (obj.type === 'polygon') {
       // Convert vertices to flat array for Phaser polygon
-      const points = obj.vertices.flatMap(v => [v.x, v.y]);
+      const points = obj.vertices.flatMap((v) => [v.x, v.y]);
       const polygon = this.add.polygon(0, 0, points, 0x4a90e2).setOrigin(0);
       polygon.setStrokeStyle(2, 0x2e5a8a);
       polygon.setDepth(1);
@@ -228,7 +231,7 @@ export class LevelEditorScene extends Phaser.Scene {
 
     for (let i = this.objectViews.length - 1; i >= 0; i -= 1) {
       const { def } = this.objectViews[i];
-      
+
       if (def.type === 'platform') {
         if (this.isPointInPlatform(x, y, def)) {
           this.setSelectedIndex(i);
@@ -249,19 +252,18 @@ export class LevelEditorScene extends Phaser.Scene {
   private isPointInPolygon(x: number, y: number, polygon: PolygonDef) {
     const vertices = polygon.vertices;
     let inside = false;
-    
+
     for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
       const xi = vertices[i].x;
       const yi = vertices[i].y;
       const xj = vertices[j].x;
       const yj = vertices[j].y;
-      
-      const intersect = ((yi > y) !== (yj > y)) &&
-        (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-      
+
+      const intersect = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+
       if (intersect) inside = !inside;
     }
-    
+
     return inside;
   }
 

@@ -37,11 +37,10 @@ export type LevelResponse = {
   data: LevelDefinition;
 };
 
-
 export type LevelListItem = {
   id: string;
   name: string;
   ownerUserId: string | null;
   visibility: 'SYSTEM' | 'PUBLIC' | 'PRIVATE';
   updatedAt: string;
-}
+};
