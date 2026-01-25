@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createBouncerEditor, type BouncerEditorConnection } from '@cup/bouncer-client';
 import { listLevels, type LevelListItem } from '../../../api/bouncer';
 import type { SessionUser } from '@cup/shared-types';
@@ -15,11 +15,10 @@ export function BouncerEditor() {
   const levelDetails = useMemo(() => {
     const map = new Map<string, LevelListItem>();
     for (const level of levels) map.set(level.id, level);
-    
+
     return map;
   }, [levels]);
 
-  
   useEffect(() => {
     (async () => {
       try {
@@ -38,7 +37,7 @@ export function BouncerEditor() {
       }
     })();
   }, []);
-  
+
   useEffect(() => {
     const updateLevelList = async () => {
       const list: LevelListItem[] = await listLevels();
@@ -46,19 +45,18 @@ export function BouncerEditor() {
       if (list.length > 0) {
         setSelectedLevel(list[0].id);
       }
-    }
+    };
 
     updateLevelList();
-    
   }, []);
 
-  useEffect(() => { // Create the actual editor and get a reference to it
+  useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
     editorRef.current?.disconnect();
     el.replaceChildren();
-    editorRef.current = createBouncerEditor(el, "Unnamed");
+    editorRef.current = createBouncerEditor(el, 'Unnamed');
 
     return () => {
       editorRef.current?.disconnect();
@@ -75,9 +73,8 @@ export function BouncerEditor() {
     if (!editorRef.current) return;
     setIsSaving(true);
     setSaveState(null);
-    
+
     const raw = window.prompt('Enter level name(letters, numbers, and underscores only): ', getLevelName(selectedLevel));
-    //TODO:: add some client-side name validation and display error messages
     const name = raw?.trim();
 
     try {
@@ -104,7 +101,7 @@ export function BouncerEditor() {
   }
 
   function fullScreen(): void {
-      containerRef.current?.requestFullscreen();
+    containerRef.current?.requestFullscreen();
   }
 
   function startLoadLevel(): void {
@@ -122,43 +119,80 @@ export function BouncerEditor() {
     setIsLoading(false);
   }
 
-  function getLoadLevelModal(): import("react").ReactNode {
+  function getLoadLevelModal(): ReactNode {
     return (
-      <div className="modal_container">
-        <div className="modal_content">
-          <h3>Select Level:</h3>
-          <select value={selectedLevel} onChange={(e) => setSelectedLevel(e.target.value)}>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur">
+        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-black/80 p-6 text-slate-200 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+          <h3 className="mb-4 text-lg font-semibold">Select Level</h3>
+
+          <select
+            className="w-full rounded-lg border border-white/20 bg-black/60 px-3 py-2 text-slate-100 outline-none focus:border-white/50"
+            value={selectedLevel}
+            onChange={(e) => setSelectedLevel(e.target.value)}
+          >
             {levels.map((lvl) => (
               <option key={`${lvl.ownerUserId ?? 'system'}:${lvl.name}`} value={lvl.id}>
                 {lvl.ownerUserId ? lvl.name : `${lvl.name} (System Level)`}
               </option>
             ))}
           </select>
-          <div className="modal_buttons">
-            <button onClick={loadSelected}>Load</button>
-            <button onClick={cancelLoadLevel}>Cancel</button>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              onClick={cancelLoadLevel}
+              className="rounded-full border border-white/20 px-4 py-2 text-sm text-slate-200 hover:border-white/50 hover:text-white transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={loadSelected}
+              className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 transition"
+            >
+              Load
+            </button>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
-  return (
-    <div className="editorPage">
-      <div className="editorToolbar">
-        <div className="editorTitle">Level Editor: {getLevelName(selectedLevel) || 'Unnamed'}</div>
-        <div className="editorActions">
-          <button onClick={fullScreen}>Fullscreen</button>
-          <button onClick={startLoadLevel}>Load Level</button>
-          <button onClick={saveLevel} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Level'}
-          </button>
-          {saveState && <span className="editorStatus">{saveState}</span>}
 
-          {isLoading && getLoadLevelModal()}
+  return (
+    <div className="mx-auto max-w-6xl px-6 py-10">
+      <div className="rounded-2xl border border-white/10 bg-black/70 p-2   md:p-8 backdrop-blur">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <h2 className="font-['Fugaz_One'] text-2xl sm:text-3xl text-slate-200">
+            Level Editor: {getLevelName(selectedLevel) || 'Unnamed'}
+          </h2>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={fullScreen}
+              className="rounded-full border border-white/20 px-4 py-2 text-sm text-slate-200 hover:border-white/50 hover:text-white transition"
+            >
+              Fullscreen
+            </button>
+            <button
+              onClick={startLoadLevel}
+              className="rounded-full border border-white/20 px-4 py-2 text-sm text-slate-200 hover:border-white/50 hover:text-white transition"
+            >
+              Load Level
+            </button>
+            <button
+              onClick={saveLevel}
+              disabled={isSaving}
+              className="rounded-full border border-white/20 px-4 py-2 text-sm text-slate-200 hover:border-white/50 hover:text-white transition disabled:opacity-60"
+            >
+              {isSaving ? 'Saving...' : 'Save Level'}
+            </button>
+            {saveState && <span className="self-center text-sm text-slate-400">{saveState}</span>}
+          </div>
         </div>
+
+        <div ref={containerRef} id="bouncer_editor_container" />
+
+        {isLoading && getLoadLevelModal()}
       </div>
-      <div ref={containerRef} id="bouncer_editor_container" className="editorCanvas" />
     </div>
   );
 }
