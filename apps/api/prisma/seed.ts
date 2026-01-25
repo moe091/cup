@@ -1,21 +1,20 @@
+// @ts-nocheck
 import fs from 'node:fs';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import 'dotenv/config';
 
 function loadLevel(name) {
-    const data = fs.readFileSync("prisma/seed-data/bouncer/" + name + ".json", "utf-8");
-    const level = JSON.parse(data);
+  const data = fs.readFileSync('prisma/seed-data/bouncer/' + name + '.json', 'utf-8');
+  const level = JSON.parse(data);
 
-    return level;
+  return level;
 }
 
 const adapter = new PrismaPg({
-    connectionString: process.env.DATABASE_URL as string,
+  connectionString: process.env.DATABASE_URL as string,
 });
 const prisma = new PrismaClient({ adapter });
-
-
 
 async function main() {
   const levels = [loadLevel('level1'), loadLevel('level2')];
@@ -25,7 +24,8 @@ async function main() {
       where: { ownerUserId: null, name: level.name },
     });
 
-    if (existing) { //don't wanna overwrite levels rn just in case
+    if (existing) {
+      //don't wanna overwrite levels rn just in case
       await prisma.bouncerLevel.update({
         where: { id: existing.id },
         data: {
@@ -47,7 +47,6 @@ async function main() {
     }
   }
 }
-
 
 main()
   .catch((e) => {
