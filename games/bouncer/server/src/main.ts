@@ -74,6 +74,7 @@ ioServer.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('Client disconnected, socket id:', socket.id);
     match.onLeave(socket);
+    
     if (match.isEmpty()) {
       match.destroy();
       matches.delete(matchId);

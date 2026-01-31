@@ -13,8 +13,17 @@ export type PlayerSession = {
   ready: boolean;
 };
 
+export type Player = {
+    playerId: PlayerId;
+    isFinished: boolean;
+    session: PlayerSession;
+};
+
 export type Broadcast = (name: string, payload: unknown) => void;
 export type BroadcastSnapshot = (payload: TickSnapshot) => void;
 
 export const asPlayerId = (s: string) => s as PlayerId;
 export const asSocketId = (s: string) => s as SocketId;
+
+
+

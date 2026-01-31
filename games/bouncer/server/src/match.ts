@@ -1,5 +1,5 @@
-import type { Socket } from 'socket.io';
-import type { PlayerId, SocketId, PlayerSession, Broadcast } from './types.js';
+import { Socket } from 'socket.io';
+import { type PlayerId, type SocketId, type PlayerSession, type Broadcast, asPlayerId, asSocketId, Player } from './types.js';
 import type {
   MatchStatus,
   MatchPhase,
@@ -11,6 +11,7 @@ import type {
 } from '@cup/bouncer-shared';
 import { Simulation } from './gameplay/simulation.js';
 import { loadLevelDef } from './api/helpers.js';
+import GameManager from './gameplay/gameManager.js';
 
 /**
  * Match class handles a single room or lobby. It keeps track of players, game
@@ -31,12 +32,35 @@ export class Match {
   private afterAcks: (() => void) | null = null;
   private levelDef: LevelDefinition | null = null;
   private levelSelection: LevelListItem | null = null;
+  private game: GameManager;
 
   constructor(
     public matchId: string,
     private broadcast: Broadcast,
   ) {
-    this.simulation = new Simulation(this.broadcastSnapshot.bind(this));
+    this.simulation = new Simulation(this.broadcastSnapshot.bind(this), this.onPlayerFinish.bind(this));
+    this.game = new GameManager(this.simulation);
+  }
+
+  
+  onPlayerFinish(playerId: string) {
+    const id = playerId as PlayerId;
+    
+    console.log("PLAYER FINISHED: ", id);
+    this.game.playerFinished(id);
+  }
+  
+  addPlayer(playerId: PlayerId, socketId: SocketId, displayName: string, role: string) {
+    this.players.set(playerId, { playerId, socketId, displayName, role, ready: false });
+    this.game.addPlayer(playerId, { playerId, socketId, displayName, role, ready: false });
+  }
+
+  getPlayer(playerId: PlayerId): Player | undefined {
+    return this.game.getPlayer(playerId);
+  }
+
+  getPlayerSession(playerId: PlayerId) {
+    return this.game.getPlayerSession(playerId);
   }
 
   async loadLevel(): Promise<LevelDefinition | null> {
@@ -46,7 +70,7 @@ export class Match {
     }
 
     this.levelDef = await loadLevelDef(this.levelSelection.id);
-    this.simulation.loadLevel(this.levelDef);
+    this.game.loadLevel(this.levelDef);
 
     return this.levelDef;
   }
@@ -57,13 +81,11 @@ export class Match {
 
   startGame() {
     this.broadcast('start_match', {}); //TODO:: make this display some UI message on client
-    this.simulation.start();
+    this.game.start();
   }
 
   async spawnPlayers() {
-    this.players.forEach((player) => {
-      this.simulation.spawnPlayer(player.playerId); //TODO:: check return type of spawnPlayer, if false then display error message
-    });
+    this.game.spawnPlayers();
 
     this.broadcast('load_level', this.levelDef);
     this.broadcast('initialize_world', this.simulation.getSnapshot());
@@ -91,12 +113,7 @@ export class Match {
       matchId: this.matchId,
       phase: this.phase,
       minPlayers: this.minPlayers,
-      players: Array.from(this.players.values()).map((player) => ({
-        playerId: player.playerId,
-        displayName: player.displayName,
-        ready: player.ready,
-        role: player.role,
-      })),
+      players: this.game.getPlayerStatus(),
     };
 
     this.broadcast('match_status', status);
@@ -112,7 +129,7 @@ export class Match {
     const displayName = socket.data.displayName;
     const role = socket.data.role;
 
-    this.players.set(playerId, { playerId, socketId: socket.id as SocketId, displayName, role, ready: false });
+    this.addPlayer(playerId, socket.id as SocketId, displayName, role);
 
     console.log(`Socket ${socket.id} joined match ${this.matchId}`);
     socket.emit('match_joined', { role, displayName });
@@ -143,7 +160,7 @@ export class Match {
       this.awaitingAcks.clear();
 
       //After all player acknowledge they are ready for new phase, call setCountdown
-      this.players.forEach((p) => {
+      this.game.getPlayers().forEach((p) => {
         this.awaitingAcks.add(p.playerId);
         this.afterAcks = () => this.startGameplay();
       });
@@ -174,8 +191,7 @@ export class Match {
     if (socket.data.role === 'creator') {
       this.setPhase('IN_PROGRESS');
     } else {
-      const player = this.players.get(socket.data.playerId);
-      if (player) player.ready = data.ready;
+      this.game.setPlayerReady(socket.data.playerId, data.ready);
 
       this.broadcastStatus();
     }
@@ -189,14 +205,14 @@ export class Match {
 
   //not used yet TODO:: remove this if I don't end up using 'update' events
   onInput(playerId: PlayerId, inputVector: InputVector): void {
-    this.simulation.addInput(playerId, inputVector);
+    this.game.addInput(playerId, inputVector);
   }
 
   //called on socket disconnect
   onLeave(socket: Socket) {
     console.log(`Socket ${socket.id} left match ${this.matchId}`);
     if (socket.data.playerId) {
-      this.players.delete(socket.data.playerId);
+      this.game.deletePlayer(socket.data.playerId);
       this.awaitingAcks.delete(socket.data.playerId);
     }
 
@@ -204,7 +220,7 @@ export class Match {
   }
 
   isEmpty() {
-    return this.players.size === 0;
+    return this.game.isEmpty();
   }
 
   destroy() {

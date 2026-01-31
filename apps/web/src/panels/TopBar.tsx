@@ -12,7 +12,7 @@ export default function TopBar() {
           to="/"
           className="border-b border-slate-700 px-3 font-['Zain'] text-3xl text-slate-200 tracking-wide"
         >
-          the nite crew
+          TheNiteCrew
         </Link>
 
         {/* Middle: nav */}

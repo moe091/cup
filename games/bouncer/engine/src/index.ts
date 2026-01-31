@@ -1,12 +1,16 @@
+import { FinishListener } from './types.js';
 import { World } from './world.js';
 import type { LevelDefinition, PlayerInputVector, TickSnapshot } from '@cup/bouncer-shared';
 
 export class Engine {
   private world = new World();
   private tick: number = 0;
+  private onPlayerFinish: FinishListener;
 
-  constructor(private timestep: number) {
+  constructor(private timestep: number, onPlayerFinish: FinishListener) {
     this.world.setTimestep(timestep);
+    this.onPlayerFinish = onPlayerFinish;
+    this.world.setFinishListener(onPlayerFinish);
   }
 
   step(inputs: PlayerInputVector[]) {
@@ -31,6 +35,10 @@ export class Engine {
     console.log('[DEBUG] ENGINE LOADING LEVEL DEF: ', level.name);
     this.world.resetWorld();
     this.world.loadLevel(level);
+    if (this.onPlayerFinish)
+      this.world.setFinishListener(this.onPlayerFinish);
+    else 
+      console.warn("[Engine.loadLevel] loaded level but no finish listener is set!");
   }
 }
 

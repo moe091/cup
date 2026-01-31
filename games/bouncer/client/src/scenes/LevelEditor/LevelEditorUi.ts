@@ -42,9 +42,10 @@ export class LevelEditorUiScene extends Phaser.Scene {
     toolbar.setDepth(100);
 
     const items: Array<{ tool: ToolName; label: string }> = [
-      { tool: 'platform', label: 'Platform' },
+      { tool: 'platform', label: 'Plat' },
       { tool: 'spawnPoint', label: 'Spawn' },
-      { tool: 'polygon', label: 'Polygon' },
+      { tool: 'polygon', label: 'Poly' },
+      { tool: 'goal', label: 'Goal' },
     ];
 
     const startY = 40;

@@ -193,6 +193,9 @@ export class GameplayScene extends Phaser.Scene {
           if (v.y < minY) minY = v.y;
           if (v.y > maxY) maxY = v.y;
         });
+      } else if (obj.type === 'goal') {
+        const goal = this.add.circle(obj.x, obj.y, obj.size, 0xFFFFFF);
+
       }
     });
 

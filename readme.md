@@ -49,6 +49,8 @@ PostgreSQL with Prisma for database, because I like postgres, and Prisma seems v
 Simple react, SPA style. No SSR or anything fancy needed. UI will be ver minimal and clean. Frontend will have a /game route that has a gameName arg and actual games will be their own projects which are exported as packages then frontend can just import the correct game package depending on the gamename arg
 
 
+
+# PERSONAL NOTES
 ### Bouncer TODOs:
 
 X Add an arrow UI thing when user is clicking/dragging to indicate force and direction

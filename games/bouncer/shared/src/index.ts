@@ -52,6 +52,7 @@ export type {
   PlatformDef,
   SpawnPointDef,
   PolygonDef,
+  GoalDef,
   LevelListItem,
 } from './level.js';
 

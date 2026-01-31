@@ -22,7 +22,15 @@ export type SpawnPointDef = {
   y: number;
 };
 
-export type LevelObject = PlatformDef | PolygonDef | SpawnPointDef;
+export type GoalDef = {
+  type: 'goal';
+  name?: string;
+  x: number;
+  y: number;
+  size: number;
+};
+
+export type LevelObject = PlatformDef | PolygonDef | SpawnPointDef | GoalDef;
 
 export type LevelDefinition = {
   name: string;

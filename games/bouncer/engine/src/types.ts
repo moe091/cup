@@ -10,3 +10,5 @@ export type Point = {
   x: number;
   y: number;
 };
+
+export type FinishListener = (playerId: string) => void;

@@ -1,5 +1,5 @@
 import { TickSnapshot, toPixels, toWorld } from '@cup/bouncer-shared';
-import type { Ball, Point } from './types.js';
+import type { Ball, FinishListener, Point } from './types.js';
 import planck from 'planck';
 import type { Body } from 'planck';
 import type { LevelDefinition } from '@cup/bouncer-shared';
@@ -13,17 +13,48 @@ export class World {
   private spawnPoints: Point[] = [];
   private physics: planck.World = new planck.World(gravity);
   private launchPower = 0.6;
+  private finishListener: FinishListener | null = null;
+  private finishedPlayers = new Set<string>();
+
+  constructor() {
+    this.setupContactListeners();
+  }
+
+  setupContactListeners() {
+    console.log("[DEBUG] setting up contact listenres");
+    this.physics.on('begin-contact', (contact) => {
+      console.log("contact happened: ");
+      const fixtureA = contact.getFixtureA();
+      const fixtureB = contact.getFixtureB();
+      const bodyA = fixtureA.getBody();
+      const bodyB = fixtureB.getBody();
+      const aUser = bodyA.getUserData();
+      const bUser = bodyB.getUserData();
+      
+      const isBallA = typeof aUser === 'string' && aUser.startsWith('Ball-');
+      const isBallB = typeof bUser === 'string' && bUser.startsWith('Ball-');
+      const isGoalA = aUser === 'Goal';
+      const isGoalB = bUser === 'Goal';
+      if ((isBallA && isGoalB) || (isBallB && isGoalA)) {
+        console.log("goal happened");
+        const ballUser = isBallA ? (aUser as string) : (bUser as string);
+        const playerId = ballUser.replace('Ball-', '');
+        this.onFinish(playerId);
+      }
+    });
+  }
+
 
   launchBall(ballId: string, dx: number, dy: number) {
+    if (this.finishedPlayers.has(ballId)) return;
+    
     const body = this.balls.get(ballId);
-
     if (!body) {
       console.error("[Engine.World.launchBall] Tried launching ball with an ID that doesn't exist: ", ballId, dx, dy);
       return;
     }
 
     const impulse = new planck.Vec2(toWorld(dx) * this.launchPower, toWorld(dy) * this.launchPower);
-
     body.setAwake(true);
     body.applyLinearImpulse(impulse, body.getWorldCenter(), true);
     this.dumpBodies();
@@ -122,7 +153,48 @@ export class World {
       if (obj.type === 'spawnPoint') {
         this.spawnPoints.push({ x: obj.x, y: obj.y });
       }
+
+      if (obj.type === 'goal') {
+        const body = this.physics.createBody({
+          type: 'static',
+          position: new planck.Vec2(toWorld(obj.x), toWorld(obj.y)),
+        });
+        body.setUserData('Goal');
+        const shape = new planck.Circle(toWorld(obj.size));
+        body.createFixture({
+          shape,
+          isSensor: true,
+        });
+      }
     });
+  }
+
+  onFinish(playerId: string) {
+    if (this.finishedPlayers.has(playerId)) return;
+    this.finishedPlayers.add(playerId);
+
+    const body = this.balls.get(playerId);
+    if (!body) return;
+    
+    body.setLinearVelocity(planck.Vec2(0, 0));
+    body.setAngularVelocity(0);
+    body.setAwake(false);
+    
+    body.setType('static');
+    let fixture = body.getFixtureList();
+    while (fixture) {
+      const next = fixture.getNext();
+      body.destroyFixture(fixture);
+      fixture = next;
+    }
+
+    if (this.finishListener) {
+      this.finishListener(playerId);
+    }
+  }
+
+  setFinishListener(listener: FinishListener) {
+    this.finishListener = listener;
   }
 
   dumpBodies() {
@@ -158,5 +230,9 @@ export class World {
     this.balls = new Map<string, Body>();
     this.spawnPoints = [];
     this.physics = new planck.World(gravity);
+    this.finishListener = null;
+
+    this.setupContactListeners();
+
   }
 }

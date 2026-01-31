@@ -33,8 +33,8 @@ export class Simulation {
   private inputBuffer: PlayerInputVector[] = [];
   //NOTE: if I want to implement rollback later I'll have to add tick to inputs(can just add as they are applied, as long as re-apply them on the same tick it will be fine)
 
-  constructor(private snapshotCallback: BroadcastSnapshot) {
-    this.engine = new Engine(this.tickMs / 1000); //planck wants seconds
+  constructor(private snapshotCallback: BroadcastSnapshot, onPlayerFinish: (playerId: string) => void) {
+    this.engine = new Engine(this.tickMs / 1000, onPlayerFinish); //planck wants seconds
   }
 
   addInput(playerId: PlayerId, inputVector: InputVector) {

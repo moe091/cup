@@ -4,6 +4,7 @@ import EditorTool, { ToolName } from './EditorTool';
 import SpawnPointTool from './SpawnPointTool';
 import PlatformTool from './PlatformTool';
 import PolygonTool from './PolygonTool';
+import GoalTool from './GoalTool';
 
 type ObjectView = { def: LevelObject; view: Phaser.GameObjects.GameObject };
 
@@ -20,6 +21,7 @@ export class LevelEditorScene extends Phaser.Scene {
     platform: new PlatformTool(),
     spawnPoint: new SpawnPointTool(),
     polygon: new PolygonTool(),
+    goal: new GoalTool(),
   };
   private isPanning = false;
   private panStartX = 0;
@@ -137,7 +139,13 @@ export class LevelEditorScene extends Phaser.Scene {
     }
 
     if (obj.type === 'spawnPoint') {
-      const circle = this.add.circle(obj.x, obj.y, 6, 0xffffff).setOrigin(0.5);
+      const circle = this.add.circle(obj.x, obj.y, 26, 0xffffff).setOrigin(0.5);
+      circle.setDepth(2);
+      return circle;
+    }
+
+    if (obj.type === 'goal') {
+      const circle = this.add.circle(obj.x, obj.y, obj.size, 0x22DD29).setOrigin(0.5);
       circle.setDepth(2);
       return circle;
     }
