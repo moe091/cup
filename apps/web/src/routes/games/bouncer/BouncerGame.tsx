@@ -66,17 +66,17 @@ export function BouncerGame() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
-      <div className="rounded-2xl border border-white/10 bg-black/70 p-2   md:p-8 backdrop-blur">
+      <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)]/80 p-2 md:p-8 backdrop-blur">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <h2 className="font-['Fugaz_One'] text-2xl sm:text-3xl text-slate-200">
+          <h2 className="text-2xl sm:text-3xl text-[color:var(--text)]">
             Bouncer
           </h2>
 
           <div className="flex gap-3">
-            <button className="rounded-full border border-white/20 px-4 py-2 text-sm text-slate-200 hover:border-white/50 hover:text-white transition">
+            <button className="rounded-full border border-[color:var(--line)] px-4 py-2 text-sm text-[color:var(--text)] hover:border-[color:var(--text)] transition">
               Invite Friends
             </button>
-            <button className="rounded-full border border-white/20 px-4 py-2 text-sm text-slate-200 hover:border-white/50 hover:text-white transition">
+            <button className="rounded-full border border-[color:var(--line)] px-4 py-2 text-sm text-[color:var(--text)] hover:border-[color:var(--text)] transition">
               Copy Join Link
             </button>
           </div>
@@ -86,7 +86,7 @@ export function BouncerGame() {
           {/*<Link to="/games/bouncer">Back</Link> */}
         </div>
 
-        <ul className="mt-4 text-sm text-slate-400 leading-relaxed">
+        <ul className="mt-4 text-sm text-[color:var(--muted)] leading-relaxed">
           <li>- Click + drag to aim, release to launch.</li>
           <li>- Press F for fullscreen.</li>
         </ul>

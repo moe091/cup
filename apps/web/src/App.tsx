@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Routes, Route, Link, Outlet } from "react-router-dom";
 import type { SessionUser } from "@cup/shared-types";
 import { BouncerGame } from "./routes/games/bouncer/BouncerGame";
@@ -10,33 +11,31 @@ import Browse from "./routes/games/Browse";
 import GamesLayout from "./routes/games/GamesLayout";
 //import './assets/games.css';
 
-function LoggedOutActions() {
-  return (
-    <div className="mx-auto mt-8 w-full max-w-xl rounded-2xl border border-white/10 bg-black/40 px-6 py-5 text-slate-200 backdrop-blur">
-      <p className="mb-4 text-sm text-slate-300">
-        Sign up instantly — no email verification required.
-      </p>
+function LoginSignupCard() {
+  const [username, setUsername] = useState("");
+  const handleQuickStart = () => {};
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:gap-4">
+  return (
+    <div className="mt-8 w-full max-w-2xl rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)]/90 px-6 py-5 shadow-[0_15px_40px_rgba(0,0,0,0.35)]">
+      <div className="grid gap-3 max-w-sm">
+        <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--muted)]">
+          Quick start
+        </p>
         <input
-          className="w-full rounded-lg border border-white/20 bg-black/40 px-3 py-2 text-slate-100 placeholder-slate-500 outline-none focus:border-white/50"
+          className="w-full rounded-lg border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-2 text-[color:var(--text)] placeholder-[color:var(--muted)] outline-none focus:border-[color:var(--accent)]"
           type="text"
           placeholder="username"
+          autoComplete="username"
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
         />
-        <input
-          className="w-full rounded-lg border border-white/20 bg-black/40 px-3 py-2 text-slate-100 placeholder-slate-500 outline-none focus:border-white/50"
-          type="password"
-          placeholder="password"
-        />
-      </div>
-
-      <div className="flex justify-center">
-        <a
-          href="/api/auth/google"
-          className="px-6 py-2 rounded-full border border-white/20 hover:border-white/50 hover:text-white transition"
+        <button
+          type="button"
+          onClick={handleQuickStart}
+          className="w-fit rounded-full border border-[color:var(--line)] bg-[color:var(--panel)] px-4 py-2 text-sm text-[color:var(--text)] transition hover:border-[color:var(--text)]"
         >
-          Register
-        </a>
+          Create account
+        </button>
       </div>
     </div>
   );
@@ -44,14 +43,14 @@ function LoggedOutActions() {
 
 function LoggedInActions() {
   return (
-    <div className="text-slate-200 flex flex-col sm:flex-row gap-4 justify-center mt-10 ">
-      <button className="mt-10 px-8 py-4 rounded-full text-lg font-medium border border-white/20 hover:border-white/50 hover:text-white transition">
+    <div className="text-[color:var(--text)] flex flex-col sm:flex-row gap-4 justify-center mt-10 ">
+      <button className="mt-10 px-8 py-4 rounded-full text-lg font-medium border border-[color:var(--line)] hover:border-[color:var(--text)] transition">
         Game
       </button>
-      <button className="mt-10 px-8 py-4 rounded-full text-lg font-medium border border-white/20 hover:border-white/50 hover:text-white transition">
+      <button className="mt-10 px-8 py-4 rounded-full text-lg font-medium border border-[color:var(--line)] hover:border-[color:var(--text)] transition">
         Chill
       </button>
-      <button className="mt-10 px-8 py-4 rounded-full text-lg font-medium border border-white/20 hover:border-white/50 hover:text-white transition">
+      <button className="mt-10 px-8 py-4 rounded-full text-lg font-medium border border-[color:var(--line)] hover:border-[color:var(--text)] transition">
         My Home
       </button>
     </div>
@@ -61,7 +60,7 @@ function LoggedInActions() {
 function GreetingText(user: SessionUser | null, isLoading: boolean) {
   if (isLoading) return null;
   return (
-    <h1 className="font-['Cardo'] text-5xl sm:text-6xl lg:text-7xl font-semibold space-y-8">
+    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight">
       {user?.displayName
         ? `Welcome back, ${user?.displayName}`
         : "Welcome to the Night Crew."}
@@ -71,11 +70,11 @@ function GreetingText(user: SessionUser | null, isLoading: boolean) {
 
 function BouncerRec() {
   return (
-    <div className="mx-auto mt-10 w-fit rounded-full border border-white/10 bg-white/5 px-6 py-3 text-slate-200">
+    <div className="mx-auto mt-10 w-fit rounded-full border border-[color:var(--line)] bg-[color:var(--panel)]/60 px-6 py-3 text-[color:var(--text)]">
       Or: Try our newest game:&nbsp;
       <Link
         to="/games/bouncer"
-        className="text-indigo-200 font-semibold text-lg hover:text-white transition-colors underline-offset-4 hover:underline"
+        className="text-[color:var(--accent)] font-semibold text-lg hover:text-[color:var(--text)] transition-colors underline-offset-4 hover:underline"
       >
         Bouncer!
       </Link>
@@ -86,15 +85,15 @@ function BouncerRec() {
 function Home() {
   const { user, isLoading } = useAuth();
 
-  // ALTERNATE COLORING FOR BG GRADIENT. Can't decide which one to use
-  //  dark fuschia  <main className="min-h-screen w-full flex items-center justify-center text-white bg-gradient-to-br bg-gradient-to-br from-purple-900 via-black to-violet-900">
-  //  less dark blueish  <main className="min-h-screen w-full flex items-center justify-center text-white bg-gradient-to-tl from-neutral-900 via-indigo-900 to-neutral-900">
-
   return (
-    <main className="font-['Manrope'] text-slate-200/90 tracking-wide min-h-screen w-full flex items-center justify-center text-slate-100 bg-gradient-to-tl from-neutral-950 via-indigo-950 to-neutral-950">
-      <div className="text-center space-y-6">
+    <main className="min-h-screen w-full flex items-center justify-center px-6 pt-20 text-[color:var(--text)]">
+      <div className="w-full max-w-4xl space-y-6 text-left">
         {GreetingText(user, isLoading)}
-        {!user && !isLoading && LoggedOutActions()}
+        <p className="text-[color:var(--muted)] max-w-2xl">
+          Drop in, play a quick match, and keep the hangout going. Fast, social,
+          and low friction.
+        </p>
+        {!user && !isLoading && <LoginSignupCard />}
         {user && !isLoading && LoggedInActions()}
         {BouncerRec()}
       </div>

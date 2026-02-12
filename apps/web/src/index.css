@@ -1,6 +1,40 @@
-@import url("https://fonts.googleapis.com/css2?family=Cardo:wght@700&family=Manrope:wght@400;500;600&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Zain:wght@400;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Fugaz+One&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 
 @import "tailwindcss";
 
+:root {
+  color-scheme: dark;
+  --bg: #0c0f12;
+  --panel: #10151a;
+  --panel-strong: #141b22;
+  --text: #e6edf3;
+  --muted: #9aa4af;
+  --line: #1e2832;
+  --accent: #55d6a9;
+  --accent-2: #3b82f6;
+  --discord: #5865f2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  background:
+    radial-gradient(1200px 700px at 10% 10%, #121820 0%, transparent 60%),
+    var(--bg);
+  color: var(--text);
+}
+
+#root {
+  min-height: 100vh;
+}
