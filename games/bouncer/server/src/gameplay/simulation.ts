@@ -1,6 +1,6 @@
 import { type BroadcastSnapshot, type PlayerId } from '../types.js';
 import { Engine } from '@cup/bouncer-engine';
-import { InputVector, LevelDefinition, PlayerInputVector, TickSnapshot } from '@cup/bouncer-shared';
+import { InputState, LevelDefinition, PlayerInputState, TickSnapshot } from '@cup/bouncer-shared';
 import { performance as perf } from 'node:perf_hooks';
 
 import { createRequire } from 'node:module';
@@ -30,19 +30,16 @@ export class Simulation {
   private tick = -1;
   private tickMs = 33;
   private nextTickTime = -1;
-  private inputBuffer: PlayerInputVector[] = [];
+  private inputState: Map<PlayerId, InputState> = new Map();
+  private lastJumpHeld: Map<PlayerId, boolean> = new Map();
   //NOTE: if I want to implement rollback later I'll have to add tick to inputs(can just add as they are applied, as long as re-apply them on the same tick it will be fine)
 
   constructor(private snapshotCallback: BroadcastSnapshot, onPlayerFinish: (playerId: string) => void) {
     this.engine = new Engine(this.tickMs / 1000, onPlayerFinish); //planck wants seconds
   }
 
-  addInput(playerId: PlayerId, inputVector: InputVector) {
-    this.inputBuffer.push({
-      playerId,
-      x: inputVector.x,
-      y: inputVector.y,
-    });
+  setInputState(playerId: PlayerId, input: InputState) {
+    this.inputState.set(playerId, input);
   }
 
   loop() {
@@ -50,10 +47,19 @@ export class Simulation {
 
     const now = perf.now();
     if (now > this.nextTickTime) {
-      const inputs = this.inputBuffer;
-      this.inputBuffer = [];
+      const inputs: PlayerInputState[] = [];
+      this.inputState.forEach((state, playerId) => {
+        const lastHeld = this.lastJumpHeld.get(playerId) ?? false;
+        const jumpPressed = state.jumpPressed || (state.jumpHeld && !lastHeld);
+        this.lastJumpHeld.set(playerId, state.jumpHeld);
+        inputs.push({
+          playerId,
+          move: state.move,
+          jumpHeld: state.jumpHeld,
+          jumpPressed,
+        });
+      });
       this.engine.step(inputs);
-      this.inputBuffer = []; //TODO:: For rollback, save these inputs somewhere(combined with snapshot data taken from line below)
       this.snapshotCallback(this.engine.getSnapshot());
 
       this.tick++; // Last tick is done at this point, it's been broadcast. Move on to next tick

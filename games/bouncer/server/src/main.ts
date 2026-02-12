@@ -63,7 +63,7 @@ ioServer.on('connection', (socket) => {
 
   socket.on('update_level_selection', (data) => match.onUpdateLevelSelection(socket, data));
 
-  socket.on('input', (data) => match.onInput(socket.data.playerId, data));
+  socket.on('player_input', (data) => match.onPlayerInput(socket.data.playerId, data));
 
   socket.on('set_ready', (data) => match.onSetReady(socket, data));
 

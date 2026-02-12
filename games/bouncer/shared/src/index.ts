@@ -34,15 +34,25 @@ export type Ball = {
   yVel?: number;
 };
 
-export type InputVector = {
+export type LegacyDragInputVector = {
   x: number;
   y: number;
 };
 
-export type PlayerInputVector = {
+export type LegacyPlayerInputVector = {
   playerId: string;
   x: number;
   y: number;
+};
+
+export type InputState = {
+  move: -1 | 0 | 1;
+  jumpPressed: boolean;
+  jumpHeld: boolean;
+};
+
+export type PlayerInputState = InputState & {
+  playerId: string;
 };
 
 export type {

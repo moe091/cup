@@ -1,4 +1,4 @@
-import { InputVector, LevelDefinition } from "@cup/bouncer-shared";
+import { InputState, LevelDefinition } from "@cup/bouncer-shared";
 import type { PlayerId, Player, PlayerSession } from "../types.js";
 import { Simulation } from "./simulation.js";
 
@@ -59,8 +59,8 @@ export default class GameManager {
       }));
     }
         
-    addInput(playerId: PlayerId, inputVector: InputVector) {
-      this.simulation.addInput(playerId, inputVector);
+    setInputState(playerId: PlayerId, input: InputState) {
+      this.simulation.setInputState(playerId, input);
     }
 
     setPlayerReady(playerId: PlayerId, ready: boolean) {

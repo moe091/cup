@@ -5,7 +5,7 @@ import type {
   MatchPhase,
   MatchCountdown,
   TickSnapshot,
-  InputVector,
+  InputState,
   LevelDefinition,
   LevelListItem,
 } from '@cup/bouncer-shared';
@@ -204,8 +204,11 @@ export class Match {
   }
 
   //not used yet TODO:: remove this if I don't end up using 'update' events
-  onInput(playerId: PlayerId, inputVector: InputVector): void {
-    this.game.addInput(playerId, inputVector);
+  onPlayerInput(playerId: PlayerId, input: InputState): void {
+    if (input.jumpPressed) {
+      console.log(`[Match.onPlayerInput] jumpPressed from ${playerId}`);
+    }
+    this.game.setInputState(playerId, input);
   }
 
   //called on socket disconnect

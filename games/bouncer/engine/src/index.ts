@@ -1,6 +1,6 @@
 import { FinishListener } from './types.js';
 import { World } from './world.js';
-import type { LevelDefinition, PlayerInputVector, TickSnapshot } from '@cup/bouncer-shared';
+import type { LevelDefinition, PlayerInputState, TickSnapshot } from '@cup/bouncer-shared';
 
 export class Engine {
   private world = new World();
@@ -13,11 +13,16 @@ export class Engine {
     this.world.setFinishListener(onPlayerFinish);
   }
 
-  step(inputs: PlayerInputVector[]) {
+  step(inputs: PlayerInputState[]) {
     this.tick++;
 
     inputs.forEach((input) => {
-      this.world.launchBall(input.playerId, input.x, input.y);
+      this.world.applyMoveInput(input.playerId, input.move);
+      if (input.jumpPressed) {
+        console.log(`[Engine.step] jumpPressed for ${input.playerId}`);
+        this.world.applyJump(input.playerId);
+      }
+      this.world.applyJumpHold(input.playerId, input.jumpHeld);
     });
 
     this.world.step();

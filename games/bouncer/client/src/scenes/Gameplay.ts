@@ -1,4 +1,4 @@
-import type { TickSnapshot, InputVector, LevelDefinition, MatchStatus } from '@cup/bouncer-shared';
+import type { TickSnapshot, InputState, LevelDefinition, MatchStatus } from '@cup/bouncer-shared';
 import { InputController } from '../misc/InputController';
 
 type ShadowSprite = Phaser.GameObjects.Sprite & {
@@ -10,8 +10,6 @@ export class GameplayScene extends Phaser.Scene {
   private readyBg: Phaser.GameObjects.Rectangle | undefined;
   private balls: Map<string, ShadowSprite>;
   private me: Phaser.GameObjects.Sprite | undefined;
-  private dragCircles: { x: number; y: number; circle: Phaser.GameObjects.Arc }[] = [];
-  private lastDragInput: InputVector | undefined;
   private inputController: InputController = new InputController();
   private levelRects: Phaser.GameObjects.TileSprite[] = [];
   private levelPolygons: Phaser.GameObjects.Container[] = [];
@@ -51,12 +49,7 @@ export class GameplayScene extends Phaser.Scene {
       .setSize(this.cameras.main.width, this.cameras.main.height)
       .setScrollFactor(0);
 
-    this.inputController.onDrag(
-      this,
-      this.handleDragMove.bind(this),
-      this.handleDragRelease.bind(this),
-      this.cancelDrag.bind(this),
-    );
+    this.inputController.onInput(this, this.handleInput.bind(this));
 
     this.events.once('destroy', this.onDestroy, this);
     console.log('EMITTING CLIENT READY');
@@ -65,47 +58,10 @@ export class GameplayScene extends Phaser.Scene {
 
   statusUpdate(status: MatchStatus) {}
 
-  update() {
-    if (this.me && this.lastDragInput) {
-      const input = this.lastDragInput;
-      const xThird = input.x / 5;
-      const yThird = input.y / 5;
-      const numCircles = 3;
-      if (this.dragCircles.length != numCircles) {
-        for (var i = 0; i < numCircles; i++) {
-          const x = this.me.x + xThird * (i + 1);
-          const y = this.me.y + yThird * (i + 1);
-          const size = 9 - i * 3;
-          this.dragCircles[i] = { x, y, circle: this.add.circle(x, y, size, 0xddffee) };
-        }
-      } else {
-        for (var i = 0; i < this.dragCircles.length; i++) {
-          this.dragCircles[i].circle.x = this.me.x + xThird * (i + 1);
-          this.dragCircles[i].circle.y = this.me.y + yThird * (i + 1);
-        }
-      }
-    }
-  }
+  update() {}
 
-  handleDragMove(input: InputVector) {
-    this.lastDragInput = input;
-  }
-
-  handleDragRelease(inputVector: InputVector) {
-    this.dragCircles.forEach((dc) => {
-      dc.circle.destroy();
-    });
-    this.dragCircles = [];
-    this.lastDragInput = undefined;
-    this.emit('input', inputVector);
-  }
-
-  cancelDrag() {
-    this.dragCircles.forEach((dc) => {
-      dc.circle.destroy();
-    });
-    this.dragCircles = [];
-    this.lastDragInput = undefined;
+  handleInput(input: InputState) {
+    this.emit('player_input', input);
   }
 
   hideReadyButton() {

@@ -7,12 +7,31 @@ import { createPolygonBody } from './helpers/PhysicsHelpers.js';
 
 let gravity = { x: 0, y: 10 };
 
+type BallState = {
+  body: Body;
+  groundSensor: Body;
+  grounded: boolean;
+  groundContacts: number;
+  lastGroundedAtMs: number;
+  jumpActive: boolean;
+  jumpStartedAtMs: number;
+  jumpHoldRemainingMs: number;
+};
+
 export class World {
   private timestep = 1 / 30;
-  private balls: Map<string, Body> = new Map<string, Body>();
+  private balls: Map<string, BallState> = new Map<string, BallState>();
   private spawnPoints: Point[] = [];
   private physics: planck.World = new planck.World(gravity);
-  private launchPower = 0.6;
+  private ballRadius = 0.26;
+  private groundSensorRadius = 0.08;
+  private groundSensorOffset = this.ballRadius + 0.04;
+  private moveTorque = 0.6;
+  private moveImpulse = 0.025;
+  private jumpImpulse = 1.1;
+  private jumpHoldImpulse = 0.5;
+  private jumpHoldMs = 750;
+  private coyoteMs = 200;
   private finishListener: FinishListener | null = null;
   private finishedPlayers = new Set<string>();
 
@@ -30,7 +49,11 @@ export class World {
       const bodyB = fixtureB.getBody();
       const aUser = bodyA.getUserData();
       const bUser = bodyB.getUserData();
-      
+      const groundSensorA = this.getGroundSensorPlayerId(aUser);
+      const groundSensorB = this.getGroundSensorPlayerId(bUser);
+      const fixtureAIsSensor = fixtureA.isSensor();
+      const fixtureBIsSensor = fixtureB.isSensor();
+
       const isBallA = typeof aUser === 'string' && aUser.startsWith('Ball-');
       const isBallB = typeof bUser === 'string' && bUser.startsWith('Ball-');
       const isGoalA = aUser === 'Goal';
@@ -41,29 +64,107 @@ export class World {
         const playerId = ballUser.replace('Ball-', '');
         this.onFinish(playerId);
       }
+
+      if (groundSensorA && !fixtureBIsSensor && !this.isBallUser(bUser, groundSensorA)) {
+        this.addGroundContact(groundSensorA);
+      }
+
+      if (groundSensorB && !fixtureAIsSensor && !this.isBallUser(aUser, groundSensorB)) {
+        this.addGroundContact(groundSensorB);
+      }
+    });
+
+    this.physics.on('end-contact', (contact) => {
+      const fixtureA = contact.getFixtureA();
+      const fixtureB = contact.getFixtureB();
+      const bodyA = fixtureA.getBody();
+      const bodyB = fixtureB.getBody();
+      const aUser = bodyA.getUserData();
+      const bUser = bodyB.getUserData();
+      const groundSensorA = this.getGroundSensorPlayerId(aUser);
+      const groundSensorB = this.getGroundSensorPlayerId(bUser);
+      const fixtureAIsSensor = fixtureA.isSensor();
+      const fixtureBIsSensor = fixtureB.isSensor();
+
+      if (groundSensorA && !fixtureBIsSensor && !this.isBallUser(bUser, groundSensorA)) {
+        this.removeGroundContact(groundSensorA);
+      }
+
+      if (groundSensorB && !fixtureAIsSensor && !this.isBallUser(aUser, groundSensorB)) {
+        this.removeGroundContact(groundSensorB);
+      }
     });
   }
 
-
-  launchBall(ballId: string, dx: number, dy: number) {
+  applyMoveInput(ballId: string, move: -1 | 0 | 1) {
     if (this.finishedPlayers.has(ballId)) return;
-    
-    const body = this.balls.get(ballId);
-    if (!body) {
-      console.error("[Engine.World.launchBall] Tried launching ball with an ID that doesn't exist: ", ballId, dx, dy);
+    if (move === 0) return;
+
+    const ballState = this.balls.get(ballId);
+    if (!ballState) {
+      console.error("[Engine.World.applyMoveInput] Tried applying input to ball that doesn't exist: ", ballId, move);
       return;
     }
 
-    const impulse = new planck.Vec2(toWorld(dx) * this.launchPower, toWorld(dy) * this.launchPower);
+    const body = ballState.body;
     body.setAwake(true);
-    body.applyLinearImpulse(impulse, body.getWorldCenter(), true);
-    this.dumpBodies();
+    body.applyTorque(move * this.moveTorque, true);
+    body.applyLinearImpulse(new planck.Vec2(move * this.moveImpulse, 0), body.getWorldCenter(), true);
+  }
+
+  applyJump(ballId: string) {
+    if (this.finishedPlayers.has(ballId)) return;
+
+    const ballState = this.balls.get(ballId);
+    if (!ballState) {
+      console.error("[Engine.World.applyJump] Tried jumping with ball that doesn't exist: ", ballId);
+      return;
+    }
+
+    const now = this.nowMs();
+    const groundedOrCoyote = ballState.grounded || now - ballState.lastGroundedAtMs <= this.coyoteMs;
+    if (!groundedOrCoyote) {
+      console.log(`[Engine.World.applyJump] Not grounded: ${ballId}`);
+      return;
+    }
+
+    const body = ballState.body;
+    body.setAwake(true);
+    body.applyLinearImpulse(new planck.Vec2(0, -this.jumpImpulse), body.getWorldCenter(), true);
+    ballState.jumpActive = true;
+    ballState.jumpStartedAtMs = now;
+    ballState.jumpHoldRemainingMs = this.jumpHoldMs;
+    console.log(`[Engine.World.applyJump] Jumped: ${ballId} grounded=${ballState.grounded}`);
+  }
+
+  applyJumpHold(ballId: string, jumpHeld: boolean) {
+    if (this.finishedPlayers.has(ballId)) return;
+
+    const ballState = this.balls.get(ballId);
+    if (!ballState) return;
+
+    if (!jumpHeld || !ballState.jumpActive || ballState.jumpHoldRemainingMs <= 0) {
+      ballState.jumpActive = false;
+      ballState.jumpHoldRemainingMs = 0;
+      return;
+    }
+
+    const body = ballState.body;
+    body.setAwake(true);
+    const dtMs = this.timestep * 1000;
+    const impulseScale = dtMs / this.jumpHoldMs;
+    body.applyLinearImpulse(
+      new planck.Vec2(0, -this.jumpHoldImpulse * impulseScale),
+      body.getWorldCenter(),
+      true,
+    );
+    ballState.jumpHoldRemainingMs = Math.max(0, ballState.jumpHoldRemainingMs - dtMs);
   }
 
   spawnPlayer(playerId: string): boolean {
     for (const spawn of this.spawnPoints) {
-      const occupied = Array.from(this.balls.values()).some((body) => {
-        const p = body.getPosition(); // meters
+      const occupied = Array.from(this.balls.values()).some((ballState) => {
+        const p = ballState.body.getPosition(); // meters
         const x = toPixels(p.x);
         const y = toPixels(p.y);
         return x === spawn.x && y === spawn.y; // just checking if exact position is used(not collision). Good enough
@@ -82,7 +183,7 @@ export class World {
         angularDamping: 0.3,
       });
       body.setUserData('Ball-' + playerId);
-      const shape = new planck.Circle(0.26);
+      const shape = new planck.Circle(this.ballRadius);
 
       body.createFixture({
         shape,
@@ -91,7 +192,30 @@ export class World {
         restitution: 0.3,
       });
 
-      this.balls.set(playerId, body);
+      const sensorPos = new planck.Vec2(spawnPos.x, spawnPos.y + this.groundSensorOffset);
+      const groundSensor = this.physics.createBody({
+        type: 'dynamic',
+        position: sensorPos,
+        fixedRotation: true,
+        gravityScale: 0,
+      });
+      groundSensor.setUserData('GroundSensor-' + playerId);
+      const sensorShape = new planck.Circle(this.groundSensorRadius);
+      groundSensor.createFixture({
+        shape: sensorShape,
+        isSensor: true,
+      });
+
+      this.balls.set(playerId, {
+        body,
+        groundSensor,
+        grounded: false,
+        groundContacts: 0,
+        lastGroundedAtMs: 0,
+        jumpActive: false,
+        jumpStartedAtMs: 0,
+        jumpHoldRemainingMs: 0,
+      });
       return true;
     }
 
@@ -99,10 +223,10 @@ export class World {
   }
 
   getSnapshot(tick: number): TickSnapshot {
-    const balls = Array.from(this.balls.entries()).map(([id, body]) => {
-      const pos = body.getPosition();
-      const vel = body.getLinearVelocity();
-      const angle = body.getAngle();
+    const balls = Array.from(this.balls.entries()).map(([id, ballState]) => {
+      const pos = ballState.body.getPosition();
+      const vel = ballState.body.getLinearVelocity();
+      const angle = ballState.body.getAngle();
       //TODO:: Add rotation to tickSnapshot
 
       return {
@@ -119,6 +243,7 @@ export class World {
   }
 
   step() {
+    this.updateGroundSensors();
     this.physics.step(this.timestep);
   }
 
@@ -175,18 +300,25 @@ export class World {
 
     const body = this.balls.get(playerId);
     if (!body) return;
-    
-    body.setLinearVelocity(planck.Vec2(0, 0));
-    body.setAngularVelocity(0);
-    body.setAwake(false);
-    
-    body.setType('static');
-    let fixture = body.getFixtureList();
+
+    const ballBody = body.body;
+    ballBody.setLinearVelocity(planck.Vec2(0, 0));
+    ballBody.setAngularVelocity(0);
+    ballBody.setAwake(false);
+
+    ballBody.setType('static');
+    let fixture = ballBody.getFixtureList();
     while (fixture) {
       const next = fixture.getNext();
-      body.destroyFixture(fixture);
+      ballBody.destroyFixture(fixture);
       fixture = next;
     }
+
+    body.grounded = false;
+    body.groundContacts = 0;
+    body.jumpActive = false;
+    body.jumpHoldRemainingMs = 0;
+    body.groundSensor.setType('static');
 
     if (this.finishListener) {
       this.finishListener(playerId);
@@ -227,12 +359,57 @@ export class World {
   }
 
   resetWorld() {
-    this.balls = new Map<string, Body>();
+    this.balls = new Map<string, BallState>();
     this.spawnPoints = [];
     this.physics = new planck.World(gravity);
     this.finishListener = null;
 
     this.setupContactListeners();
 
+  }
+
+  private updateGroundSensors() {
+    this.balls.forEach((ballState) => {
+      const pos = ballState.body.getPosition();
+      const sensorPos = new planck.Vec2(pos.x, pos.y + this.groundSensorOffset);
+      ballState.groundSensor.setTransform(sensorPos, 0);
+      ballState.groundSensor.setAwake(true);
+    });
+  }
+
+  private getGroundSensorPlayerId(userData: unknown): string | null {
+    if (typeof userData !== 'string') return null;
+    if (!userData.startsWith('GroundSensor-')) return null;
+    return userData.replace('GroundSensor-', '');
+  }
+
+  private isBallUser(userData: unknown, playerId: string): boolean {
+    return userData === `Ball-${playerId}`;
+  }
+
+  private addGroundContact(playerId: string) {
+    const ballState = this.balls.get(playerId);
+    if (!ballState) return;
+    ballState.groundContacts += 1;
+    ballState.grounded = ballState.groundContacts > 0;
+    if (ballState.grounded) {
+      ballState.lastGroundedAtMs = this.nowMs();
+      ballState.jumpActive = false;
+      ballState.jumpHoldRemainingMs = 0;
+    }
+  }
+
+  private removeGroundContact(playerId: string) {
+    const ballState = this.balls.get(playerId);
+    if (!ballState) return;
+    ballState.groundContacts = Math.max(0, ballState.groundContacts - 1);
+    ballState.grounded = ballState.groundContacts > 0;
+    if (ballState.grounded) {
+      ballState.lastGroundedAtMs = this.nowMs();
+    }
+  }
+
+  private nowMs() {
+    return Date.now();
   }
 }

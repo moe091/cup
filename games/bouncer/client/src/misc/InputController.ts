@@ -1,70 +1,82 @@
-import { InputVector } from '@cup/bouncer-shared';
-type PointerHandler = (inputVector: InputVector) => void;
+import { InputState } from '@cup/bouncer-shared';
+
+type InputHandler = (input: InputState) => void;
 
 export class InputController {
-  private isPointerDown = false;
-  private downX = -1;
-  private downY = -1;
-  private dragThreshold = 30;
-  private disposeDrag: () => void = () => {};
+  private disposeInput: () => void = () => {};
+  private lastState: InputState = { move: 0, jumpPressed: false, jumpHeld: false };
 
-  onDrag(scene: Phaser.Scene, dragHandler: PointerHandler, releaseHandler: PointerHandler, cancelHandler: () => void) {
-    const input = scene.input;
-    this.disposeDrag(); // only want 1 drag handler, avoid leaking or stacking
+  onInput(scene: Phaser.Scene, handler: InputHandler) {
+    const keyboard = scene.input.keyboard;
+    if (!keyboard) return this.disposeInput;
+    this.disposeInput();
 
-    // --------- Track Pointer Down ----------- \\
-    const pointerDown = (pointer: Phaser.Input.Pointer) => {
-      this.isPointerDown = true;
-      this.downX = pointer.x;
-      this.downY = pointer.y;
+    const left = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+    const right = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+    const jump = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+
+    const emitIfChanged = (next: InputState) => {
+      const changed =
+        next.move !== this.lastState.move ||
+        next.jumpHeld !== this.lastState.jumpHeld ||
+        next.jumpPressed !== this.lastState.jumpPressed;
+      if (!changed) return;
+      this.lastState = next;
+      handler(next);
     };
-    input.on('pointerdown', pointerDown);
 
-    // ----- Calculate Drag on Pointer Up ----- \\
-    const pointerUp = (pointer: Phaser.Input.Pointer) => {
-      if (!this.isPointerDown) return; //this kinda doesn't do anything but I'll keep it just incase
-
-      this.isPointerDown = false;
-      const dx = pointer.x - this.downX;
-      const dy = pointer.y - this.downY;
-
-      if (Math.hypot(dx, dy) > this.dragThreshold) releaseHandler({ x: dx, y: dy });
-      else cancelHandler();
+    const computeMove = () => {
+      if (left.isDown && !right.isDown) return -1 as const;
+      if (right.isDown && !left.isDown) return 1 as const;
+      return 0 as const;
     };
-    input.on('pointerup', pointerUp);
 
-    // ----- Draw UI Arrow on mouse move ----- \\
-    const pointerMove = (pointer: Phaser.Input.Pointer) => {
-      if (!this.isPointerDown) return;
-
-      const dx = pointer.x - this.downX;
-      const dy = pointer.y - this.downY;
-
-      dragHandler({ x: dx, y: dy });
+    const emitState = (jumpPressed: boolean) => {
+      emitIfChanged({
+        move: computeMove(),
+        jumpHeld: jump.isDown,
+        jumpPressed,
+      });
     };
-    input.on('pointermove', pointerMove);
 
-    const cancelDrag = () => {
-      this.isPointerDown = false;
-      cancelHandler();
+    const onLeftDown = () => emitState(false);
+    const onLeftUp = () => emitState(false);
+    const onRightDown = () => emitState(false);
+    const onRightUp = () => emitState(false);
+    const onJumpDown = () => {
+      console.log('[Bouncer.Input] jumpPressed');
+      emitState(true);
+      emitIfChanged({
+        move: computeMove(),
+        jumpHeld: true,
+        jumpPressed: false,
+      });
     };
-    input.on('gameout', cancelDrag);
+    const onJumpUp = () => emitState(false);
 
-    // ------- Make sure listeners don't leak ------- \\
+    left.on('down', onLeftDown);
+    left.on('up', onLeftUp);
+    right.on('down', onRightDown);
+    right.on('up', onRightUp);
+    jump.on('down', onJumpDown);
+    jump.on('up', onJumpUp);
+
     const dispose = () => {
-      input.off('pointerdown', pointerDown);
-      input.off('pointerup', pointerUp);
-      input.off('pointermove', pointerMove);
-      input.off('gameout', cancelDrag);
-      this.isPointerDown = false;
-      this.disposeDrag = () => {};
+      left.off('down', onLeftDown);
+      left.off('up', onLeftUp);
+      right.off('down', onRightDown);
+      right.off('up', onRightUp);
+      jump.off('down', onJumpDown);
+      jump.off('up', onJumpUp);
+      this.disposeInput = () => {};
+      this.lastState = { move: 0, jumpPressed: false, jumpHeld: false };
     };
 
-    this.disposeDrag = dispose;
+    this.disposeInput = dispose;
     return dispose;
   }
 
   dispose() {
-    this.disposeDrag();
+    this.disposeInput();
   }
 }
