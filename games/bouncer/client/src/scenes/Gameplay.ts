@@ -1,5 +1,6 @@
-import type { TickSnapshot, InputState, LevelDefinition, MatchStatus } from '@cup/bouncer-shared';
+import type { BallState, TickSnapshot, InputState, LevelDefinition, MatchStatus } from '@cup/bouncer-shared';
 import { InputController } from '../misc/InputController';
+import { InputSampler } from '../misc/InputSampler';
 
 type ShadowSprite = Phaser.GameObjects.Sprite & {
   shadow: Phaser.GameObjects.Arc;
@@ -10,7 +11,10 @@ export class GameplayScene extends Phaser.Scene {
   private readyBg: Phaser.GameObjects.Rectangle | undefined;
   private balls: Map<string, ShadowSprite>;
   private me: Phaser.GameObjects.Sprite | undefined;
+  private predictedBall: ShadowSprite | undefined;
   private inputController: InputController = new InputController();
+  private inputSampler: InputSampler = new InputSampler();
+  private debugPrediction = false;
   private levelRects: Phaser.GameObjects.TileSprite[] = [];
   private levelPolygons: Phaser.GameObjects.Container[] = [];
   private bg: Phaser.GameObjects.TileSprite | undefined;
@@ -20,6 +24,8 @@ export class GameplayScene extends Phaser.Scene {
     private playerId: string,
     private readonly emit: (name: string, data: unknown) => void,
     private containerEl: HTMLElement,
+    private readonly getPredictedState: (() => BallState | null) | null = null,
+    private readonly onTogglePredictionDebug: ((enabled: boolean) => void) | null = null,
   ) {
     super('gameplay');
     this.balls = new Map<string, ShadowSprite>();
@@ -50,6 +56,7 @@ export class GameplayScene extends Phaser.Scene {
       .setScrollFactor(0);
 
     this.inputController.onInput(this, this.handleInput.bind(this));
+    this.setupDebugToggle();
 
     this.events.once('destroy', this.onDestroy, this);
     console.log('EMITTING CLIENT READY');
@@ -58,10 +65,15 @@ export class GameplayScene extends Phaser.Scene {
 
   statusUpdate(status: MatchStatus) {}
 
-  update() {}
+  update() {
+    if (!this.getPredictedState || !this.debugPrediction) return;
+    const predicted = this.getPredictedState();
+    if (!predicted) return;
+    this.upsertPredictedBall(predicted);
+  }
 
   handleInput(input: InputState) {
-    this.emit('player_input', input);
+    this.inputSampler.updateFromEvent(input);
   }
 
   hideReadyButton() {
@@ -90,6 +102,7 @@ export class GameplayScene extends Phaser.Scene {
 
         if (ball.id === this.playerId) {
           this.me = newBall;
+          newBall.setAlpha(0.5);
           this.cameras.main.startFollow(newBall, false, 0.4, 0.4);
           const particles = this.add
             .particles(0, 0, 'trail_dot', {
@@ -219,5 +232,34 @@ export class GameplayScene extends Phaser.Scene {
 
   onDestroy() {
     this.inputController.dispose();
+  }
+
+  getInputSampler(): InputSampler {
+    return this.inputSampler;
+  }
+
+  private upsertPredictedBall(ball: BallState) {
+    if (this.predictedBall) {
+      this.predictedBall.setPosition(ball.x, ball.y);
+      this.predictedBall.setRotation(ball.angle);
+      this.predictedBall.shadow.setPosition(ball.x + 8, ball.y - 10);
+      return;
+    }
+
+    const newBall = this.add.sprite(ball.x, ball.y, 'ball_red') as ShadowSprite;
+    newBall.setAlpha(0.5);
+    newBall.shadow = this.add.circle(ball.x + 8, ball.y - 10, 26, 0x000000, 0.4).setDepth(-2);
+    this.predictedBall = newBall;
+  }
+
+  private setupDebugToggle() {
+    const pKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+    if (!pKey) return;
+    pKey.on('down', () => {
+      this.debugPrediction = !this.debugPrediction;
+      this.predictedBall?.setVisible(this.debugPrediction);
+      this.predictedBall?.shadow.setVisible(this.debugPrediction);
+      this.onTogglePredictionDebug?.(this.debugPrediction);
+    });
   }
 }

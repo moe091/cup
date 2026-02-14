@@ -228,6 +228,9 @@ importers:
 
   games/bouncer/client:
     dependencies:
+      '@cup/bouncer-engine':
+        specifier: workspace:*
+        version: link:../engine
       '@cup/bouncer-shared':
         specifier: workspace:*
         version: link:../shared

@@ -23,6 +23,9 @@ export type TickSnapshot = {
     x: number;
     y: number;
     angle: number;
+    xVel: number;
+    yVel: number;
+    angularVel: number;
   }>;
 };
 
@@ -32,6 +35,16 @@ export type Ball = {
   y: number;
   xVel?: number;
   yVel?: number;
+};
+
+export type BallState = {
+  id: string;
+  x: number;
+  y: number;
+  xVel: number;
+  yVel: number;
+  angle: number;
+  angularVel: number;
 };
 
 export type LegacyDragInputVector = {
@@ -55,6 +68,11 @@ export type PlayerInputState = InputState & {
   playerId: string;
 };
 
+export type TickedInput = {
+  tick: number;
+  input: InputState;
+};
+
 export type {
   LevelDefinition,
   LevelResponse,
@@ -69,3 +87,6 @@ export type {
 export const scaleFactor = 100; //pixels per planck.js unit(meter). Const because this needs to be consistent between client and server - nobody can change it anywhere except here
 export const toWorld = (pixels: number) => pixels / scaleFactor;
 export const toPixels = (meters: number) => meters * scaleFactor;
+
+export const TICK_RATE = 30;
+export const TICK_MS = 1000 / TICK_RATE;

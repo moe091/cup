@@ -8,10 +8,13 @@ import {
   MatchJoinInfo,
   MatchStatus,
   TickSnapshot,
+  InputState,
+  TICK_RATE,
 } from '@cup/bouncer-shared';
 import { WaitingRoomScene } from './scenes/WaitingRoom';
 import { BootScene } from './scenes/Boot';
 import { loadLevelDef } from './api/levels';
+import { Prediction } from './net/Prediction';
 
 /**
  * The root of the actual bouncer game client. This class is created after all the
@@ -25,15 +28,27 @@ export class BouncerClient {
   private socket: Socket;
   private gameplayScene: GameplayScene | undefined;
   private waitingRoomScene: WaitingRoomScene | undefined;
+  private prediction: Prediction;
 
   constructor(socket: Socket, containerEl: HTMLElement) {
     this.socket = socket;
+    this.prediction = new Prediction(socket.id || '', TICK_RATE);
     this.game = this.createPhaserGame(containerEl, 960, 540);
   }
 
   createPhaserGame(containerEl: HTMLElement, width: number, height: number): Phaser.Game {
     const playerId = this.socket.id || '';
-    this.gameplayScene = new GameplayScene(playerId, this.emitMessage.bind(this), containerEl);
+    this.gameplayScene = new GameplayScene(
+      playerId,
+      this.emitMessage.bind(this),
+      containerEl,
+      this.prediction.getLocalBallState.bind(this.prediction),
+      this.prediction.setDebugLogs.bind(this.prediction),
+    );
+    if (this.gameplayScene) {
+      this.prediction.setInputSampler(this.gameplayScene.getInputSampler());
+    }
+    this.prediction.setSendInput(this.sendTickedInput.bind(this));
     this.waitingRoomScene = new WaitingRoomScene(playerId, this.emitMessage.bind(this), containerEl);
     const boot = new BootScene();
 
@@ -56,6 +71,7 @@ export class BouncerClient {
   }
 
   destroy() {
+    this.prediction.stop();
     this.game.destroy(true);
   }
 
@@ -75,6 +91,7 @@ export class BouncerClient {
 
   async onLoadLevel(level: LevelDefinition) {
     this.gameplayScene?.loadLevel(level);
+    this.prediction.loadLevel(level);
   }
 
   onMatchCountdownUpdate(data: MatchCountdown) {
@@ -84,9 +101,26 @@ export class BouncerClient {
 
   onInitializeWorld(snapshot: TickSnapshot) {
     this.gameplayScene?.applySnapshot(snapshot);
+    this.prediction.onServerSnapshot(snapshot);
+    const localId = this.socket.id || '';
+    const localBall = snapshot.balls.find((ball) => ball.id === localId);
+    if (localBall) {
+      this.prediction.setLocalBallState({
+        id: localBall.id,
+        x: localBall.x,
+        y: localBall.y,
+        xVel: localBall.xVel,
+        yVel: localBall.yVel,
+        angle: localBall.angle,
+        angularVel: localBall.angularVel,
+      });
+    } else {
+      this.prediction.spawnPlayer(localId);
+    }
   }
 
   onSnapshot(snapshot: TickSnapshot) {
+    this.prediction.onServerSnapshot(snapshot);
     this.gameplayScene?.applySnapshot(snapshot);
   }
 
@@ -110,10 +144,14 @@ export class BouncerClient {
   onMatchStart() {
     //TODO:: Display a UI message or something here
     console.log(`[BouncerClient.onMatchStart]: Starting Match!`);
+    this.prediction.startFromTickZero();
   }
 
   emitMessage(name: string, data: unknown) {
-    console.log(`Emitting Message [${name}]: `, data);
     this.socket.emit(name, data);
+  }
+
+  private sendTickedInput(tick: number, input: InputState) {
+    this.emitMessage('player_input', { tick, input });
   }
 }

@@ -1,6 +1,6 @@
 import { type BroadcastSnapshot, type PlayerId } from '../types.js';
 import { Engine } from '@cup/bouncer-engine';
-import { InputState, LevelDefinition, PlayerInputState, TickSnapshot } from '@cup/bouncer-shared';
+import { InputState, LevelDefinition, PlayerInputState, TickSnapshot, TICK_MS } from '@cup/bouncer-shared';
 import { performance as perf } from 'node:perf_hooks';
 
 import { createRequire } from 'node:module';
@@ -28,18 +28,31 @@ export class Simulation {
   private timer: NodeJS.Timeout | null = null;
   private maxCatchup = 5;
   private tick = -1;
-  private tickMs = 33;
+  private tickMs = TICK_MS;
   private nextTickTime = -1;
   private inputState: Map<PlayerId, InputState> = new Map();
   private lastJumpHeld: Map<PlayerId, boolean> = new Map();
+  private inputByTick: Map<PlayerId, Map<number, InputState>> = new Map();
   //NOTE: if I want to implement rollback later I'll have to add tick to inputs(can just add as they are applied, as long as re-apply them on the same tick it will be fine)
 
   constructor(private snapshotCallback: BroadcastSnapshot, onPlayerFinish: (playerId: string) => void) {
     this.engine = new Engine(this.tickMs / 1000, onPlayerFinish); //planck wants seconds
   }
 
-  setInputState(playerId: PlayerId, input: InputState) {
-    this.inputState.set(playerId, input);
+  setInputState(playerId: PlayerId, tick: number, input: InputState) {
+    // If input arrives late, apply it immediately as the latest known state.
+    // This avoids dead controls under even small network delay.
+    if (tick <= this.tick) {
+      this.inputState.set(playerId, input);
+      return;
+    }
+
+    let playerQueue = this.inputByTick.get(playerId);
+    if (!playerQueue) {
+      playerQueue = new Map<number, InputState>();
+      this.inputByTick.set(playerId, playerQueue);
+    }
+    playerQueue.set(tick, input);
   }
 
   loop() {
@@ -47,6 +60,9 @@ export class Simulation {
 
     const now = perf.now();
     if (now > this.nextTickTime) {
+      const currentTick = this.tick;
+      this.applyInputsForTick(currentTick);
+
       const inputs: PlayerInputState[] = [];
       this.inputState.forEach((state, playerId) => {
         const lastHeld = this.lastJumpHeld.get(playerId) ?? false;
@@ -60,6 +76,16 @@ export class Simulation {
         });
       });
       this.engine.step(inputs);
+      // inputs.forEach((input) => {
+      //   const ball = this.engine.getBallState(input.playerId);
+      //   if (!ball) return;
+      //   console.log(
+      //     `[CSP-S] t=${currentTick} pid=${input.playerId} in(m=${input.move},jp=${Number(input.jumpPressed)},jh=${Number(input.jumpHeld)}) ` +
+      //       `p=(${ball.x.toFixed(2)},${ball.y.toFixed(2)}) ` +
+      //       `v=(${ball.xVel.toFixed(2)},${ball.yVel.toFixed(2)}) ` +
+      //       `a=${ball.angle.toFixed(4)} av=${ball.angularVel.toFixed(4)}`,
+      //   );
+      // });
       this.snapshotCallback(this.engine.getSnapshot());
 
       this.tick++; // Last tick is done at this point, it's been broadcast. Move on to next tick
@@ -94,5 +120,14 @@ export class Simulation {
 
   async loadLevel(level: LevelDefinition) {
     this.engine.loadLevel(level);
+  }
+
+  private applyInputsForTick(tick: number) {
+    this.inputByTick.forEach((queue, playerId) => {
+      const input = queue.get(tick);
+      if (!input) return;
+      this.inputState.set(playerId, input);
+      queue.delete(tick);
+    });
   }
 }

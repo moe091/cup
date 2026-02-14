@@ -1,6 +1,6 @@
 import { FinishListener } from './types.js';
 import { World } from './world.js';
-import type { LevelDefinition, PlayerInputState, TickSnapshot } from '@cup/bouncer-shared';
+import type { BallState, LevelDefinition, PlayerInputState, TickSnapshot } from '@cup/bouncer-shared';
 
 export class Engine {
   private world = new World();
@@ -30,6 +30,14 @@ export class Engine {
 
   getSnapshot(): TickSnapshot {
     return this.world.getSnapshot(this.tick);
+  }
+
+  getBallState(playerId: string): BallState | null {
+    return this.world.getBallState(playerId);
+  }
+
+  setBallState(state: BallState) {
+    this.world.setBallState(state);
   }
 
   spawnPlayer(playerId: string) {

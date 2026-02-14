@@ -1,4 +1,4 @@
-import { TickSnapshot, toPixels, toWorld } from '@cup/bouncer-shared';
+import { BallState, TickSnapshot, toPixels, toWorld } from '@cup/bouncer-shared';
 import type { Ball, FinishListener, Point } from './types.js';
 import planck from 'planck';
 import type { Body } from 'planck';
@@ -7,7 +7,7 @@ import { createPolygonBody } from './helpers/PhysicsHelpers.js';
 
 let gravity = { x: 0, y: 10 };
 
-type BallState = {
+type BallBodyState = {
   body: Body;
   groundSensor: Body;
   grounded: boolean;
@@ -20,7 +20,7 @@ type BallState = {
 
 export class World {
   private timestep = 1 / 30;
-  private balls: Map<string, BallState> = new Map<string, BallState>();
+  private balls: Map<string, BallBodyState> = new Map<string, BallBodyState>();
   private spawnPoints: Point[] = [];
   private physics: planck.World = new planck.World(gravity);
   private ballRadius = 0.26;
@@ -227,6 +227,7 @@ export class World {
       const pos = ballState.body.getPosition();
       const vel = ballState.body.getLinearVelocity();
       const angle = ballState.body.getAngle();
+      const angularVel = ballState.body.getAngularVelocity();
       //TODO:: Add rotation to tickSnapshot
 
       return {
@@ -236,10 +237,51 @@ export class World {
         angle: angle,
         xVel: toPixels(vel.x),
         yVel: toPixels(vel.y),
+        angularVel,
       };
     });
 
     return { tick, balls };
+  }
+
+  getBallState(playerId: string): BallState | null {
+    const ballState = this.balls.get(playerId);
+    if (!ballState) return null;
+
+    const pos = ballState.body.getPosition();
+    const vel = ballState.body.getLinearVelocity();
+    const angle = ballState.body.getAngle();
+    const angularVel = ballState.body.getAngularVelocity();
+
+    return {
+      id: playerId,
+      x: toPixels(pos.x),
+      y: toPixels(pos.y),
+      xVel: toPixels(vel.x),
+      yVel: toPixels(vel.y),
+      angle,
+      angularVel,
+    };
+  }
+
+  setBallState(state: BallState) {
+    let ballState = this.balls.get(state.id);
+    if (!ballState) {
+      const spawned = this.spawnPlayer(state.id);
+      if (!spawned) {
+        console.warn('[Engine.World.setBallState] Unable to spawn ball for state: ', state.id);
+        return;
+      }
+      ballState = this.balls.get(state.id);
+    }
+    if (!ballState) return;
+
+    const body = ballState.body;
+    body.setAwake(true);
+    body.setTransform(new planck.Vec2(toWorld(state.x), toWorld(state.y)), state.angle);
+    body.setLinearVelocity(new planck.Vec2(toWorld(state.xVel), toWorld(state.yVel)));
+    body.setAngularVelocity(state.angularVel);
+    this.updateGroundSensor(ballState);
   }
 
   step() {
@@ -359,7 +401,7 @@ export class World {
   }
 
   resetWorld() {
-    this.balls = new Map<string, BallState>();
+    this.balls = new Map<string, BallBodyState>();
     this.spawnPoints = [];
     this.physics = new planck.World(gravity);
     this.finishListener = null;
@@ -370,11 +412,15 @@ export class World {
 
   private updateGroundSensors() {
     this.balls.forEach((ballState) => {
-      const pos = ballState.body.getPosition();
-      const sensorPos = new planck.Vec2(pos.x, pos.y + this.groundSensorOffset);
-      ballState.groundSensor.setTransform(sensorPos, 0);
-      ballState.groundSensor.setAwake(true);
+      this.updateGroundSensor(ballState);
     });
+  }
+
+  private updateGroundSensor(ballState: BallBodyState) {
+    const pos = ballState.body.getPosition();
+    const sensorPos = new planck.Vec2(pos.x, pos.y + this.groundSensorOffset);
+    ballState.groundSensor.setTransform(sensorPos, 0);
+    ballState.groundSensor.setAwake(true);
   }
 
   private getGroundSensorPlayerId(userData: unknown): string | null {

@@ -59,8 +59,8 @@ export default class GameManager {
       }));
     }
         
-    setInputState(playerId: PlayerId, input: InputState) {
-      this.simulation.setInputState(playerId, input);
+    setInputState(playerId: PlayerId, tick: number, input: InputState) {
+      this.simulation.setInputState(playerId, tick, input);
     }
 
     setPlayerReady(playerId: PlayerId, ready: boolean) {
