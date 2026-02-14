@@ -38,6 +38,6 @@ export class AuthController {
       );
     });
 
-    res.redirect('http://localhost:5173/game');
+    res.redirect('http://localhost:5173/games'); //TODO:: redirect to previous page
   }
 }

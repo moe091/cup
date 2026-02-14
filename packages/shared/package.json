@@ -3,10 +3,19 @@
   "private": true,
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
   "scripts": {
-    "build": "tsc -p tsconfig.build.json"
+    "build": "tsc -p tsconfig.build.json",
+    "start:dev": "tsc -p tsconfig.build.json -w"
   },
   "keywords": [],
   "author": "",

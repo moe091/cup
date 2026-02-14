@@ -50,6 +50,8 @@ export const AnyNull = runtime.AnyNull;
 export const ModelName = {
   User: 'User',
   OAuthAccount: 'OAuthAccount',
+  Lobby: 'Lobby',
+  BouncerLevel: 'BouncerLevel',
   Message: 'Message',
 } as const;
 
@@ -90,6 +92,35 @@ export const OAuthAccountScalarFieldEnum = {
 export type OAuthAccountScalarFieldEnum =
   (typeof OAuthAccountScalarFieldEnum)[keyof typeof OAuthAccountScalarFieldEnum];
 
+export const LobbyScalarFieldEnum = {
+  matchId: 'matchId',
+  gameId: 'gameId',
+  status: 'status',
+  socketUrl: 'socketUrl',
+  maxPlayers: 'maxPlayers',
+  createdByUserId: 'createdByUserId',
+  createdByGuestId: 'createdByGuestId',
+  meta: 'meta',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  expiresAt: 'expiresAt',
+} as const;
+
+export type LobbyScalarFieldEnum = (typeof LobbyScalarFieldEnum)[keyof typeof LobbyScalarFieldEnum];
+
+export const BouncerLevelScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  data: 'data',
+  ownerUserId: 'ownerUserId',
+  visibility: 'visibility',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+} as const;
+
+export type BouncerLevelScalarFieldEnum =
+  (typeof BouncerLevelScalarFieldEnum)[keyof typeof BouncerLevelScalarFieldEnum];
+
 export const MessageScalarFieldEnum = {
   id: 'id',
   hello: 'hello',
@@ -104,6 +135,19 @@ export const SortOrder = {
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
 
+export const NullableJsonNullValueInput = {
+  DbNull: 'DbNull',
+  JsonNull: 'JsonNull',
+} as const;
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput];
+
+export const JsonNullValueInput = {
+  JsonNull: 'JsonNull',
+} as const;
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput];
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive',
@@ -117,3 +161,11 @@ export const NullsOrder = {
 } as const;
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder];
+
+export const JsonNullValueFilter = {
+  DbNull: 'DbNull',
+  JsonNull: 'JsonNull',
+  AnyNull: 'AnyNull',
+} as const;
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter];

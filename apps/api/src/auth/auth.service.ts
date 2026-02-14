@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Profile } from 'passport-google-oauth20';
-import { SessionUser } from '@cup/shared-types';
+import type { SessionUser } from '@cup/shared-types';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
