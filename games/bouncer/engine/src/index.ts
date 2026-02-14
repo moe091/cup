@@ -36,6 +36,15 @@ export class Engine {
     return this.world.spawnPlayer(playerId);
   }
 
+  spawnPlayerAt(playerId: string, xPixels: number, yPixels: number) {
+    const spawned = this.world.spawnPlayer(playerId);
+    if (!spawned) {
+      return false;
+    }
+
+    return this.world.setPlayerPosition(playerId, xPixels, yPixels);
+  }
+
   loadLevel(level: LevelDefinition) {
     console.log('[DEBUG] ENGINE LOADING LEVEL DEF: ', level.name);
     this.world.resetWorld();

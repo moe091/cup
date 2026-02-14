@@ -2,12 +2,14 @@ import Phaser from 'phaser';
 import type { Socket } from 'socket.io-client';
 import { GameplayScene } from './scenes/Gameplay';
 import {
+  FinishOrderUpdate,
+  InitializePlayersPayload,
   LevelDefinition,
   LevelListItem,
   MatchCountdown,
   MatchJoinInfo,
   MatchStatus,
-  TickSnapshot,
+  RemotePlayerStateUpdate,
 } from '@cup/bouncer-shared';
 import { WaitingRoomScene } from './scenes/WaitingRoom';
 import { BootScene } from './scenes/Boot';
@@ -66,7 +68,8 @@ export class BouncerClient {
   onMatchStatusUpdate(status: MatchStatus) {
     console.log(`[BouncerClient.onMatchStatusUpdate] (SocketID :: ${this.socket.id}) Match Status = `, status);
     if (status.phase === 'WAITING') this.startOrContinueWaiting(status);
-    else if (status.phase === 'IN_PROGRESS_QUEUED') this.startOrContinueGameplay(status);
+    else if (status.phase === 'IN_PROGRESS_QUEUED' || status.phase === 'IN_PROGRESS')
+      this.startOrContinueGameplay(status);
   }
 
   onSetLevel(level: LevelListItem) {
@@ -82,12 +85,16 @@ export class BouncerClient {
     //Display a big countdown on screen
   }
 
-  onInitializeWorld(snapshot: TickSnapshot) {
-    this.gameplayScene?.applySnapshot(snapshot);
+  onInitializePlayers(payload: InitializePlayersPayload) {
+    this.gameplayScene?.onInitializePlayers(payload);
   }
 
-  onSnapshot(snapshot: TickSnapshot) {
-    this.gameplayScene?.applySnapshot(snapshot);
+  onRemotePlayerState(update: RemotePlayerStateUpdate) {
+    this.gameplayScene?.onRemotePlayerState(update);
+  }
+
+  onFinishOrderUpdate(update: FinishOrderUpdate) {
+    this.gameplayScene?.onFinishOrderUpdate(update);
   }
 
   // ------------- Scene Helpers -------------- \\
@@ -108,12 +115,17 @@ export class BouncerClient {
   }
 
   onMatchStart() {
-    //TODO:: Display a UI message or something here
+    this.gameplayScene?.onMatchStart();
     console.log(`[BouncerClient.onMatchStart]: Starting Match!`);
   }
 
   emitMessage(name: string, data: unknown) {
     console.log(`Emitting Message [${name}]: `, data);
+    if (name === 'player_state') {
+      this.socket.volatile.emit(name, data);
+      return;
+    }
+
     this.socket.emit(name, data);
   }
 }

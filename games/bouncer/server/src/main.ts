@@ -63,7 +63,9 @@ ioServer.on('connection', (socket) => {
 
   socket.on('update_level_selection', (data) => match.onUpdateLevelSelection(socket, data));
 
-  socket.on('player_input', (data) => match.onPlayerInput(socket.data.playerId, data));
+  socket.on('player_state', (data) => match.onPlayerState(socket, data));
+
+  socket.on('player_finished', () => match.onPlayerFinished(socket));
 
   socket.on('set_ready', (data) => match.onSetReady(socket, data));
 
@@ -95,10 +97,10 @@ function getOrCreateMatch(matchId: string): Match {
     const broadcast = (name: string, payload: unknown) => {
       ioServer.to(matchId).emit(name, payload);
     };
-    //TODO:: Inplement real level selection/loading
-    //const DEFAULT_LEVEL_ID = 'baed0d97-d1fc-4b85-bf1c-6b6558b03052'; //TODO:: put this line back. Update db seed script to specify ID
-    const DEFAULT_LEVEL_ID = 'seeded-id-test3'; //seeded-id-del is other option
-    match = new Match(matchId, broadcast);
+    const broadcastExcept = (socketId: string, name: string, payload: unknown) => {
+      ioServer.to(matchId).except(socketId).emit(name, payload);
+    };
+    match = new Match(matchId, broadcast, broadcastExcept);
     matches.set(matchId, match);
   }
   return match;

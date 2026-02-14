@@ -222,6 +222,31 @@ export class World {
     return false; // unable to find an open spawn point.
   }
 
+  setPlayerPosition(playerId: string, xPixels: number, yPixels: number): boolean {
+    const ballState = this.balls.get(playerId);
+    if (!ballState) {
+      return false;
+    }
+
+    const worldPos = new planck.Vec2(toWorld(xPixels), toWorld(yPixels));
+    ballState.body.setTransform(worldPos, ballState.body.getAngle());
+    ballState.body.setLinearVelocity(planck.Vec2(0, 0));
+    ballState.body.setAngularVelocity(0);
+
+    const sensorPos = new planck.Vec2(worldPos.x, worldPos.y + this.groundSensorOffset);
+    ballState.groundSensor.setTransform(sensorPos, 0);
+    ballState.groundSensor.setLinearVelocity(planck.Vec2(0, 0));
+    ballState.groundSensor.setAngularVelocity(0);
+
+    ballState.grounded = false;
+    ballState.groundContacts = 0;
+    ballState.lastGroundedAtMs = 0;
+    ballState.jumpActive = false;
+    ballState.jumpHoldRemainingMs = 0;
+
+    return true;
+  }
+
   getSnapshot(tick: number): TickSnapshot {
     const balls = Array.from(this.balls.entries()).map(([id, ballState]) => {
       const pos = ballState.body.getPosition();

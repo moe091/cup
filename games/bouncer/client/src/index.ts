@@ -2,10 +2,12 @@ import { io } from 'socket.io-client';
 import { BouncerClient } from './BouncerClient';
 import { BouncerEditorClient } from './BouncerEditorClient';
 import {
+  FinishOrderUpdate,
+  InitializePlayersPayload,
   type LevelDefinition,
   type MatchStatus,
   type MatchCountdown,
-  type TickSnapshot,
+  type RemotePlayerStateUpdate,
   MatchJoinInfo,
   LevelListItem,
 } from '@cup/bouncer-shared';
@@ -59,16 +61,20 @@ export function connectBouncer(url: string, ticket: string, containerEl: HTMLEle
     bouncerClient?.onMatchCountdownUpdate(data);
   });
 
-  socket.on('initialize_world', (data: TickSnapshot) => {
-    bouncerClient?.onInitializeWorld(data);
+  socket.on('initialize_players', (data: InitializePlayersPayload) => {
+    bouncerClient?.onInitializePlayers(data);
   });
 
   socket.on('start_match', () => {
     bouncerClient?.onMatchStart();
   });
 
-  socket.on('snapshot', (data: TickSnapshot) => {
-    bouncerClient?.onSnapshot(data);
+  socket.on('remote_player_state', (data: RemotePlayerStateUpdate) => {
+    bouncerClient?.onRemotePlayerState(data);
+  });
+
+  socket.on('finish_order_update', (data: FinishOrderUpdate) => {
+    bouncerClient?.onFinishOrderUpdate(data);
   });
 
   socket.on('disconnect', () => {

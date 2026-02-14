@@ -1,12 +1,13 @@
-import { type BroadcastSnapshot, type PlayerId } from '../types.js';
+import { type PlayerId } from '../types.js';
 import { Engine } from '@cup/bouncer-engine';
 import { InputState, LevelDefinition, PlayerInputState, TickSnapshot } from '@cup/bouncer-shared';
 import { performance as perf } from 'node:perf_hooks';
 
 import { createRequire } from 'node:module';
-import { loadLevelDef } from '../api/helpers.js';
 const require = createRequire(import.meta.url);
 console.log('Resolved @cup/bouncer-engine to:', require.resolve('@cup/bouncer-engine'));
+
+type BroadcastSnapshot = (payload: TickSnapshot) => void;
 
 /**
  * Simulation will import and wrap Engine. It will be wrapped by Match.

@@ -23,7 +23,37 @@ export type TickSnapshot = {
     x: number;
     y: number;
     angle: number;
+    xVel: number;
+    yVel: number;
   }>;
+};
+
+export type PlayerStateUpdate = {
+  seq: number;
+  x: number;
+  y: number;
+  angle: number;
+  xVel: number;
+  yVel: number;
+};
+
+export type RemotePlayerStateUpdate = PlayerStateUpdate & {
+  playerId: string;
+  serverTimeMs: number;
+};
+
+export type PlayerSpawn = {
+  playerId: string;
+  x: number;
+  y: number;
+};
+
+export type InitializePlayersPayload = {
+  spawns: PlayerSpawn[];
+};
+
+export type FinishOrderUpdate = {
+  finishedPlayerIds: string[];
 };
 
 export type Ball = {

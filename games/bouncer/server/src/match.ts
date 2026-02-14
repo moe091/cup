@@ -1,97 +1,44 @@
 import { Socket } from 'socket.io';
-import { type PlayerId, type SocketId, type PlayerSession, type Broadcast, asPlayerId, asSocketId, Player } from './types.js';
-import type {
-  MatchStatus,
-  MatchPhase,
-  MatchCountdown,
-  TickSnapshot,
-  InputState,
-  LevelDefinition,
-  LevelListItem,
-} from '@cup/bouncer-shared';
-import { Simulation } from './gameplay/simulation.js';
+import type { MatchStatus, MatchPhase, MatchCountdown, LevelDefinition, LevelListItem, InitializePlayersPayload, PlayerStateUpdate, RemotePlayerStateUpdate, FinishOrderUpdate } from '@cup/bouncer-shared';
+import type { PlayerId, SocketId, PlayerSession, Broadcast, BroadcastExcept } from './types.js';
 import { loadLevelDef } from './api/helpers.js';
-import GameManager from './gameplay/gameManager.js';
 
-/**
- * Match class handles a single room or lobby. It keeps track of players, game
- * state(e.g. WAITING vs IN_PROGRESS vs POST_GAME), handles/routes socket messages,
- * and wraps the engine which handles the actual game state. Match receives updates
- * from players, tells the engine when to tick, and grabs snapshots from the engine
- * to send to players. It's responsible for running the engine and keeping clients synced
- * up with it.
- */
 export class Match {
-  private players = new Map<PlayerId, PlayerSession>(); // players keyed by PlayerId. Will map to Player class once(if?) implemented
+  private players = new Map<PlayerId, PlayerSession>();
   private phase: MatchPhase = 'WAITING';
-  private minPlayers: number = 1;
+  private minPlayers = 1;
   private countdownSeconds = 1;
-  private simulation: Simulation;
-  private lastSeen = Date.now(); //TODO:: add idle cleanup if a match hasn't done anything in a couple hours
   private awaitingAcks = new Set<PlayerId>();
   private afterAcks: (() => void) | null = null;
   private levelDef: LevelDefinition | null = null;
   private levelSelection: LevelListItem | null = null;
-  private game: GameManager;
+  private finishedPlayerIds: PlayerId[] = [];
 
   constructor(
     public matchId: string,
     private broadcast: Broadcast,
-  ) {
-    this.simulation = new Simulation(this.broadcastSnapshot.bind(this), this.onPlayerFinish.bind(this));
-    this.game = new GameManager(this.simulation);
-  }
+    private broadcastExcept: BroadcastExcept,
+  ) {}
 
-  
-  onPlayerFinish(playerId: string) {
-    const id = playerId as PlayerId;
-    
-    console.log("PLAYER FINISHED: ", id);
-    this.game.playerFinished(id);
-  }
-  
-  addPlayer(playerId: PlayerId, socketId: SocketId, displayName: string, role: string) {
+  private addPlayer(playerId: PlayerId, socketId: SocketId, displayName: string, role: string) {
     this.players.set(playerId, { playerId, socketId, displayName, role, ready: false });
-    this.game.addPlayer(playerId, { playerId, socketId, displayName, role, ready: false });
   }
 
-  getPlayer(playerId: PlayerId): Player | undefined {
-    return this.game.getPlayer(playerId);
-  }
-
-  getPlayerSession(playerId: PlayerId) {
-    return this.game.getPlayerSession(playerId);
-  }
-
-  async loadLevel(): Promise<LevelDefinition | null> {
+  private async loadLevel(): Promise<LevelDefinition | null> {
     if (!this.levelSelection) {
-      console.error('[match.loadLevel] loadLevel called with now levelSelection!');
+      console.error('[Match.loadLevel] loadLevel called with no levelSelection');
       return null;
     }
 
     this.levelDef = await loadLevelDef(this.levelSelection.id);
-    this.game.loadLevel(this.levelDef);
-
     return this.levelDef;
   }
 
-  broadcastSnapshot(snapshot: TickSnapshot) {
-    this.broadcast('snapshot', snapshot);
+  private startGame() {
+    this.broadcast('start_match', {});
   }
 
-  startGame() {
-    this.broadcast('start_match', {}); //TODO:: make this display some UI message on client
-    this.game.start();
-  }
-
-  async spawnPlayers() {
-    this.game.spawnPlayers();
-
-    this.broadcast('load_level', this.levelDef);
-    this.broadcast('initialize_world', this.simulation.getSnapshot());
-  }
-
-  startCountdown() {
+  private startCountdown() {
     let countdownTimer = this.countdownSeconds;
 
     const countdownSecond = () => {
@@ -107,38 +54,47 @@ export class Match {
     countdownSecond();
   }
 
-  //Evaluates the current match status and then broadcasts it to all connected players
+  private assignSpawns(level: LevelDefinition): InitializePlayersPayload {
+    const spawnPoints = level.objects.filter((obj) => obj.type === 'spawnPoint');
+    const playerIds = Array.from(this.players.keys());
+    const spawns = playerIds.map((playerId, idx) => {
+      const spawn = spawnPoints[idx] ?? spawnPoints[0];
+      const x = spawn?.x ?? 0;
+      const y = spawn?.y ?? 0;
+      return { playerId, x, y };
+    });
+
+    return { spawns };
+  }
+
   broadcastStatus() {
     const status: MatchStatus = {
       matchId: this.matchId,
       phase: this.phase,
       minPlayers: this.minPlayers,
-      players: this.game.getPlayerStatus(),
+      players: Array.from(this.players.values()).map((player) => ({
+        playerId: player.playerId,
+        displayName: player.displayName,
+        ready: player.ready,
+        role: player.role,
+      })),
     };
 
     this.broadcast('match_status', status);
   }
 
-  /**************************************************************************
-    ...............           SOCKET HANDLERS               .................
-   **************************************************************************/
-  //called when a new player joins this match
   onJoin(socket: Socket) {
-    socket.data.playerId = socket.id as PlayerId; // TODO:: use real playerIds, will come from tickets once implemented. Also maybe add a createPlayerSession function to clean up the join handler
-    const playerId = socket.data.playerId;
-    const displayName = socket.data.displayName;
-    const role = socket.data.role;
+    socket.data.playerId = socket.id as PlayerId;
+    const playerId = socket.data.playerId as PlayerId;
+    const displayName = socket.data.displayName as string;
+    const role = socket.data.role as string;
 
     this.addPlayer(playerId, socket.id as SocketId, displayName, role);
 
-    console.log(`Socket ${socket.id} joined match ${this.matchId}`);
     socket.emit('match_joined', { role, displayName });
 
     if (this.levelSelection) {
-      console.log('PLayer joined, emitting levelSelection: ', this.levelSelection);
       socket.emit('set_level', this.levelSelection);
-    } else {
-      console.log('[DEBUG} player joined, no levelSelectione xists yet');
     }
 
     setTimeout(() => this.broadcastStatus(), 1000);
@@ -148,85 +104,155 @@ export class Match {
     return this.phase;
   }
 
-  /**setPhase('IN_PROGRESS') is called when leader clicks start game.
-   * When that happens, it queues IN_PROGRESS and sends a status update to
-   * all clients. The clients respond to the IN_PROGRESS_QUEUED status by sending
-   * an ack message. setPhase waits for all of those ack messages to come in and then
-   * calls startGameplay. This is where we load the level, spawn players, etc.
-   */
   setPhase(val: MatchPhase) {
-    if (this.phase == 'WAITING' && val == 'IN_PROGRESS') {
+    if (this.phase === 'WAITING' && val === 'IN_PROGRESS') {
       this.phase = 'IN_PROGRESS_QUEUED';
       this.awaitingAcks.clear();
 
-      //After all player acknowledge they are ready for new phase, call setCountdown
-      this.game.getPlayers().forEach((p) => {
-        this.awaitingAcks.add(p.playerId);
-        this.afterAcks = () => this.startGameplay();
+      this.players.forEach((player) => {
+        this.awaitingAcks.add(player.playerId);
       });
+      this.afterAcks = () => {
+        void this.startGameplay();
+      };
       this.broadcastStatus();
-    } else {
-      this.phase = val;
+      return;
     }
+
+    this.phase = val;
+    this.broadcastStatus();
   }
 
   async startGameplay() {
     this.setPhase('IN_PROGRESS');
-    await this.loadLevel();
-    this.spawnPlayers();
+    this.finishedPlayerIds = [];
+
+    const level = await this.loadLevel();
+    if (!level) {
+      console.error('[Match.startGameplay] Failed to load level');
+      this.setPhase('WAITING');
+      this.broadcastStatus();
+      return;
+    }
+
+    this.broadcast('load_level', level);
+    this.broadcast('initialize_players', this.assignSpawns(level));
     this.startCountdown();
   }
 
   onClientReady(socket: Socket) {
-    this.awaitingAcks.delete(socket.data.playerId);
+    this.awaitingAcks.delete(socket.data.playerId as PlayerId);
 
     if (this.awaitingAcks.size === 0 && this.afterAcks) {
       this.afterAcks();
     }
   }
 
-  //client sends this message when ready button is clicked
   onSetReady(socket: Socket, data: { ready: boolean }) {
-    // if leader, then it's actually the Start button. Set phase to inProgress, gives clients 1s to load, then start match countdown
     if (socket.data.role === 'creator') {
       this.setPhase('IN_PROGRESS');
-    } else {
-      this.game.setPlayerReady(socket.data.playerId, data.ready);
-
-      this.broadcastStatus();
+      return;
     }
+
+    const playerId = socket.data.playerId as PlayerId;
+    const player = this.players.get(playerId);
+    if (player) {
+      player.ready = data.ready;
+    }
+
+    this.broadcastStatus();
   }
 
   onUpdateLevelSelection(socket: Socket, level: LevelListItem) {
-    console.log(`${socket.data.role}-${socket.data.displayName} Updated level selection to: ${level.name}`);
+    console.log(`${socket.data.role}-${socket.data.displayName} updated level selection to: ${level.name}`);
     this.levelSelection = level;
     this.broadcast('set_level', level);
   }
 
-  //not used yet TODO:: remove this if I don't end up using 'update' events
-  onPlayerInput(playerId: PlayerId, input: InputState): void {
-    if (input.jumpPressed) {
-      console.log(`[Match.onPlayerInput] jumpPressed from ${playerId}`);
+  onPlayerState(socket: Socket, data: unknown) {
+    if (this.phase !== 'IN_PROGRESS') {
+      return;
     }
-    this.game.setInputState(playerId, input);
+
+    const parsed = this.parsePlayerStateUpdate(data);
+    if (!parsed) {
+      return;
+    }
+
+    const payload: RemotePlayerStateUpdate = {
+      playerId: socket.data.playerId as PlayerId,
+      serverTimeMs: Date.now(),
+      ...parsed,
+    };
+
+    this.broadcastExcept(socket.id, 'remote_player_state', payload);
   }
 
-  //called on socket disconnect
+  onPlayerFinished(socket: Socket) {
+    if (this.phase !== 'IN_PROGRESS') {
+      return;
+    }
+
+    const playerId = socket.data.playerId as PlayerId;
+    if (!this.players.has(playerId)) {
+      return;
+    }
+    if (this.finishedPlayerIds.includes(playerId)) {
+      return;
+    }
+
+    this.finishedPlayerIds.push(playerId);
+    const finishUpdate: FinishOrderUpdate = {
+      finishedPlayerIds: [...this.finishedPlayerIds],
+    };
+    this.broadcast('finish_order_update', finishUpdate);
+  }
+
   onLeave(socket: Socket) {
-    console.log(`Socket ${socket.id} left match ${this.matchId}`);
-    if (socket.data.playerId) {
-      this.game.deletePlayer(socket.data.playerId);
-      this.awaitingAcks.delete(socket.data.playerId);
+    const playerId = socket.data.playerId as PlayerId | undefined;
+    if (playerId) {
+      this.players.delete(playerId);
+      this.awaitingAcks.delete(playerId);
+      this.finishedPlayerIds = this.finishedPlayerIds.filter((id) => id !== playerId);
     }
 
     this.broadcastStatus();
   }
 
   isEmpty() {
-    return this.game.isEmpty();
+    return this.players.size === 0;
   }
 
   destroy() {
-    this.simulation.stop();
+    this.awaitingAcks.clear();
+    this.afterAcks = null;
+    this.finishedPlayerIds = [];
+  }
+
+  private parsePlayerStateUpdate(data: unknown): PlayerStateUpdate | null {
+    if (!data || typeof data !== 'object') {
+      return null;
+    }
+
+    const candidate = data as Partial<PlayerStateUpdate>;
+    if (!this.isFiniteNumber(candidate.seq)) return null;
+    if (!this.isFiniteNumber(candidate.x)) return null;
+    if (!this.isFiniteNumber(candidate.y)) return null;
+    if (!this.isFiniteNumber(candidate.angle)) return null;
+    if (!this.isFiniteNumber(candidate.xVel)) return null;
+    if (!this.isFiniteNumber(candidate.yVel)) return null;
+
+    return {
+      seq: candidate.seq,
+      x: candidate.x,
+      y: candidate.y,
+      angle: candidate.angle,
+      xVel: candidate.xVel,
+      yVel: candidate.yVel,
+    };
+  }
+
+  private isFiniteNumber(value: unknown): value is number {
+    return typeof value === 'number' && Number.isFinite(value);
   }
 }
