@@ -68,7 +68,7 @@ export class RemoteSmoother {
     const dtSeconds = dtMs / 1000;
     return {
       x: latest.x + latest.xVel * dtSeconds,
-      y: latest.y + latest.yVel * dtSeconds,
+      y: latest.y,
       angle: latest.angle,
     };
   }

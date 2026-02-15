@@ -21,8 +21,11 @@ const LOCAL_STEP_MS = 1000 / LOCAL_SIM_HZ;
 const ACTIVE_SEND_MS = 1000 / 30;
 const IDLE_SEND_MS = 1000 / 10;
 const INTERPOLATION_DELAY_MS = 120;
-const EXTRAPOLATION_CAP_MS = 150;
-const SNAP_DISTANCE_PX = 120;
+const EXTRAPOLATION_CAP_MS = 50;
+const HARD_SNAP_X_PX = 140;
+const HARD_SNAP_Y_PX = 28;
+const POSITION_DEADZONE_X_PX = 0.8;
+const POSITION_DEADZONE_Y_PX = 0.6;
 
 export class GameplayScene extends Phaser.Scene {
   private readyText: Phaser.GameObjects.Text | undefined;
@@ -275,16 +278,23 @@ export class GameplayScene extends Phaser.Scene {
         this.balls.set(playerId, sprite);
       }
 
-      const dx = sample.x - sprite.x;
-      const dy = sample.y - sprite.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist > SNAP_DISTANCE_PX) {
+      const errorX = sample.x - sprite.x;
+      const errorY = sample.y - sprite.y;
+      const absErrorX = Math.abs(errorX);
+      const absErrorY = Math.abs(errorY);
+
+      if (absErrorX > HARD_SNAP_X_PX || absErrorY > HARD_SNAP_Y_PX) {
         sprite.setPosition(sample.x, sample.y);
       } else {
-        sprite.setPosition(
-          Phaser.Math.Linear(sprite.x, sample.x, 0.7),
-          Phaser.Math.Linear(sprite.y, sample.y, 0.7),
-        );
+        const xLerp = Phaser.Math.Clamp(0.18 + absErrorX / 42, 0.18, 0.55);
+        const yLerp = Phaser.Math.Clamp(0.14 + absErrorY / 36, 0.14, 0.42);
+
+        const nextX =
+          absErrorX <= POSITION_DEADZONE_X_PX ? sprite.x : Phaser.Math.Linear(sprite.x, sample.x, xLerp);
+        const nextY =
+          absErrorY <= POSITION_DEADZONE_Y_PX ? sprite.y : Phaser.Math.Linear(sprite.y, sample.y, yLerp);
+
+        sprite.setPosition(nextX, nextY);
       }
       sprite.shadow.setPosition(sprite.x + 8, sprite.y - 10);
       sprite.setRotation(Phaser.Math.Angle.RotateTo(sprite.rotation, sample.angle, 0.35));
