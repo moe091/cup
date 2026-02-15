@@ -40,9 +40,9 @@ export class World {
   }
 
   setupContactListeners() {
-    console.log("[DEBUG] setting up contact listenres");
+    console.log('[DEBUG] setting up contact listenres');
     this.physics.on('begin-contact', (contact) => {
-      console.log("contact happened: ");
+      console.log('contact happened: ');
       const fixtureA = contact.getFixtureA();
       const fixtureB = contact.getFixtureB();
       const bodyA = fixtureA.getBody();
@@ -59,7 +59,7 @@ export class World {
       const isGoalA = aUser === 'Goal';
       const isGoalB = bUser === 'Goal';
       if ((isBallA && isGoalB) || (isBallB && isGoalA)) {
-        console.log("goal happened");
+        console.log('goal happened');
         const ballUser = isBallA ? (aUser as string) : (bUser as string);
         const playerId = ballUser.replace('Ball-', '');
         this.onFinish(playerId);
@@ -153,11 +153,7 @@ export class World {
     body.setAwake(true);
     const dtMs = this.timestep * 1000;
     const impulseScale = dtMs / this.jumpHoldMs;
-    body.applyLinearImpulse(
-      new planck.Vec2(0, -this.jumpHoldImpulse * impulseScale),
-      body.getWorldCenter(),
-      true,
-    );
+    body.applyLinearImpulse(new planck.Vec2(0, -this.jumpHoldImpulse * impulseScale), body.getWorldCenter(), true);
     ballState.jumpHoldRemainingMs = Math.max(0, ballState.jumpHoldRemainingMs - dtMs);
   }
 
@@ -390,7 +386,6 @@ export class World {
     this.finishListener = null;
 
     this.setupContactListeners();
-
   }
 
   private updateGroundSensors() {

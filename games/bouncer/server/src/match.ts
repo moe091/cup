@@ -1,5 +1,15 @@
 import { Socket } from 'socket.io';
-import type { MatchStatus, MatchPhase, MatchCountdown, LevelDefinition, LevelListItem, InitializePlayersPayload, PlayerStateUpdate, RemotePlayerStateUpdate, FinishOrderUpdate } from '@cup/bouncer-shared';
+import type {
+  MatchStatus,
+  MatchPhase,
+  MatchCountdown,
+  LevelDefinition,
+  LevelListItem,
+  InitializePlayersPayload,
+  PlayerStateUpdate,
+  RemotePlayerStateUpdate,
+  FinishOrderUpdate,
+} from '@cup/bouncer-shared';
 import type { PlayerId, SocketId, PlayerSession, Broadcast, BroadcastExcept } from './types.js';
 import { loadLevelDef } from './api/helpers.js';
 

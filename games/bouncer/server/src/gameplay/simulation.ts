@@ -35,7 +35,10 @@ export class Simulation {
   private lastJumpHeld: Map<PlayerId, boolean> = new Map();
   //NOTE: if I want to implement rollback later I'll have to add tick to inputs(can just add as they are applied, as long as re-apply them on the same tick it will be fine)
 
-  constructor(private snapshotCallback: BroadcastSnapshot, onPlayerFinish: (playerId: string) => void) {
+  constructor(
+    private snapshotCallback: BroadcastSnapshot,
+    onPlayerFinish: (playerId: string) => void,
+  ) {
     this.engine = new Engine(this.tickMs / 1000, onPlayerFinish); //planck wants seconds
   }
 

@@ -240,10 +240,7 @@ export class GameplayScene extends Phaser.Scene {
 
     this.sendAccumulatorMs += LOCAL_STEP_MS;
     const isActive =
-      this.inputState.move !== 0 ||
-      this.inputState.jumpHeld ||
-      Math.abs(me.xVel) > 1 ||
-      Math.abs(me.yVel) > 1;
+      this.inputState.move !== 0 || this.inputState.jumpHeld || Math.abs(me.xVel) > 1 || Math.abs(me.yVel) > 1;
     const targetSendMs = isActive ? ACTIVE_SEND_MS : IDLE_SEND_MS;
     if (this.sendAccumulatorMs >= targetSendMs) {
       this.sendAccumulatorMs = 0;
@@ -289,10 +286,8 @@ export class GameplayScene extends Phaser.Scene {
         const xLerp = Phaser.Math.Clamp(0.18 + absErrorX / 42, 0.18, 0.55);
         const yLerp = Phaser.Math.Clamp(0.14 + absErrorY / 36, 0.14, 0.42);
 
-        const nextX =
-          absErrorX <= POSITION_DEADZONE_X_PX ? sprite.x : Phaser.Math.Linear(sprite.x, sample.x, xLerp);
-        const nextY =
-          absErrorY <= POSITION_DEADZONE_Y_PX ? sprite.y : Phaser.Math.Linear(sprite.y, sample.y, yLerp);
+        const nextX = absErrorX <= POSITION_DEADZONE_X_PX ? sprite.x : Phaser.Math.Linear(sprite.x, sample.x, xLerp);
+        const nextY = absErrorY <= POSITION_DEADZONE_Y_PX ? sprite.y : Phaser.Math.Linear(sprite.y, sample.y, yLerp);
 
         sprite.setPosition(nextX, nextY);
       }
@@ -355,11 +350,7 @@ export class GameplayScene extends Phaser.Scene {
   }
 
   private createBallSprite(playerId: string, x: number, y: number): ShadowSprite {
-    const sprite = this.add.sprite(
-      x,
-      y,
-      playerId === this.playerId ? 'ball_green' : 'ball_red',
-    ) as ShadowSprite;
+    const sprite = this.add.sprite(x, y, playerId === this.playerId ? 'ball_green' : 'ball_red') as ShadowSprite;
     sprite.shadow = this.add.circle(x + 8, y - 10, 26, 0x000000, 0.4).setDepth(-2);
     return sprite;
   }

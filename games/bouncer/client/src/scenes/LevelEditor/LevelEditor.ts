@@ -145,7 +145,7 @@ export class LevelEditorScene extends Phaser.Scene {
     }
 
     if (obj.type === 'goal') {
-      const circle = this.add.circle(obj.x, obj.y, obj.size, 0x22DD29).setOrigin(0.5);
+      const circle = this.add.circle(obj.x, obj.y, obj.size, 0x22dd29).setOrigin(0.5);
       circle.setDepth(2);
       return circle;
     }

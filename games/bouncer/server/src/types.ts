@@ -12,9 +12,9 @@ export type PlayerSession = {
 };
 
 export type Player = {
-    playerId: PlayerId;
-    isFinished: boolean;
-    session: PlayerSession;
+  playerId: PlayerId;
+  isFinished: boolean;
+  session: PlayerSession;
 };
 
 export type Broadcast = (name: string, payload: unknown) => void;
@@ -22,5 +22,3 @@ export type BroadcastExcept = (socketId: string, name: string, payload: unknown)
 
 export const asPlayerId = (s: string) => s as PlayerId;
 export const asSocketId = (s: string) => s as SocketId;
-
-

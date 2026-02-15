@@ -7,7 +7,10 @@ export class Engine {
   private tick: number = 0;
   private onPlayerFinish: FinishListener;
 
-  constructor(private timestep: number, onPlayerFinish: FinishListener) {
+  constructor(
+    private timestep: number,
+    onPlayerFinish: FinishListener,
+  ) {
     this.world.setTimestep(timestep);
     this.onPlayerFinish = onPlayerFinish;
     this.world.setFinishListener(onPlayerFinish);
@@ -49,10 +52,8 @@ export class Engine {
     console.log('[DEBUG] ENGINE LOADING LEVEL DEF: ', level.name);
     this.world.resetWorld();
     this.world.loadLevel(level);
-    if (this.onPlayerFinish)
-      this.world.setFinishListener(this.onPlayerFinish);
-    else 
-      console.warn("[Engine.loadLevel] loaded level but no finish listener is set!");
+    if (this.onPlayerFinish) this.world.setFinishListener(this.onPlayerFinish);
+    else console.warn('[Engine.loadLevel] loaded level but no finish listener is set!');
   }
 }
 
