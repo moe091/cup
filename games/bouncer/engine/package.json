@@ -3,7 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "type": "module",
-  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -20,7 +25,13 @@
   "license": "ISC",
   "packageManager": "pnpm@10.26.1",
   "devDependencies": {
+    "@types/earcut": "^3.0.0",
     "prettier": "^3.4.2",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@cup/bouncer-shared": "workspace:*",
+    "earcut": "^3.0.2",
+    "planck": "^1.4.2"
   }
 }

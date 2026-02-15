@@ -10,5 +10,6 @@
 export type * from './models/User.js';
 export type * from './models/OAuthAccount.js';
 export type * from './models/Lobby.js';
+export type * from './models/BouncerLevel.js';
 export type * from './models/Message.js';
 export type * from './commonInputTypes.js';

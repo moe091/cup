@@ -1,26 +1,80 @@
 import { io } from 'socket.io-client';
+import { BouncerClient } from './BouncerClient';
+import { BouncerEditorClient } from './BouncerEditorClient';
+import {
+  FinishOrderUpdate,
+  InitializePlayersPayload,
+  type LevelDefinition,
+  type MatchStatus,
+  type MatchCountdown,
+  type RemotePlayerStateUpdate,
+  MatchJoinInfo,
+  LevelListItem,
+} from '@cup/bouncer-shared';
+import { LevelEditorScene } from './scenes/LevelEditor/LevelEditor';
+import { loadLevelDef } from './api/levels';
 
-export type BouncerConnection = {
-  disconnect: () => void;
-};
+/*
+ * Entry point for Bouncer client. Will be imported in react frontend.
+ * React passes in the server url and matchId needed to connect to a lobby, as well
+ * as the containerEl, which will end up being passed into phaser as the parent el
+ * where the game canvas is added.
+ *
+ * returns a clean 'disconnect' function that cleans everything up, so react(or whoever
+ * imports this) can handle disconnecting smoothly before leaving the page or rerendering or anything
+ */
+export function connectBouncer(url: string, ticket: string, containerEl: HTMLElement): BouncerConnection {
+  let bouncerClient: BouncerClient | null = null;
 
-export function connectBouncer(url: string, matchId: string): BouncerConnection {
   const socket = io(url, {
     transports: ['websocket'],
-    auth: { matchId: matchId },
+    auth: { ticket: ticket },
     path: '/gameserver/bouncer/socket.io',
   });
 
   socket.on('connect', () => {
     console.log('Connected to server with socket id:', socket.id);
+
+    if (!bouncerClient) bouncerClient = new BouncerClient(socket, containerEl);
+    else console.warn("connectBouncer() - socket.on('connect') :: bouncerClient already exists! Keeping old client.");
   });
 
-  socket.on('hello_event', (message) => {
-    console.log('Received message from server:', message);
+  socket.on('match_joined', (data: MatchJoinInfo) => {
+    bouncerClient?.onMatchJoin(data);
   });
 
-  socket.on('match_joined', (message) => {
-    console.log('match_joined: ', message);
+  socket.on('match_status', (data: MatchStatus) => {
+    bouncerClient?.onMatchStatusUpdate(data);
+  });
+
+  //this event is called when the match leader updates the level selection for next round, but it's not time to load it yet
+  socket.on('set_level', (data: LevelListItem) => {
+    bouncerClient?.onSetLevel(data);
+  });
+
+  //this event actually loads a levelDefinition
+  socket.on('load_level', (data: LevelDefinition) => {
+    bouncerClient?.onLoadLevel(data);
+  });
+
+  socket.on('countdown', (data: MatchCountdown) => {
+    bouncerClient?.onMatchCountdownUpdate(data);
+  });
+
+  socket.on('initialize_players', (data: InitializePlayersPayload) => {
+    bouncerClient?.onInitializePlayers(data);
+  });
+
+  socket.on('start_match', () => {
+    bouncerClient?.onMatchStart();
+  });
+
+  socket.on('remote_player_state', (data: RemotePlayerStateUpdate) => {
+    bouncerClient?.onRemotePlayerState(data);
+  });
+
+  socket.on('finish_order_update', (data: FinishOrderUpdate) => {
+    bouncerClient?.onFinishOrderUpdate(data);
   });
 
   socket.on('disconnect', () => {
@@ -31,5 +85,34 @@ export function connectBouncer(url: string, matchId: string): BouncerConnection 
     console.error('Connection error:', err);
   });
 
-  return { disconnect: () => void socket.disconnect() };
+  return {
+    disconnect: () => {
+      bouncerClient?.destroy();
+      bouncerClient = null;
+      socket.disconnect();
+    },
+  };
+}
+
+export type BouncerConnection = {
+  disconnect: () => void;
+};
+
+export type BouncerEditorConnection = {
+  disconnect: () => void;
+  getLevelDefinition: () => LevelDefinition;
+  loadExistingLevel: (id: string) => void;
+};
+
+export function createBouncerEditor(containerEl: HTMLElement, levelName: string): BouncerEditorConnection {
+  const editor = new BouncerEditorClient(containerEl, levelName);
+
+  return {
+    disconnect: () => editor.destroy(),
+    getLevelDefinition: () => editor.getLevelDefinition(),
+    loadExistingLevel: async (id: string) => {
+      const level = await loadLevelDef(id);
+      editor.loadLevel(level);
+    },
+  };
 }

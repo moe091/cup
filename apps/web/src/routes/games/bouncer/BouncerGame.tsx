@@ -1,64 +1,96 @@
-import { useParams, Link } from 'react-router-dom';
-import { useEffect } from 'react';
-import { connectBouncer, type BouncerConnection } from '@cup/bouncer-client';
-import type { LobbyJoinResponse } from '@cup/shared-types';
+import { useParams } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { connectBouncer, type BouncerConnection } from "@cup/bouncer-client";
+import type { LobbyJoinResponse } from "@cup/shared-types";
 
 type Params = { matchId: string };
 
 export function BouncerGame() {
-    const { matchId } = useParams<Params>();
+  const { matchId } = useParams<Params>();
+  const gameContainerRef = useRef<HTMLDivElement | null>(null);
 
-    useEffect(() => {
-        if (!matchId) return; // can't have this check earlier because useEffect shouldn't be called conditionally. Just return instantly if no matchId
+  console.log("BEFORE USEEFFECT");
+  useEffect(() => {
+    if (!matchId) return; // can't have this check earlier because useEffect shouldn't be called conditionally. Just return instantly if no matchId
 
-        function connectToLobby(lobbyInfo: LobbyJoinResponse): BouncerConnection {
-            const bouncerConnection = connectBouncer(lobbyInfo.socketUrl, lobbyInfo.matchId);
-            console.log("Got bouncerConnection:", bouncerConnection);
+    const gameEl = gameContainerRef.current;
+    if (!gameEl) return; // el should always exist by now but this protects from weird behavior(hanging sockets) if anything goes wrong. Also tells typescript it's not null before we pass in to connectToLobby
 
-            return bouncerConnection;
-        }
+    function connectToLobby(
+      lobbyInfo: LobbyJoinResponse,
+      gameContainerEl: HTMLElement,
+    ): BouncerConnection {
+      const bouncerConnection = connectBouncer(
+        lobbyInfo.socketUrl,
+        lobbyInfo.ticket,
+        gameContainerEl,
+      );
+      console.log("Got bouncerConnection:", bouncerConnection);
 
-        const controller = new AbortController();
-        let conn: BouncerConnection | null = null;
-        
-        fetch(`/api/games/bouncer/join/${matchId}`, { 
-            method: 'POST',
-            signal: controller.signal,
-            credentials: 'include',
-        })
-        .then(res => {
-            if (res.ok) return res.json();
-            if (res.status == 404) throw new Error("Lobby not found");
-            if (res.status == 410) throw new Error("Lobby has expired");
-            if (res.status == 409) throw new Error("Lobby is not open for joining");
-            throw new Error("Failed to join lobby: " + res.statusText);
-        })
-        .then((data: LobbyJoinResponse) => {
-            console.log("Joining lobby with data:", data);
-            conn = connectToLobby(data);
-        })
-        .catch(err => {
-            if (err?.name === 'AbortError') return;
-            console.error("Error joining lobby:", err);
-        });
-
-        return () => {
-            controller.abort();
-            if (conn) conn.disconnect();
-        };
-    }, [matchId]);
-    
-    
-    if (!matchId) {
-        return <div>Missing matchId</div>;
+      return bouncerConnection;
     }
 
-    return (
-        <div>
-            <h1>Bouncer</h1>
-            <div>Match ID: {matchId}</div>
-            <Link to="/games/bouncer">Back</Link>
-        </div>
-    )
+    const controller = new AbortController();
+    let conn: BouncerConnection | null = null;
 
+    fetch(`/api/games/bouncer/join/${matchId}`, {
+      method: "POST",
+      signal: controller.signal,
+      credentials: "include",
+    })
+      .then((res) => {
+        if (res.ok) return res.json();
+        if (res.status == 404) throw new Error("Lobby not found");
+        if (res.status == 410) throw new Error("Lobby has expired");
+        if (res.status == 409) throw new Error("Lobby is not open for joining");
+        throw new Error("Failed to join lobby: " + res.statusText);
+      })
+      .then((data: LobbyJoinResponse) => {
+        console.log("Joining lobby with data:", data);
+        conn = connectToLobby(data, gameEl);
+      })
+      .catch((err) => {
+        if (err?.name === "AbortError") return;
+        console.error("Error joining lobby:", err);
+      });
+
+    return () => {
+      controller.abort();
+      if (conn) conn.disconnect();
+    };
+  }, [matchId]);
+
+  if (!matchId) {
+    return <div>Missing matchId</div>;
+  }
+
+  return (
+    <div className="mx-auto max-w-6xl px-6 py-10">
+      <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)]/80 p-2 md:p-8 backdrop-blur">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <h2 className="text-2xl sm:text-3xl text-[color:var(--text)]">
+            Bouncer
+          </h2>
+
+          <div className="flex gap-3">
+            <button className="rounded-full border border-[color:var(--line)] px-4 py-2 text-sm text-[color:var(--text)] hover:border-[color:var(--text)] transition">
+              Invite Friends
+            </button>
+            <button className="rounded-full border border-[color:var(--line)] px-4 py-2 text-sm text-[color:var(--text)] hover:border-[color:var(--text)] transition">
+              Copy Join Link
+            </button>
+          </div>
+        </div>
+
+        <div className="" ref={gameContainerRef} id="bouncer_client_container">
+          {/*<Link to="/games/bouncer">Back</Link> */}
+        </div>
+
+        <ul className="mt-4 text-sm text-[color:var(--muted)] leading-relaxed">
+          <li>- Click + drag to aim, release to launch.</li>
+          <li>- Press F for fullscreen.</li>
+        </ul>
+      </div>
+    </div>
+  );
 }

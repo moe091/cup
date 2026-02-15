@@ -40,6 +40,7 @@ export type LobbyMinAggregateOutputType = {
   socketUrl: string | null;
   maxPlayers: number | null;
   createdByUserId: string | null;
+  createdByGuestId: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
   expiresAt: Date | null;
@@ -52,6 +53,7 @@ export type LobbyMaxAggregateOutputType = {
   socketUrl: string | null;
   maxPlayers: number | null;
   createdByUserId: string | null;
+  createdByGuestId: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
   expiresAt: Date | null;
@@ -64,6 +66,7 @@ export type LobbyCountAggregateOutputType = {
   socketUrl: number;
   maxPlayers: number;
   createdByUserId: number;
+  createdByGuestId: number;
   meta: number;
   createdAt: number;
   updatedAt: number;
@@ -86,6 +89,7 @@ export type LobbyMinAggregateInputType = {
   socketUrl?: true;
   maxPlayers?: true;
   createdByUserId?: true;
+  createdByGuestId?: true;
   createdAt?: true;
   updatedAt?: true;
   expiresAt?: true;
@@ -98,6 +102,7 @@ export type LobbyMaxAggregateInputType = {
   socketUrl?: true;
   maxPlayers?: true;
   createdByUserId?: true;
+  createdByGuestId?: true;
   createdAt?: true;
   updatedAt?: true;
   expiresAt?: true;
@@ -110,6 +115,7 @@ export type LobbyCountAggregateInputType = {
   socketUrl?: true;
   maxPlayers?: true;
   createdByUserId?: true;
+  createdByGuestId?: true;
   meta?: true;
   createdAt?: true;
   updatedAt?: true;
@@ -211,6 +217,7 @@ export type LobbyGroupByOutputType = {
   socketUrl: string;
   maxPlayers: number;
   createdByUserId: string | null;
+  createdByGuestId: string | null;
   meta: runtime.JsonValue | null;
   createdAt: Date;
   updatedAt: Date;
@@ -244,6 +251,7 @@ export type LobbyWhereInput = {
   socketUrl?: Prisma.StringFilter<'Lobby'> | string;
   maxPlayers?: Prisma.IntFilter<'Lobby'> | number;
   createdByUserId?: Prisma.StringNullableFilter<'Lobby'> | string | null;
+  createdByGuestId?: Prisma.StringNullableFilter<'Lobby'> | string | null;
   meta?: Prisma.JsonNullableFilter<'Lobby'>;
   createdAt?: Prisma.DateTimeFilter<'Lobby'> | Date | string;
   updatedAt?: Prisma.DateTimeFilter<'Lobby'> | Date | string;
@@ -258,6 +266,7 @@ export type LobbyOrderByWithRelationInput = {
   socketUrl?: Prisma.SortOrder;
   maxPlayers?: Prisma.SortOrder;
   createdByUserId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  createdByGuestId?: Prisma.SortOrderInput | Prisma.SortOrder;
   meta?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
@@ -276,6 +285,7 @@ export type LobbyWhereUniqueInput = Prisma.AtLeast<
     socketUrl?: Prisma.StringFilter<'Lobby'> | string;
     maxPlayers?: Prisma.IntFilter<'Lobby'> | number;
     createdByUserId?: Prisma.StringNullableFilter<'Lobby'> | string | null;
+    createdByGuestId?: Prisma.StringNullableFilter<'Lobby'> | string | null;
     meta?: Prisma.JsonNullableFilter<'Lobby'>;
     createdAt?: Prisma.DateTimeFilter<'Lobby'> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<'Lobby'> | Date | string;
@@ -292,6 +302,7 @@ export type LobbyOrderByWithAggregationInput = {
   socketUrl?: Prisma.SortOrder;
   maxPlayers?: Prisma.SortOrder;
   createdByUserId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  createdByGuestId?: Prisma.SortOrderInput | Prisma.SortOrder;
   meta?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
@@ -313,6 +324,7 @@ export type LobbyScalarWhereWithAggregatesInput = {
   socketUrl?: Prisma.StringWithAggregatesFilter<'Lobby'> | string;
   maxPlayers?: Prisma.IntWithAggregatesFilter<'Lobby'> | number;
   createdByUserId?: Prisma.StringNullableWithAggregatesFilter<'Lobby'> | string | null;
+  createdByGuestId?: Prisma.StringNullableWithAggregatesFilter<'Lobby'> | string | null;
   meta?: Prisma.JsonNullableWithAggregatesFilter<'Lobby'>;
   createdAt?: Prisma.DateTimeWithAggregatesFilter<'Lobby'> | Date | string;
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<'Lobby'> | Date | string;
@@ -325,6 +337,7 @@ export type LobbyCreateInput = {
   status?: $Enums.LobbyStatus;
   socketUrl: string;
   maxPlayers?: number;
+  createdByGuestId?: string | null;
   meta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -339,6 +352,7 @@ export type LobbyUncheckedCreateInput = {
   socketUrl: string;
   maxPlayers?: number;
   createdByUserId?: string | null;
+  createdByGuestId?: string | null;
   meta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -351,6 +365,7 @@ export type LobbyUpdateInput = {
   status?: Prisma.EnumLobbyStatusFieldUpdateOperationsInput | $Enums.LobbyStatus;
   socketUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number;
+  createdByGuestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   meta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -365,6 +380,7 @@ export type LobbyUncheckedUpdateInput = {
   socketUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number;
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdByGuestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   meta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -378,6 +394,7 @@ export type LobbyCreateManyInput = {
   socketUrl: string;
   maxPlayers?: number;
   createdByUserId?: string | null;
+  createdByGuestId?: string | null;
   meta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -390,6 +407,7 @@ export type LobbyUpdateManyMutationInput = {
   status?: Prisma.EnumLobbyStatusFieldUpdateOperationsInput | $Enums.LobbyStatus;
   socketUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number;
+  createdByGuestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   meta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -403,6 +421,7 @@ export type LobbyUncheckedUpdateManyInput = {
   socketUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number;
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdByGuestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   meta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -426,6 +445,7 @@ export type LobbyCountOrderByAggregateInput = {
   socketUrl?: Prisma.SortOrder;
   maxPlayers?: Prisma.SortOrder;
   createdByUserId?: Prisma.SortOrder;
+  createdByGuestId?: Prisma.SortOrder;
   meta?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
@@ -443,6 +463,7 @@ export type LobbyMaxOrderByAggregateInput = {
   socketUrl?: Prisma.SortOrder;
   maxPlayers?: Prisma.SortOrder;
   createdByUserId?: Prisma.SortOrder;
+  createdByGuestId?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
   expiresAt?: Prisma.SortOrder;
@@ -455,6 +476,7 @@ export type LobbyMinOrderByAggregateInput = {
   socketUrl?: Prisma.SortOrder;
   maxPlayers?: Prisma.SortOrder;
   createdByUserId?: Prisma.SortOrder;
+  createdByGuestId?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
   expiresAt?: Prisma.SortOrder;
@@ -560,6 +582,7 @@ export type LobbyCreateWithoutCreatedByInput = {
   status?: $Enums.LobbyStatus;
   socketUrl: string;
   maxPlayers?: number;
+  createdByGuestId?: string | null;
   meta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -572,6 +595,7 @@ export type LobbyUncheckedCreateWithoutCreatedByInput = {
   status?: $Enums.LobbyStatus;
   socketUrl: string;
   maxPlayers?: number;
+  createdByGuestId?: string | null;
   meta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -614,6 +638,7 @@ export type LobbyScalarWhereInput = {
   socketUrl?: Prisma.StringFilter<'Lobby'> | string;
   maxPlayers?: Prisma.IntFilter<'Lobby'> | number;
   createdByUserId?: Prisma.StringNullableFilter<'Lobby'> | string | null;
+  createdByGuestId?: Prisma.StringNullableFilter<'Lobby'> | string | null;
   meta?: Prisma.JsonNullableFilter<'Lobby'>;
   createdAt?: Prisma.DateTimeFilter<'Lobby'> | Date | string;
   updatedAt?: Prisma.DateTimeFilter<'Lobby'> | Date | string;
@@ -626,6 +651,7 @@ export type LobbyCreateManyCreatedByInput = {
   status?: $Enums.LobbyStatus;
   socketUrl: string;
   maxPlayers?: number;
+  createdByGuestId?: string | null;
   meta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -638,6 +664,7 @@ export type LobbyUpdateWithoutCreatedByInput = {
   status?: Prisma.EnumLobbyStatusFieldUpdateOperationsInput | $Enums.LobbyStatus;
   socketUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number;
+  createdByGuestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   meta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -650,6 +677,7 @@ export type LobbyUncheckedUpdateWithoutCreatedByInput = {
   status?: Prisma.EnumLobbyStatusFieldUpdateOperationsInput | $Enums.LobbyStatus;
   socketUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number;
+  createdByGuestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   meta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -662,6 +690,7 @@ export type LobbyUncheckedUpdateManyWithoutCreatedByInput = {
   status?: Prisma.EnumLobbyStatusFieldUpdateOperationsInput | $Enums.LobbyStatus;
   socketUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number;
+  createdByGuestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   meta?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -677,6 +706,7 @@ export type LobbySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
       socketUrl?: boolean;
       maxPlayers?: boolean;
       createdByUserId?: boolean;
+      createdByGuestId?: boolean;
       meta?: boolean;
       createdAt?: boolean;
       updatedAt?: boolean;
@@ -696,6 +726,7 @@ export type LobbySelectCreateManyAndReturn<
     socketUrl?: boolean;
     maxPlayers?: boolean;
     createdByUserId?: boolean;
+    createdByGuestId?: boolean;
     meta?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -715,6 +746,7 @@ export type LobbySelectUpdateManyAndReturn<
     socketUrl?: boolean;
     maxPlayers?: boolean;
     createdByUserId?: boolean;
+    createdByGuestId?: boolean;
     meta?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -731,6 +763,7 @@ export type LobbySelectScalar = {
   socketUrl?: boolean;
   maxPlayers?: boolean;
   createdByUserId?: boolean;
+  createdByGuestId?: boolean;
   meta?: boolean;
   createdAt?: boolean;
   updatedAt?: boolean;
@@ -745,6 +778,7 @@ export type LobbyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = ru
     | 'socketUrl'
     | 'maxPlayers'
     | 'createdByUserId'
+    | 'createdByGuestId'
     | 'meta'
     | 'createdAt'
     | 'updatedAt'
@@ -781,6 +815,7 @@ export type $LobbyPayload<
       socketUrl: string;
       maxPlayers: number;
       createdByUserId: string | null;
+      createdByGuestId: string | null;
       meta: runtime.JsonValue | null;
       createdAt: Date;
       updatedAt: Date;
@@ -1307,6 +1342,7 @@ export interface LobbyFieldRefs {
   readonly socketUrl: Prisma.FieldRef<'Lobby', 'String'>;
   readonly maxPlayers: Prisma.FieldRef<'Lobby', 'Int'>;
   readonly createdByUserId: Prisma.FieldRef<'Lobby', 'String'>;
+  readonly createdByGuestId: Prisma.FieldRef<'Lobby', 'String'>;
   readonly meta: Prisma.FieldRef<'Lobby', 'Json'>;
   readonly createdAt: Prisma.FieldRef<'Lobby', 'DateTime'>;
   readonly updatedAt: Prisma.FieldRef<'Lobby', 'DateTime'>;

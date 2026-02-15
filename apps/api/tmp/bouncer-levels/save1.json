@@ -1,0 +1,14 @@
+{
+  "name": "save1",
+  "gridSize": 32,
+  "objects": [
+    {
+      "type": "platform",
+      "name": "platform_1768284852485",
+      "x": 560,
+      "y": 336,
+      "width": 736,
+      "height": 224
+    }
+  ]
+}

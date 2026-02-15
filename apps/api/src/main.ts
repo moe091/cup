@@ -3,6 +3,7 @@ import session from 'express-session';
 import passport from 'passport';
 import { AppModule } from './app.module';
 import 'dotenv/config';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -22,6 +23,7 @@ async function bootstrap() {
 
   app.use(passport.initialize());
   app.use(passport.session());
+  app.use(cookieParser());
 
   await app.listen(process.env.PORT ?? 3000);
 }

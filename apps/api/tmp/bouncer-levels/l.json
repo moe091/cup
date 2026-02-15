@@ -1,0 +1,46 @@
+{
+  "name": "l",
+  "gridSize": 32,
+  "objects": [
+    {
+      "type": "platform",
+      "name": "platform_1768100745311",
+      "x": 176,
+      "y": 288,
+      "width": 416,
+      "height": 64
+    },
+    {
+      "type": "platform",
+      "name": "platform_1768100749011",
+      "x": 720,
+      "y": 288,
+      "width": 672,
+      "height": 64
+    },
+    {
+      "type": "platform",
+      "name": "platform_1768100755563",
+      "x": 1648,
+      "y": 288,
+      "width": 1184,
+      "height": 64
+    },
+    {
+      "type": "platform",
+      "name": "platform_1768100760037",
+      "x": 2576,
+      "y": 288,
+      "width": 672,
+      "height": 64
+    },
+    {
+      "type": "platform",
+      "name": "platform_1768100766628",
+      "x": 3248,
+      "y": 144,
+      "width": 608,
+      "height": 352
+    }
+  ]
+}
