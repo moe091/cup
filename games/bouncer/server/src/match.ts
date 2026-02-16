@@ -154,7 +154,9 @@ export class Match {
     this.awaitingAcks.delete(socket.data.playerId as PlayerId);
 
     if (this.awaitingAcks.size === 0 && this.afterAcks) {
-      this.afterAcks();
+      const afterAcks = this.afterAcks;
+      this.afterAcks = null;
+      afterAcks();
     }
   }
 

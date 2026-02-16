@@ -59,7 +59,7 @@ export function createPolygonBody(
   vertices: Array<{ x: number; y: number }>,
   name: string,
   friction: number = 0.8,
-  restitution: number = 0.5,
+  restitution: number = 0,
 ): planck.Body {
   // 1. Calculate centroid in pixel coordinates
   const centroid = calculateCentroid(vertices);

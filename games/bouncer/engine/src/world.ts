@@ -184,8 +184,8 @@ export class World {
       body.createFixture({
         shape,
         density: 0.8,
-        friction: 0.4,
-        restitution: 0.3,
+        friction: 0.5,
+        restitution: 0,
       });
 
       const sensorPos = new planck.Vec2(spawnPos.x, spawnPos.y + this.groundSensorOffset);
@@ -284,13 +284,13 @@ export class World {
         body.setUserData(obj.name);
         const box = new planck.Box(toWorld(obj.width / 2), toWorld(obj.height / 2));
 
-        body.createFixture(box, { friction: 0.8, restitution: 0.5 });
+        body.createFixture(box, { friction: 0.8, restitution: 0 });
         return;
       }
 
       if (obj.type === 'polygon') {
         const friction = obj.friction ?? 0.8;
-        const restitution = obj.restitution ?? 0.5;
+        const restitution = 0;
 
         createPolygonBody(this.physics, obj.vertices, obj.name, friction, restitution);
         return;

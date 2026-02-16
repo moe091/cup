@@ -13,7 +13,6 @@ import {
 } from '@cup/bouncer-shared';
 import { WaitingRoomScene } from './scenes/WaitingRoom';
 import { BootScene } from './scenes/Boot';
-import { loadLevelDef } from './api/levels';
 
 /**
  * The root of the actual bouncer game client. This class is created after all the
@@ -27,6 +26,12 @@ export class BouncerClient {
   private socket: Socket;
   private gameplayScene: GameplayScene | undefined;
   private waitingRoomScene: WaitingRoomScene | undefined;
+  private pendingLevel: LevelDefinition | null = null;
+  private pendingInitializePlayers: InitializePlayersPayload | null = null;
+  private pendingGameplayStatus: MatchStatus | null = null;
+  private wantsGameplay = false;
+  private isGameplayStarted = false;
+  private hasSentClientReadyForQueue = false;
 
   constructor(socket: Socket, containerEl: HTMLElement) {
     this.socket = socket;
@@ -67,9 +72,32 @@ export class BouncerClient {
 
   onMatchStatusUpdate(status: MatchStatus) {
     console.log(`[BouncerClient.onMatchStatusUpdate] (SocketID :: ${this.socket.id}) Match Status = `, status);
-    if (status.phase === 'WAITING') this.startOrContinueWaiting(status);
-    else if (status.phase === 'IN_PROGRESS_QUEUED' || status.phase === 'IN_PROGRESS')
-      this.startOrContinueGameplay(status);
+    if (status.phase === 'WAITING') {
+      this.wantsGameplay = false;
+      this.pendingGameplayStatus = null;
+      this.hasSentClientReadyForQueue = false;
+      this.startOrContinueWaiting(status);
+      return;
+    }
+
+    if (status.phase === 'IN_PROGRESS_QUEUED' || status.phase === 'IN_PROGRESS') {
+      this.wantsGameplay = true;
+      this.pendingGameplayStatus = status;
+
+      if (status.phase === 'IN_PROGRESS_QUEUED' && !this.hasSentClientReadyForQueue) {
+        this.emitMessage('client_ready', 'IN_PROGRESS');
+        this.hasSentClientReadyForQueue = true;
+      }
+
+      if (status.phase === 'IN_PROGRESS') {
+        this.hasSentClientReadyForQueue = false;
+      }
+
+      this.tryStartGameplay();
+      if (this.isGameplayStarted) {
+        this.startOrContinueGameplay(status);
+      }
+    }
   }
 
   onSetLevel(level: LevelListItem) {
@@ -77,7 +105,8 @@ export class BouncerClient {
   }
 
   async onLoadLevel(level: LevelDefinition) {
-    this.gameplayScene?.loadLevel(level);
+    this.pendingLevel = level;
+    this.tryStartGameplay();
   }
 
   onMatchCountdownUpdate(data: MatchCountdown) {
@@ -86,7 +115,8 @@ export class BouncerClient {
   }
 
   onInitializePlayers(payload: InitializePlayersPayload) {
-    this.gameplayScene?.onInitializePlayers(payload);
+    this.pendingInitializePlayers = payload;
+    this.tryStartGameplay();
   }
 
   onRemotePlayerState(update: RemotePlayerStateUpdate) {
@@ -99,18 +129,24 @@ export class BouncerClient {
 
   // ------------- Scene Helpers -------------- \\
   startOrContinueWaiting(status: MatchStatus) {
-    if (!this.game.scene.isActive('waitingRoom')) {
+    const waitingActive = this.game.scene.isActive('waitingRoom');
+    const gameplayActive = this.game.scene.isActive('gameplay');
+
+    if (!waitingActive && gameplayActive) {
       this.game.scene.stop('gameplay');
       this.game.scene.start('waitingRoom');
     }
+
+    this.isGameplayStarted = false;
+    this.pendingLevel = null;
+    this.pendingInitializePlayers = null;
+    this.pendingGameplayStatus = null;
+    this.hasSentClientReadyForQueue = false;
     this.waitingRoomScene?.statusUpdate(status);
   }
 
   startOrContinueGameplay(status: MatchStatus) {
-    if (!this.game.scene.isActive('gameplay')) {
-      this.game.scene.stop('waitingRoom');
-      this.game.scene.start('gameplay');
-    }
+    this.ensureGameplaySceneStarted();
     this.gameplayScene?.statusUpdate(status);
   }
 
@@ -127,5 +163,33 @@ export class BouncerClient {
     }
 
     this.socket.emit(name, data);
+  }
+
+  private tryStartGameplay() {
+    if (!this.wantsGameplay) {
+      return;
+    }
+    if (!this.pendingLevel || !this.pendingInitializePlayers) {
+      return;
+    }
+
+    this.ensureGameplaySceneStarted();
+
+    this.gameplayScene?.loadLevel(this.pendingLevel);
+    this.gameplayScene?.onInitializePlayers(this.pendingInitializePlayers);
+    if (this.pendingGameplayStatus) {
+      this.gameplayScene?.statusUpdate(this.pendingGameplayStatus);
+    }
+
+    this.pendingLevel = null;
+    this.pendingInitializePlayers = null;
+  }
+
+  private ensureGameplaySceneStarted() {
+    if (!this.game.scene.isActive('gameplay')) {
+      this.game.scene.stop('waitingRoom');
+      this.game.scene.start('gameplay');
+    }
+    this.isGameplayStarted = true;
   }
 }

@@ -11,6 +11,7 @@ export class WaitingRoomScene extends Phaser.Scene {
   private waitingRoomUI: WaitingRoomUI | null = null;
   private selectedLevel: LevelListItem | null = null;
   private levelList: LevelListItem[] = [];
+  private isShuttingDown = false;
 
   constructor(
     private playerId: string,
@@ -34,6 +35,9 @@ export class WaitingRoomScene extends Phaser.Scene {
   }
 
   async create() {
+    this.isShuttingDown = false;
+    this.events.once('shutdown', this.onShutdown, this);
+
     this.fullscreenListener();
 
     this.isReady = true;
@@ -44,14 +48,16 @@ export class WaitingRoomScene extends Phaser.Scene {
 
     // Load available levels (only for creators)
     if (this.role === 'creator') {
-      this.levelList = await listLevels();
+      const levels = await listLevels();
+      if (this.isShuttingDown || !this.sys.isActive()) {
+        return;
+      }
+      this.levelList = levels;
       console.log('GOT LEVEL LIST: ', this.levelList);
     }
 
     // Try to create UI components now that we're ready
     this.createUIComponents();
-
-    this.events.once('shutdown', this.onShutdown, this);
   }
 
   private createUIComponents() {
@@ -146,6 +152,7 @@ export class WaitingRoomScene extends Phaser.Scene {
   }
 
   private onShutdown() {
+    this.isShuttingDown = true;
     this.levelSelector?.destroy();
     this.levelSelector = null;
     this.waitingRoomUI?.destroy();

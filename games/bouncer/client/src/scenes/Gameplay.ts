@@ -10,10 +10,11 @@ import type {
   RemotePlayerStateUpdate,
 } from '@cup/bouncer-shared';
 import { InputController } from '../misc/InputController';
+import { ParallaxBackground } from '../misc/ParallaxBackground';
 import { RemoteSmoother } from '../misc/RemoteSmoother';
 
 type ShadowSprite = Phaser.GameObjects.Sprite & {
-  shadow: Phaser.GameObjects.Arc;
+  shadow?: Phaser.GameObjects.Arc;
 };
 
 const LOCAL_SIM_HZ = 30;
@@ -26,6 +27,27 @@ const HARD_SNAP_X_PX = 140;
 const HARD_SNAP_Y_PX = 28;
 const POSITION_DEADZONE_X_PX = 0.8;
 const POSITION_DEADZONE_Y_PX = 0.6;
+const ENABLE_SHADOWS = false;
+const PLAYER_BALL_DIAMETER_PX = 52;
+
+const PLATFORM_GLOW_COLOR = 0xa7d6ff;
+const PLATFORM_BASE_COLOR = 0xcfe9ff;
+const PLATFORM_TOP_HIGHLIGHT_COLOR = 0xe9f7ff;
+const PLATFORM_BOTTOM_SHADE_COLOR = 0x78a7cf;
+const PLATFORM_BASE_ALPHA = 0.8;
+const PLATFORM_FOREGROUND_COLOR = 0x5e88c7;
+// Quick alternates for A/B:
+// const PLATFORM_FOREGROUND_COLOR = 0x6e97d4;
+// const PLATFORM_FOREGROUND_COLOR = 0x4f79b8;
+
+type PlatformRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+type PolygonVerts = Array<{ x: number; y: number }>;
 
 export class GameplayScene extends Phaser.Scene {
   private readyText: Phaser.GameObjects.Text | undefined;
@@ -33,9 +55,9 @@ export class GameplayScene extends Phaser.Scene {
   private balls = new Map<string, ShadowSprite>();
   private me: ShadowSprite | undefined;
   private inputController: InputController = new InputController();
-  private levelRects: Phaser.GameObjects.TileSprite[] = [];
+  private levelRects: Phaser.GameObjects.GameObject[] = [];
   private levelPolygons: Phaser.GameObjects.Container[] = [];
-  private bg: Phaser.GameObjects.TileSprite | undefined;
+  private parallaxBg: ParallaxBackground | null = null;
   private shadowOffset = { x: 8, y: -10 };
   private engine: Engine | null = null;
   private levelDef: LevelDefinition | null = null;
@@ -86,7 +108,6 @@ export class GameplayScene extends Phaser.Scene {
     this.inputController.onInput(this, this.handleInput.bind(this));
 
     this.events.once('destroy', this.onDestroy, this);
-    this.emit('client_ready', 'IN_PROGRESS');
   }
 
   statusUpdate(status: MatchStatus) {
@@ -157,8 +178,8 @@ export class GameplayScene extends Phaser.Scene {
     this.levelRects = [];
     for (const poly of this.levelPolygons) poly.destroy();
     this.levelPolygons = [];
-    this.bg?.destroy();
-    this.bg = undefined;
+    this.parallaxBg?.destroy();
+    this.parallaxBg = null;
 
     this.levelDef = level;
     this.hasStartedMatch = false;
@@ -167,28 +188,35 @@ export class GameplayScene extends Phaser.Scene {
     let minY = 0;
     let maxX = 0;
     let maxY = 0;
+    const platformRects: PlatformRect[] = [];
+    const polygonDefs: PolygonVerts[] = [];
 
     level.objects.forEach((obj) => {
       if (obj.type === 'platform') {
-        const platform = this.add
-          .tileSprite(obj.x, obj.y, obj.width, obj.height, 'platform_texture')
-          .setOrigin(0.5)
-          .setDepth(-10);
+        // Preserved textured platform rendering for quick restore later:
+        // const platform = this.add
+        //   .tileSprite(obj.x, obj.y, obj.width, obj.height, 'platform_texture')
+        //   .setOrigin(0.5)
+        //   .setDepth(-10);
+        // this.add
+        //   .rectangle(obj.x + 18, obj.y - 15, obj.width, obj.height, 0x000000, 0.4)
+        //   .setOrigin(0.5)
+        //   .setDepth(-11);
 
-        this.add
-          .rectangle(obj.x + 18, obj.y - 15, obj.width, obj.height, 0x000000, 0.4)
-          .setOrigin(0.5)
-          .setDepth(-11);
+        platformRects.push({
+          x: obj.x,
+          y: obj.y,
+          width: obj.width,
+          height: obj.height,
+        });
 
         if (obj.x - obj.width / 2 < minX) minX = obj.x - obj.width / 2;
         if (obj.x + obj.width / 2 > maxX) maxX = obj.x + obj.width / 2;
         if (obj.y - obj.height / 2 < minY) minY = obj.y - obj.height / 2;
         if (obj.y + obj.height / 2 > maxY) maxY = obj.y + obj.height / 2;
 
-        this.levelRects.push(platform);
       } else if (obj.type === 'polygon') {
-        const polygonContainer = this.createTexturedPolygon(obj.vertices);
-        this.levelPolygons.push(polygonContainer);
+        polygonDefs.push(obj.vertices);
 
         obj.vertices.forEach((v) => {
           if (v.x < minX) minX = v.x;
@@ -201,12 +229,68 @@ export class GameplayScene extends Phaser.Scene {
       }
     });
 
-    this.bg = this.add
-      .tileSprite(minX - 500, minY - 500, maxX - minX + 1000, maxY - minY + 1000, 'bg_texture')
-      .setOrigin(0)
-      .setDepth(-100);
+    this.renderUnifiedTerrain(platformRects, polygonDefs, minX, minY, maxX, maxY);
+
+    this.parallaxBg = ParallaxBackground.create(this, {
+      x: minX,
+      y: minY,
+      width: Math.max(1, maxX - minX),
+      height: Math.max(1, maxY - minY),
+      padding: 1200,
+    })
+      .addLayer(-140, 'nebula_red.png', 0.08, 0.95)
+      .addLayer(-130, 'stars_small_1.png', 0.3, 0.9)
+      .addLayer(-120, 'stars_big_1.png', 0.55, 1);
 
     this.initializeLocalEngineIfReady();
+  }
+
+  private renderUnifiedTerrain(
+    platformRects: PlatformRect[],
+    polygons: PolygonVerts[],
+    minX: number,
+    minY: number,
+    maxX: number,
+    maxY: number,
+  ) {
+    const maskGraphics = this.make.graphics();
+    maskGraphics.fillStyle(0xffffff, 1);
+
+    for (const rect of platformRects) {
+      maskGraphics.fillRect(
+        rect.x - rect.width / 2,
+        rect.y - rect.height / 2,
+        rect.width,
+        rect.height,
+      );
+    }
+
+    for (const vertices of polygons) {
+      maskGraphics.beginPath();
+      maskGraphics.moveTo(vertices[0].x, vertices[0].y);
+      for (let i = 1; i < vertices.length; i++) {
+        maskGraphics.lineTo(vertices[i].x, vertices[i].y);
+      }
+      maskGraphics.closePath();
+      maskGraphics.fillPath();
+    }
+
+    const geometryMask = new Phaser.Display.Masks.GeometryMask(this, maskGraphics);
+
+    const terrainX = minX - 500;
+    const terrainY = minY - 500;
+    const terrainWidth = Math.max(1, maxX - minX + 1000);
+    const terrainHeight = Math.max(1, maxY - minY + 1000);
+    const terrainCenterX = terrainX + terrainWidth / 2;
+    const terrainCenterY = terrainY + terrainHeight / 2;
+
+    const terrainFill = this.add
+      .rectangle(terrainCenterX, terrainCenterY, terrainWidth, terrainHeight, PLATFORM_FOREGROUND_COLOR, 0.8)
+      .setDepth(-10)
+      .setOrigin(0.5);
+    terrainFill.setMask(geometryMask);
+
+    this.levelRects.push(maskGraphics, terrainFill);
   }
 
   private stepLocalSimulation() {
@@ -234,7 +318,7 @@ export class GameplayScene extends Phaser.Scene {
     const mySprite = this.balls.get(this.playerId);
     if (mySprite) {
       mySprite.setPosition(me.x, me.y);
-      mySprite.shadow.setPosition(me.x + 8, me.y - 10);
+      mySprite.shadow?.setPosition(me.x + 8, me.y - 10);
       mySprite.setRotation(me.angle);
     }
 
@@ -291,7 +375,7 @@ export class GameplayScene extends Phaser.Scene {
 
         sprite.setPosition(nextX, nextY);
       }
-      sprite.shadow.setPosition(sprite.x + 8, sprite.y - 10);
+      sprite.shadow?.setPosition(sprite.x + 8, sprite.y - 10);
       sprite.setRotation(Phaser.Math.Angle.RotateTo(sprite.rotation, sample.angle, 0.35));
     }
   }
@@ -307,7 +391,7 @@ export class GameplayScene extends Phaser.Scene {
 
     for (const sprite of this.balls.values()) {
       sprite.destroy();
-      sprite.shadow.destroy();
+      sprite.shadow?.destroy();
     }
     this.balls.clear();
     this.remoteSmoother.clearAll();
@@ -350,8 +434,12 @@ export class GameplayScene extends Phaser.Scene {
   }
 
   private createBallSprite(playerId: string, x: number, y: number): ShadowSprite {
-    const sprite = this.add.sprite(x, y, playerId === this.playerId ? 'ball_green' : 'ball_red') as ShadowSprite;
-    sprite.shadow = this.add.circle(x + 8, y - 10, 26, 0x000000, 0.4).setDepth(-2);
+    const sprite = this.add
+      .sprite(x, y, playerId === this.playerId ? 'ball_green' : 'ball_red')
+      .setDisplaySize(PLAYER_BALL_DIAMETER_PX, PLAYER_BALL_DIAMETER_PX) as ShadowSprite;
+    if (ENABLE_SHADOWS) {
+      sprite.shadow = this.add.circle(x + 8, y - 10, 26, 0x000000, 0.4).setDepth(-2);
+    }
     return sprite;
   }
 
@@ -368,24 +456,38 @@ export class GameplayScene extends Phaser.Scene {
       if (v.y > maxY) maxY = v.y;
     });
 
-    const width = maxX - minX;
-    const height = maxY - minY;
-    const centerX = (minX + maxX) / 2;
-    const centerY = (minY + maxY) / 2;
+    // Preserved textured polygon rendering for quick restore later:
+    // const width = maxX - minX;
+    // const height = maxY - minY;
+    // const centerX = (minX + maxX) / 2;
+    // const centerY = (minY + maxY) / 2;
+    // const shadowGraphics = this.add.graphics();
+    // shadowGraphics.fillStyle(0x000000, 0.4);
+    // shadowGraphics.beginPath();
+    // shadowGraphics.moveTo(vertices[0].x + this.shadowOffset.x, vertices[0].y + this.shadowOffset.y);
+    // for (let i = 1; i < vertices.length; i++) {
+    //   shadowGraphics.lineTo(vertices[i].x + this.shadowOffset.x, vertices[i].y + this.shadowOffset.y);
+    // }
+    // shadowGraphics.closePath();
+    // shadowGraphics.fillPath();
+    // shadowGraphics.setDepth(-11);
+    // const graphics = this.make.graphics();
+    // graphics.fillStyle(0xffffff);
+    // graphics.beginPath();
+    // graphics.moveTo(vertices[0].x, vertices[0].y);
+    // for (let i = 1; i < vertices.length; i++) {
+    //   graphics.lineTo(vertices[i].x, vertices[i].y);
+    // }
+    // graphics.closePath();
+    // graphics.fillPath();
+    // const mask = new Phaser.Display.Masks.GeometryMask(this, graphics);
+    // const texture = this.add.tileSprite(centerX, centerY, width, height, 'platform_texture');
+    // texture.setMask(mask);
+    // texture.setDepth(-10);
+    // return this.add.container(0, 0, [shadowGraphics, texture]);
 
-    const shadowGraphics = this.add.graphics();
-    shadowGraphics.fillStyle(0x000000, 0.4);
-    shadowGraphics.beginPath();
-    shadowGraphics.moveTo(vertices[0].x + this.shadowOffset.x, vertices[0].y + this.shadowOffset.y);
-    for (let i = 1; i < vertices.length; i++) {
-      shadowGraphics.lineTo(vertices[i].x + this.shadowOffset.x, vertices[i].y + this.shadowOffset.y);
-    }
-    shadowGraphics.closePath();
-    shadowGraphics.fillPath();
-    shadowGraphics.setDepth(-11);
-
-    const graphics = this.make.graphics();
-    graphics.fillStyle(0xffffff);
+    const graphics = this.add.graphics();
+    graphics.fillStyle(0xffffff, 1);
     graphics.beginPath();
     graphics.moveTo(vertices[0].x, vertices[0].y);
     for (let i = 1; i < vertices.length; i++) {
@@ -393,17 +495,90 @@ export class GameplayScene extends Phaser.Scene {
     }
     graphics.closePath();
     graphics.fillPath();
+    graphics.setDepth(-10);
 
-    const mask = new Phaser.Display.Masks.GeometryMask(this, graphics);
-    const texture = this.add.tileSprite(centerX, centerY, width, height, 'platform_texture');
-    texture.setMask(mask);
-    texture.setDepth(-10);
+    return this.add.container(0, 0, [graphics]);
+  }
 
-    return this.add.container(0, 0, [shadowGraphics, texture]);
+  private createFrostedPlatform(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): Phaser.GameObjects.Container {
+    const container = this.add.container(0, 0);
+
+    const glow = this.add
+      .rectangle(x, y, width + 16, height + 16, PLATFORM_GLOW_COLOR, 0.18)
+      .setOrigin(0.5)
+      .setDepth(-12);
+    glow.setBlendMode(Phaser.BlendModes.ADD);
+
+    const base = this.add
+      .rectangle(x, y, width, height, PLATFORM_BASE_COLOR, PLATFORM_BASE_ALPHA)
+      .setOrigin(0.5)
+      .setDepth(-10);
+    base.setBlendMode(Phaser.BlendModes.SCREEN);
+
+    const topStripHeight = Math.min(4, Math.max(2, height * 0.14));
+    const topHighlight = this.add
+      .rectangle(x, y - height / 2 + topStripHeight / 2, Math.max(0, width - 4), topStripHeight, PLATFORM_TOP_HIGHLIGHT_COLOR, 0.3)
+      .setOrigin(0.5)
+      .setDepth(-9);
+
+    const bottomStripHeight = Math.min(6, Math.max(3, height * 0.2));
+    const bottomShade = this.add
+      .rectangle(x, y + height / 2 - bottomStripHeight / 2, Math.max(0, width - 4), bottomStripHeight, PLATFORM_BOTTOM_SHADE_COLOR, 0.22)
+      .setOrigin(0.5)
+      .setDepth(-9);
+
+    container.add([glow, base, topHighlight, bottomShade]);
+    return container;
+  }
+
+  private createFrostedPolygon(vertices: Array<{ x: number; y: number }>): Phaser.GameObjects.Container {
+    const glow = this.add.graphics();
+    glow.fillStyle(PLATFORM_GLOW_COLOR, 0.15);
+    glow.beginPath();
+    glow.moveTo(vertices[0].x, vertices[0].y);
+    for (let i = 1; i < vertices.length; i++) {
+      glow.lineTo(vertices[i].x, vertices[i].y);
+    }
+    glow.closePath();
+    glow.fillPath();
+    glow.setDepth(-12);
+    glow.setBlendMode(Phaser.BlendModes.ADD);
+
+    const base = this.add.graphics();
+    base.fillStyle(PLATFORM_BASE_COLOR, PLATFORM_BASE_ALPHA);
+    base.beginPath();
+    base.moveTo(vertices[0].x, vertices[0].y);
+    for (let i = 1; i < vertices.length; i++) {
+      base.lineTo(vertices[i].x, vertices[i].y);
+    }
+    base.closePath();
+    base.fillPath();
+    base.setDepth(-10);
+    base.setBlendMode(Phaser.BlendModes.SCREEN);
+
+    const highlight = this.add.graphics();
+    highlight.lineStyle(1, PLATFORM_TOP_HIGHLIGHT_COLOR, 0.24);
+    highlight.beginPath();
+    highlight.moveTo(vertices[0].x, vertices[0].y);
+    for (let i = 1; i < vertices.length; i++) {
+      highlight.lineTo(vertices[i].x, vertices[i].y);
+    }
+    highlight.closePath();
+    highlight.strokePath();
+    highlight.setDepth(-9);
+
+    return this.add.container(0, 0, [glow, base, highlight]);
   }
 
   onDestroy() {
     this.inputController.dispose();
+    this.parallaxBg?.destroy();
+    this.parallaxBg = null;
     this.remoteSmoother.clearAll();
   }
 }
