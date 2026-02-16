@@ -8,6 +8,7 @@ import type {
   PlayerInputState,
   PlayerStateUpdate,
   RemotePlayerStateUpdate,
+  RoundResultsUpdate,
 } from '@cup/bouncer-shared';
 import { InputController } from '../misc/InputController';
 import { ParallaxBackground } from '../misc/ParallaxBackground';
@@ -71,6 +72,7 @@ export class GameplayScene extends Phaser.Scene {
   private hasStartedMatch = false;
   private hasReportedFinish = false;
   private finishedOrder: string[] = [];
+  private roundResultsModal: Phaser.GameObjects.Container | null = null;
 
   constructor(
     private playerId: string,
@@ -113,6 +115,11 @@ export class GameplayScene extends Phaser.Scene {
   statusUpdate(status: MatchStatus) {
     if (status.phase === 'IN_PROGRESS') {
       this.hasStartedMatch = true;
+      return;
+    }
+
+    if (status.phase === 'ROUND_END' || status.phase === 'WAITING') {
+      this.hasStartedMatch = false;
     }
   }
 
@@ -433,6 +440,219 @@ export class GameplayScene extends Phaser.Scene {
     this.emit('player_finished', {});
   }
 
+  showRoundResultsModal(results: RoundResultsUpdate) {
+    this.roundResultsModal?.destroy(true);
+    this.roundResultsModal = null;
+
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const modalWidth = Math.floor(width * 0.94);
+    const modalHeight = Math.floor(height * 0.92);
+    const cx = width / 2;
+    const cy = height / 2;
+
+    const zoom = this.cameras.main.zoom || 1;
+    const uiScaleCompensation = 1 / zoom;
+
+    const root = this.add
+      .container(cx * (1 - uiScaleCompensation), cy * (1 - uiScaleCompensation))
+      .setDepth(10_000)
+      .setScrollFactor(0)
+      .setScale(uiScaleCompensation);
+    const backdrop = this.add
+      .rectangle(cx, cy, width, height, 0x020409, 0.68)
+      .setScrollFactor(0)
+      .setOrigin(0.5);
+    const panel = this.add
+      .rectangle(cx, cy, modalWidth, modalHeight, 0x0d1422, 0.94)
+      .setScrollFactor(0)
+      .setOrigin(0.5);
+    panel.setStrokeStyle(2, 0x3e5d88, 0.9);
+
+    const title = this.add
+      .text(cx, cy - modalHeight / 2 + 28, 'Round Results', {
+        fontFamily: 'Arial',
+        fontSize: '34px',
+        color: '#f4f8ff',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0);
+
+    const firstTime =
+      results.players.find((p) => p.finishPlace === 1 && typeof p.finishTimeMs === 'number')?.finishTimeMs ?? null;
+
+    const rowStartY = cy - modalHeight / 2 + 98;
+    const rowGap = 54;
+    const left = cx - modalWidth / 2 + 18;
+    const placeX = left + 4;
+    const orbX = placeX + 54;
+    const nameX = orbX + 24;
+    const timeX = left + 420;
+    const deltaX = left + 540;
+    const pointsX = left + 650;
+    const totalX = left + 735;
+
+    const placeHeader = this.add
+      .text(placeX, rowStartY - 34, 'Place', {
+        fontFamily: 'Arial',
+        fontSize: '15px',
+        color: '#9eb4d6',
+      })
+      .setScrollFactor(0);
+
+    const playerHeader = this.add
+      .text(nameX, rowStartY - 34, 'Player', {
+        fontFamily: 'Arial',
+        fontSize: '15px',
+        color: '#9eb4d6',
+      })
+      .setScrollFactor(0);
+
+    const timeHeader = this.add
+      .text(timeX, rowStartY - 34, 'Time', {
+        fontFamily: 'Arial',
+        fontSize: '15px',
+        color: '#9eb4d6',
+      })
+      .setScrollFactor(0);
+
+    const deltaHeader = this.add
+      .text(deltaX, rowStartY - 34, 'Delta', {
+        fontFamily: 'Arial',
+        fontSize: '15px',
+        color: '#9eb4d6',
+      })
+      .setScrollFactor(0);
+
+    const pointsHeader = this.add
+      .text(pointsX, rowStartY - 34, '+Pts', {
+        fontFamily: 'Arial',
+        fontSize: '15px',
+        color: '#9eb4d6',
+      })
+      .setScrollFactor(0);
+
+    const totalHeader = this.add
+      .text(totalX, rowStartY - 34, 'Total', {
+        fontFamily: 'Arial',
+        fontSize: '15px',
+        color: '#9eb4d6',
+      })
+      .setScrollFactor(0);
+
+    root.add([backdrop, panel, title, placeHeader, playerHeader, timeHeader, deltaHeader, pointsHeader, totalHeader]);
+
+    const rows = results.players.slice(0, 8);
+    rows.forEach((player, idx) => {
+      const y = rowStartY + idx * rowGap;
+
+      const placeLabel = this.formatPlace(player.finishPlace, player.dnf);
+      const placeColor = player.finishPlace === 1 ? '#ffe27d' : '#d4e3ff';
+      const placeText = this.add
+        .text(placeX, y, placeLabel, {
+          fontFamily: 'Arial',
+          fontSize: '26px',
+          color: placeColor,
+          fontStyle: 'bold',
+        })
+        .setOrigin(0, 0.5)
+        .setScrollFactor(0);
+
+      const isMe = player.playerId === this.playerId;
+      const orb = this.add
+        .sprite(orbX, y, isMe ? 'ball_green' : 'ball_red')
+        .setDisplaySize(24, 24)
+        .setOrigin(0.5)
+        .setScrollFactor(0);
+
+      const name = this.add
+        .text(nameX, y, isMe ? 'YOU' : player.displayName, {
+          fontFamily: 'Arial',
+          fontSize: '22px',
+          color: '#f4f8ff',
+        })
+        .setOrigin(0, 0.5)
+        .setScrollFactor(0);
+
+      const timeText = this.add
+        .text(timeX, y, this.formatTime(player.finishTimeMs, player.dnf), {
+          fontFamily: 'Arial',
+          fontSize: '20px',
+          color: '#ffffff',
+          fontStyle: 'bold',
+        })
+        .setOrigin(0, 0.5)
+        .setScrollFactor(0);
+
+      const deltaText = this.add
+        .text(deltaX, y, this.formatDelta(player.finishTimeMs, player.dnf, firstTime), {
+          fontFamily: 'Arial',
+          fontSize: '18px',
+          color: '#ff6e6e',
+        })
+        .setOrigin(0, 0.5)
+        .setScrollFactor(0);
+
+      const pointsText = this.add
+        .text(pointsX, y, `+${player.pointsEarned}`, {
+          fontFamily: 'Arial',
+          fontSize: '20px',
+          color: '#a5d0ff',
+          fontStyle: 'bold',
+        })
+        .setOrigin(0, 0.5)
+        .setScrollFactor(0);
+
+      const totalText = this.add
+        .text(totalX, y, String(player.totalPoints), {
+          fontFamily: 'Arial',
+          fontSize: '20px',
+          color: '#d9ecff',
+          fontStyle: 'bold',
+        })
+        .setOrigin(0, 0.5)
+        .setScrollFactor(0);
+
+      root.add([placeText, orb, name, timeText, deltaText, pointsText, totalText]);
+    });
+
+    const secondsLeft = Math.max(0, Math.ceil((results.waitingAtMs - Date.now()) / 1000));
+    const footer = this.add
+      .text(cx, cy + modalHeight / 2 - 24, `Waiting room in ${secondsLeft}s`, {
+        fontFamily: 'Arial',
+        fontSize: '16px',
+        color: '#a9bddf',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0);
+
+    root.add(footer);
+    this.roundResultsModal = root;
+  }
+
+  private formatPlace(place: number | null, dnf: boolean): string {
+    if (dnf || place === null) return 'DNF';
+    const mod100 = place % 100;
+    if (mod100 >= 11 && mod100 <= 13) return `${place}th`;
+    const mod10 = place % 10;
+    if (mod10 === 1) return `${place}st`;
+    if (mod10 === 2) return `${place}nd`;
+    if (mod10 === 3) return `${place}rd`;
+    return `${place}th`;
+  }
+
+  private formatTime(timeMs: number | null, dnf: boolean): string {
+    if (dnf || timeMs === null) return '--';
+    return `${(timeMs / 1000).toFixed(2)}s`;
+  }
+
+  private formatDelta(timeMs: number | null, dnf: boolean, firstTimeMs: number | null): string {
+    if (dnf || timeMs === null || firstTimeMs === null) return '--';
+    const delta = Math.max(0, timeMs - firstTimeMs);
+    return `+${(delta / 1000).toFixed(2)}s`;
+  }
+
   private createBallSprite(playerId: string, x: number, y: number): ShadowSprite {
     const sprite = this.add
       .sprite(x, y, playerId === this.playerId ? 'ball_green' : 'ball_red')
@@ -579,6 +799,8 @@ export class GameplayScene extends Phaser.Scene {
     this.inputController.dispose();
     this.parallaxBg?.destroy();
     this.parallaxBg = null;
+    this.roundResultsModal?.destroy(true);
+    this.roundResultsModal = null;
     this.remoteSmoother.clearAll();
   }
 }

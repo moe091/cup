@@ -9,12 +9,20 @@ import type {
   PlayerStateUpdate,
   RemotePlayerStateUpdate,
   FinishOrderUpdate,
+  RoundResultsUpdate,
+  RoundResultPlayer,
+  RoundEndReason,
+  ScoreGoal,
 } from '@cup/bouncer-shared';
 import type { PlayerId, SocketId, PlayerSession, Broadcast, BroadcastExcept } from './types.js';
 import { loadLevelDef } from './api/helpers.js';
 
+const FINISH_TIMEOUT_MS = 30_000;
+const ROUND_END_DURATION_MS = 7_000;
+
 export class Match {
   private players = new Map<PlayerId, PlayerSession>();
+  private pointsByPlayer = new Map<PlayerId, number>();
   private phase: MatchPhase = 'WAITING';
   private minPlayers = 1;
   private countdownSeconds = 1;
@@ -23,6 +31,14 @@ export class Match {
   private levelDef: LevelDefinition | null = null;
   private levelSelection: LevelListItem | null = null;
   private finishedPlayerIds: PlayerId[] = [];
+  private finishTimesMs = new Map<PlayerId, number>();
+  private firstFinisherAtMs: number | null = null;
+  private roundStartAtMs: number | null = null;
+  private finishTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
+  private roundEndTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
+  private scoreGoal: ScoreGoal = 30;
+  private scoreGoalLocked = false;
+  private hasStartedFirstRound = false;
 
   constructor(
     public matchId: string,
@@ -32,6 +48,9 @@ export class Match {
 
   private addPlayer(playerId: PlayerId, socketId: SocketId, displayName: string, role: string) {
     this.players.set(playerId, { playerId, socketId, displayName, role, ready: false });
+    if (!this.pointsByPlayer.has(playerId)) {
+      this.pointsByPlayer.set(playerId, 0);
+    }
   }
 
   private async loadLevel(): Promise<LevelDefinition | null> {
@@ -45,6 +64,7 @@ export class Match {
   }
 
   private startGame() {
+    this.roundStartAtMs = Date.now();
     this.broadcast('start_match', {});
   }
 
@@ -77,16 +97,127 @@ export class Match {
     return { spawns };
   }
 
+  private pointsForPlace(place: number): number {
+    if (place === 1) return 10;
+    if (place === 2) return 7;
+    if (place === 3) return 5;
+    if (place === 4) return 3;
+    return 1;
+  }
+
+  private getGoalThreshold(): number | null {
+    if (this.scoreGoal === 'NEVER') {
+      return null;
+    }
+    return this.scoreGoal;
+  }
+
+  private resetRoundState() {
+    this.finishedPlayerIds = [];
+    this.finishTimesMs.clear();
+    this.firstFinisherAtMs = null;
+    this.roundStartAtMs = null;
+    if (this.finishTimeoutHandle) {
+      clearTimeout(this.finishTimeoutHandle);
+      this.finishTimeoutHandle = null;
+    }
+    if (this.roundEndTimeoutHandle) {
+      clearTimeout(this.roundEndTimeoutHandle);
+      this.roundEndTimeoutHandle = null;
+    }
+  }
+
+  private maybeEndRoundIfAllFinished() {
+    const totalPlayers = this.players.size;
+    if (totalPlayers === 0) {
+      return;
+    }
+    if (this.finishedPlayerIds.length >= totalPlayers) {
+      this.endRound('all_finished');
+    }
+  }
+
+  private endRound(reason: RoundEndReason) {
+    if (this.phase !== 'IN_PROGRESS') {
+      return;
+    }
+
+    if (this.finishTimeoutHandle) {
+      clearTimeout(this.finishTimeoutHandle);
+      this.finishTimeoutHandle = null;
+    }
+
+    const playersInOrder = Array.from(this.players.values());
+    const finishedSet = new Set(this.finishedPlayerIds);
+    const finishers = this.finishedPlayerIds.map((playerId) => this.players.get(playerId)).filter(Boolean) as PlayerSession[];
+    const dnfs = playersInOrder.filter((p) => !finishedSet.has(p.playerId));
+    const ordered = [...finishers, ...dnfs];
+
+    const roundResults: RoundResultPlayer[] = ordered.map((player, idx) => {
+      const isDnf = !finishedSet.has(player.playerId);
+      const finishPlace = isDnf ? null : idx + 1;
+      const pointsEarned = isDnf ? 0 : this.pointsForPlace(finishPlace);
+      const nextPoints = (this.pointsByPlayer.get(player.playerId) ?? 0) + pointsEarned;
+      this.pointsByPlayer.set(player.playerId, nextPoints);
+
+      return {
+        playerId: player.playerId,
+        displayName: player.displayName,
+        finishPlace,
+        finishTimeMs: this.finishTimesMs.get(player.playerId) ?? null,
+        pointsEarned,
+        totalPoints: nextPoints,
+        dnf: isDnf,
+      };
+    });
+
+    const goalThreshold = this.getGoalThreshold();
+    const winners =
+      goalThreshold === null
+        ? []
+        : roundResults.filter((result) => result.totalPoints >= goalThreshold).map((result) => result.playerId);
+
+    this.setPhase('ROUND_END');
+
+    const waitingAtMs = Date.now() + ROUND_END_DURATION_MS;
+
+    const resultsUpdate: RoundResultsUpdate = {
+      reason,
+      firstFinisherAtMs: this.firstFinisherAtMs,
+      roundEndedAtMs: Date.now(),
+      waitingAtMs,
+      scoreGoal: this.scoreGoal,
+      winners,
+      players: roundResults,
+    };
+    this.broadcast('round_results', resultsUpdate);
+
+    this.roundEndTimeoutHandle = setTimeout(() => {
+      this.roundEndTimeoutHandle = null;
+      if (this.phase === 'ROUND_END') {
+        this.setPhase('WAITING');
+      }
+    }, ROUND_END_DURATION_MS);
+
+    this.finishedPlayerIds = [];
+    this.finishTimesMs.clear();
+    this.firstFinisherAtMs = null;
+    this.roundStartAtMs = null;
+  }
+
   broadcastStatus() {
     const status: MatchStatus = {
       matchId: this.matchId,
       phase: this.phase,
       minPlayers: this.minPlayers,
+      scoreGoal: this.scoreGoal,
+      scoreGoalLocked: this.scoreGoalLocked,
       players: Array.from(this.players.values()).map((player) => ({
         playerId: player.playerId,
         displayName: player.displayName,
         ready: player.ready,
         role: player.role,
+        points: this.pointsByPlayer.get(player.playerId) ?? 0,
       })),
     };
 
@@ -115,9 +246,14 @@ export class Match {
   }
 
   setPhase(val: MatchPhase) {
-    if (this.phase === 'WAITING' && val === 'IN_PROGRESS') {
+    if ((this.phase === 'WAITING' || this.phase === 'ROUND_END') && val === 'IN_PROGRESS') {
       this.phase = 'IN_PROGRESS_QUEUED';
       this.awaitingAcks.clear();
+
+      if (!this.hasStartedFirstRound) {
+        this.hasStartedFirstRound = true;
+        this.scoreGoalLocked = true;
+      }
 
       this.players.forEach((player) => {
         this.awaitingAcks.add(player.playerId);
@@ -134,8 +270,8 @@ export class Match {
   }
 
   async startGameplay() {
+    this.resetRoundState();
     this.setPhase('IN_PROGRESS');
-    this.finishedPlayerIds = [];
 
     const level = await this.loadLevel();
     if (!level) {
@@ -162,7 +298,9 @@ export class Match {
 
   onSetReady(socket: Socket, data: { ready: boolean }) {
     if (socket.data.role === 'creator') {
-      this.setPhase('IN_PROGRESS');
+      if (this.phase === 'WAITING' || this.phase === 'ROUND_END') {
+        this.setPhase('IN_PROGRESS');
+      }
       return;
     }
 
@@ -179,6 +317,25 @@ export class Match {
     console.log(`${socket.data.role}-${socket.data.displayName} updated level selection to: ${level.name}`);
     this.levelSelection = level;
     this.broadcast('set_level', level);
+  }
+
+  onUpdateScoreGoal(socket: Socket, data: unknown) {
+    if (socket.data.role !== 'creator') {
+      return;
+    }
+    if (this.scoreGoalLocked || this.phase !== 'WAITING') {
+      return;
+    }
+
+    if (!data || typeof data !== 'object') {
+      return;
+    }
+
+    const candidate = (data as { scoreGoal?: unknown }).scoreGoal;
+    if (candidate === 20 || candidate === 30 || candidate === 50 || candidate === 100 || candidate === 'NEVER') {
+      this.scoreGoal = candidate;
+      this.broadcastStatus();
+    }
   }
 
   onPlayerState(socket: Socket, data: unknown) {
@@ -213,19 +370,38 @@ export class Match {
       return;
     }
 
+    const now = Date.now();
+    if (!this.firstFinisherAtMs) {
+      this.firstFinisherAtMs = now;
+      this.finishTimeoutHandle = setTimeout(() => {
+        this.endRound('finish_timeout');
+      }, FINISH_TIMEOUT_MS);
+    }
+
+    const finishTimeMs = this.roundStartAtMs ? Math.max(0, now - this.roundStartAtMs) : 0;
+    this.finishTimesMs.set(playerId, finishTimeMs);
     this.finishedPlayerIds.push(playerId);
+
     const finishUpdate: FinishOrderUpdate = {
       finishedPlayerIds: [...this.finishedPlayerIds],
     };
     this.broadcast('finish_order_update', finishUpdate);
+
+    this.maybeEndRoundIfAllFinished();
   }
 
   onLeave(socket: Socket) {
     const playerId = socket.data.playerId as PlayerId | undefined;
     if (playerId) {
       this.players.delete(playerId);
+      this.pointsByPlayer.delete(playerId);
       this.awaitingAcks.delete(playerId);
       this.finishedPlayerIds = this.finishedPlayerIds.filter((id) => id !== playerId);
+      this.finishTimesMs.delete(playerId);
+    }
+
+    if (this.phase === 'IN_PROGRESS') {
+      this.maybeEndRoundIfAllFinished();
     }
 
     this.broadcastStatus();
@@ -238,7 +414,8 @@ export class Match {
   destroy() {
     this.awaitingAcks.clear();
     this.afterAcks = null;
-    this.finishedPlayerIds = [];
+    this.pointsByPlayer.clear();
+    this.resetRoundState();
   }
 
   private parsePlayerStateUpdate(data: unknown): PlayerStateUpdate | null {

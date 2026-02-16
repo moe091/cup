@@ -1,4 +1,4 @@
-import type { MatchJoinInfo, MatchStatus, LevelListItem } from '@cup/bouncer-shared';
+import type { MatchJoinInfo, MatchStatus, LevelListItem, ScoreGoal } from '@cup/bouncer-shared';
 import { listLevels } from '../api/levels';
 import { LevelSelectorSidebar } from '../misc/LevelSelectorSidebar';
 import { WaitingRoomUI } from '../misc/WaitingRoomUI';
@@ -12,6 +12,8 @@ export class WaitingRoomScene extends Phaser.Scene {
   private selectedLevel: LevelListItem | null = null;
   private levelList: LevelListItem[] = [];
   private isShuttingDown = false;
+  private scoreGoal: ScoreGoal = 30;
+  private scoreGoalLocked = false;
 
   constructor(
     private playerId: string,
@@ -37,14 +39,9 @@ export class WaitingRoomScene extends Phaser.Scene {
   async create() {
     this.isShuttingDown = false;
     this.events.once('shutdown', this.onShutdown, this);
+    this.isReady = false;
 
     this.fullscreenListener();
-
-    this.isReady = true;
-    if (this.pendingStatus) {
-      this.statusUpdate(this.pendingStatus);
-      this.pendingStatus = null;
-    }
 
     // Load available levels (only for creators)
     if (this.role === 'creator') {
@@ -58,6 +55,12 @@ export class WaitingRoomScene extends Phaser.Scene {
 
     // Try to create UI components now that we're ready
     this.createUIComponents();
+
+    this.isReady = true;
+    if (this.pendingStatus) {
+      this.statusUpdate(this.pendingStatus);
+      this.pendingStatus = null;
+    }
   }
 
   private createUIComponents() {
@@ -67,7 +70,13 @@ export class WaitingRoomScene extends Phaser.Scene {
 
     // Create waiting room UI (player list + ready button)
     if (!this.waitingRoomUI) {
-      this.waitingRoomUI = new WaitingRoomUI(this, isCreator, this.onReadyClicked.bind(this));
+      this.waitingRoomUI = new WaitingRoomUI(
+        this,
+        isCreator,
+        this.onReadyClicked.bind(this),
+        isCreator ? this.onScoreGoalSelected.bind(this) : undefined,
+      );
+      this.waitingRoomUI.setScoreGoal(this.scoreGoal, this.scoreGoalLocked);
 
       // Update with any pending player status
       if (this.pendingStatus) {
@@ -92,6 +101,10 @@ export class WaitingRoomScene extends Phaser.Scene {
 
   private onReadyClicked() {
     this.emit('set_ready', { ready: true });
+  }
+
+  private onScoreGoalSelected(scoreGoal: ScoreGoal) {
+    this.emit('update_score_goal', { scoreGoal });
   }
 
   private createLevelSelector() {
@@ -137,6 +150,7 @@ export class WaitingRoomScene extends Phaser.Scene {
       displayName: p.displayName,
       ready: p.ready,
       isMe: p.playerId === this.playerId,
+      points: p.points,
     }));
 
     this.waitingRoomUI?.updatePlayers(players);
@@ -147,6 +161,10 @@ export class WaitingRoomScene extends Phaser.Scene {
       this.pendingStatus = status;
       return;
     }
+
+    this.scoreGoal = status.scoreGoal;
+    this.scoreGoalLocked = status.scoreGoalLocked;
+    this.waitingRoomUI?.setScoreGoal(this.scoreGoal, this.scoreGoalLocked);
 
     this.updatePlayerList(status);
   }

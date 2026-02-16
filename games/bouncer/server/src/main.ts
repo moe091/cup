@@ -55,13 +55,15 @@ ioServer.on('connection', (socket) => {
   socket.join(matchId);
 
   const match = getOrCreateMatch(matchId);
-  if (match.getPhase() !== 'WAITING') {
+  if (match.getPhase() === 'IN_PROGRESS_QUEUED' || match.getPhase() === 'IN_PROGRESS') {
     socket.emit('join_error', { reason: 'match_in_progress' }); //TODO:: handle join_error on client side, display message
     return socket.disconnect(true);
   }
   match.onJoin(socket);
 
   socket.on('update_level_selection', (data) => match.onUpdateLevelSelection(socket, data));
+
+  socket.on('update_score_goal', (data) => match.onUpdateScoreGoal(socket, data));
 
   socket.on('player_state', (data) => match.onPlayerState(socket, data));
 

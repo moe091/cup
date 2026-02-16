@@ -3,13 +3,23 @@ export type MatchJoinInfo = {
   displayName: string;
 };
 
-export type MatchPhase = 'WAITING' | 'IN_PROGRESS_QUEUED' | 'COUNTDOWN' | 'IN_PROGRESS' | 'PAUSED';
+export type ScoreGoal = 20 | 30 | 50 | 100 | 'NEVER';
+
+export type MatchPhase =
+  | 'WAITING'
+  | 'IN_PROGRESS_QUEUED'
+  | 'COUNTDOWN'
+  | 'IN_PROGRESS'
+  | 'ROUND_END'
+  | 'PAUSED';
 
 export type MatchStatus = {
   matchId: string;
   phase: MatchPhase;
   minPlayers: number;
-  players: Array<{ playerId: string; displayName: string; ready: boolean; role: string }>;
+  scoreGoal: ScoreGoal;
+  scoreGoalLocked: boolean;
+  players: Array<{ playerId: string; displayName: string; ready: boolean; role: string; points: number }>;
 };
 
 export type MatchCountdown = {
@@ -54,6 +64,28 @@ export type InitializePlayersPayload = {
 
 export type FinishOrderUpdate = {
   finishedPlayerIds: string[];
+};
+
+export type RoundResultPlayer = {
+  playerId: string;
+  displayName: string;
+  finishPlace: number | null;
+  finishTimeMs: number | null;
+  pointsEarned: number;
+  totalPoints: number;
+  dnf: boolean;
+};
+
+export type RoundEndReason = 'all_finished' | 'finish_timeout';
+
+export type RoundResultsUpdate = {
+  reason: RoundEndReason;
+  firstFinisherAtMs: number | null;
+  roundEndedAtMs: number;
+  waitingAtMs: number;
+  scoreGoal: ScoreGoal;
+  winners: string[];
+  players: RoundResultPlayer[];
 };
 
 export type Ball = {

@@ -10,6 +10,7 @@ import {
   MatchJoinInfo,
   MatchStatus,
   RemotePlayerStateUpdate,
+  RoundResultsUpdate,
 } from '@cup/bouncer-shared';
 import { WaitingRoomScene } from './scenes/WaitingRoom';
 import { BootScene } from './scenes/Boot';
@@ -29,6 +30,8 @@ export class BouncerClient {
   private pendingLevel: LevelDefinition | null = null;
   private pendingInitializePlayers: InitializePlayersPayload | null = null;
   private pendingGameplayStatus: MatchStatus | null = null;
+  private pendingRoundEndStatus: MatchStatus | null = null;
+  private pendingRoundResults: RoundResultsUpdate | null = null;
   private wantsGameplay = false;
   private isGameplayStarted = false;
   private hasSentClientReadyForQueue = false;
@@ -72,7 +75,16 @@ export class BouncerClient {
 
   onMatchStatusUpdate(status: MatchStatus) {
     console.log(`[BouncerClient.onMatchStatusUpdate] (SocketID :: ${this.socket.id}) Match Status = `, status);
+    if (status.phase === 'ROUND_END') {
+      this.pendingRoundEndStatus = status;
+      this.tryShowRoundResults();
+      return;
+    }
+
     if (status.phase === 'WAITING') {
+      this.pendingRoundEndStatus = null;
+      this.pendingRoundResults = null;
+
       this.wantsGameplay = false;
       this.pendingGameplayStatus = null;
       this.hasSentClientReadyForQueue = false;
@@ -127,6 +139,12 @@ export class BouncerClient {
     this.gameplayScene?.onFinishOrderUpdate(update);
   }
 
+  onRoundResultsUpdate(update: RoundResultsUpdate) {
+    console.log('[BouncerClient.onRoundResultsUpdate]', update);
+    this.pendingRoundResults = update;
+    this.tryShowRoundResults();
+  }
+
   // ------------- Scene Helpers -------------- \\
   startOrContinueWaiting(status: MatchStatus) {
     const waitingActive = this.game.scene.isActive('waitingRoom');
@@ -141,6 +159,8 @@ export class BouncerClient {
     this.pendingLevel = null;
     this.pendingInitializePlayers = null;
     this.pendingGameplayStatus = null;
+    this.pendingRoundEndStatus = null;
+    this.pendingRoundResults = null;
     this.hasSentClientReadyForQueue = false;
     this.waitingRoomScene?.statusUpdate(status);
   }
@@ -191,5 +211,23 @@ export class BouncerClient {
       this.game.scene.start('gameplay');
     }
     this.isGameplayStarted = true;
+  }
+
+  private tryShowRoundResults(): boolean {
+    if (!this.pendingRoundResults) {
+      return false;
+    }
+    if (!this.game.scene.isActive('gameplay')) {
+      return false;
+    }
+
+    this.wantsGameplay = false;
+    this.pendingGameplayStatus = null;
+    this.hasSentClientReadyForQueue = false;
+
+    this.gameplayScene?.showRoundResultsModal(this.pendingRoundResults);
+    this.pendingRoundResults = null;
+
+    return true;
   }
 }
