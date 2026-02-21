@@ -223,7 +223,6 @@ export class GameplayScene extends Phaser.Scene {
         if (obj.x + obj.width / 2 > maxX) maxX = obj.x + obj.width / 2;
         if (obj.y - obj.height / 2 < minY) minY = obj.y - obj.height / 2;
         if (obj.y + obj.height / 2 > maxY) maxY = obj.y + obj.height / 2;
-
       } else if (obj.type === 'polygon') {
         polygonDefs.push(obj.vertices);
 
@@ -266,12 +265,7 @@ export class GameplayScene extends Phaser.Scene {
     maskGraphics.fillStyle(0xffffff, 1);
 
     for (const rect of platformRects) {
-      maskGraphics.fillRect(
-        rect.x - rect.width / 2,
-        rect.y - rect.height / 2,
-        rect.width,
-        rect.height,
-      );
+      maskGraphics.fillRect(rect.x - rect.width / 2, rect.y - rect.height / 2, rect.width, rect.height);
     }
 
     for (const vertices of polygons) {
@@ -463,14 +457,8 @@ export class GameplayScene extends Phaser.Scene {
       .setDepth(10_000)
       .setScrollFactor(0)
       .setScale(uiScaleCompensation);
-    const backdrop = this.add
-      .rectangle(cx, cy, width, height, 0x020409, 0.68)
-      .setScrollFactor(0)
-      .setOrigin(0.5);
-    const panel = this.add
-      .rectangle(cx, cy, modalWidth, modalHeight, 0x0d1422, 0.94)
-      .setScrollFactor(0)
-      .setOrigin(0.5);
+    const backdrop = this.add.rectangle(cx, cy, width, height, 0x020409, 0.68).setScrollFactor(0).setOrigin(0.5);
+    const panel = this.add.rectangle(cx, cy, modalWidth, modalHeight, 0x0d1422, 0.94).setScrollFactor(0).setOrigin(0.5);
     panel.setStrokeStyle(2, 0x3e5d88, 0.9);
 
     const title = this.add
@@ -685,10 +673,7 @@ export class GameplayScene extends Phaser.Scene {
       .setScale(uiScaleCompensation);
 
     const backdrop = this.add.rectangle(cx, cy, width, height, 0x03050a, 0.72).setScrollFactor(0).setOrigin(0.5);
-    const panel = this.add
-      .rectangle(cx, cy, modalWidth, modalHeight, 0x131a2b, 0.96)
-      .setScrollFactor(0)
-      .setOrigin(0.5);
+    const panel = this.add.rectangle(cx, cy, modalWidth, modalHeight, 0x131a2b, 0.96).setScrollFactor(0).setOrigin(0.5);
     panel.setStrokeStyle(2, 0x536c9b, 0.95);
 
     const winnerName = this.resolveWinnerLabel(results);
@@ -719,9 +704,15 @@ export class GameplayScene extends Phaser.Scene {
     const nameX = left + 98;
     const scoreX = left + 390;
 
-    const rankHeader = this.add.text(rankX, rowStartY - 30, 'Rank', { fontFamily: 'Arial', fontSize: '15px', color: '#98accf' }).setScrollFactor(0);
-    const playerHeader = this.add.text(nameX, rowStartY - 30, 'Player', { fontFamily: 'Arial', fontSize: '15px', color: '#98accf' }).setScrollFactor(0);
-    const scoreHeader = this.add.text(scoreX, rowStartY - 30, 'Total Points', { fontFamily: 'Arial', fontSize: '15px', color: '#98accf' }).setScrollFactor(0);
+    const rankHeader = this.add
+      .text(rankX, rowStartY - 30, 'Rank', { fontFamily: 'Arial', fontSize: '15px', color: '#98accf' })
+      .setScrollFactor(0);
+    const playerHeader = this.add
+      .text(nameX, rowStartY - 30, 'Player', { fontFamily: 'Arial', fontSize: '15px', color: '#98accf' })
+      .setScrollFactor(0);
+    const scoreHeader = this.add
+      .text(scoreX, rowStartY - 30, 'Total Points', { fontFamily: 'Arial', fontSize: '15px', color: '#98accf' })
+      .setScrollFactor(0);
 
     root.add([backdrop, panel, title, subtitle, rankHeader, playerHeader, scoreHeader]);
 
@@ -917,12 +908,7 @@ export class GameplayScene extends Phaser.Scene {
     return this.add.container(0, 0, [graphics]);
   }
 
-  private createFrostedPlatform(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-  ): Phaser.GameObjects.Container {
+  private createFrostedPlatform(x: number, y: number, width: number, height: number): Phaser.GameObjects.Container {
     const container = this.add.container(0, 0);
 
     const glow = this.add
@@ -939,13 +925,27 @@ export class GameplayScene extends Phaser.Scene {
 
     const topStripHeight = Math.min(4, Math.max(2, height * 0.14));
     const topHighlight = this.add
-      .rectangle(x, y - height / 2 + topStripHeight / 2, Math.max(0, width - 4), topStripHeight, PLATFORM_TOP_HIGHLIGHT_COLOR, 0.3)
+      .rectangle(
+        x,
+        y - height / 2 + topStripHeight / 2,
+        Math.max(0, width - 4),
+        topStripHeight,
+        PLATFORM_TOP_HIGHLIGHT_COLOR,
+        0.3,
+      )
       .setOrigin(0.5)
       .setDepth(-9);
 
     const bottomStripHeight = Math.min(6, Math.max(3, height * 0.2));
     const bottomShade = this.add
-      .rectangle(x, y + height / 2 - bottomStripHeight / 2, Math.max(0, width - 4), bottomStripHeight, PLATFORM_BOTTOM_SHADE_COLOR, 0.22)
+      .rectangle(
+        x,
+        y + height / 2 - bottomStripHeight / 2,
+        Math.max(0, width - 4),
+        bottomStripHeight,
+        PLATFORM_BOTTOM_SHADE_COLOR,
+        0.22,
+      )
       .setOrigin(0.5)
       .setDepth(-9);
 

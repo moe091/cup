@@ -173,8 +173,7 @@ export class WaitingRoomScene extends Phaser.Scene {
       const nonLeaders = status.players.filter((p) => p.role !== 'creator');
       const readyCount = nonLeaders.filter((p) => p.ready).length;
       const total = nonLeaders.length;
-      const info =
-        total > 0 ? `Waiting for players: ${readyCount}/${total}` : 'Waiting for players: 0/0';
+      const info = total > 0 ? `Waiting for players: ${readyCount}/${total}` : 'Waiting for players: 0/0';
       this.waitingRoomUI?.setRoundEndInfo(info, total === 0 || readyCount >= total);
       this.waitingRoomUI?.setReadyButtonVisible(this.role === 'creator');
     } else {

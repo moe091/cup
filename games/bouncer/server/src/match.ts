@@ -231,14 +231,16 @@ export class Match {
 
     const playersInOrder = Array.from(this.players.values());
     const finishedSet = new Set(this.finishedPlayerIds);
-    const finishers = this.finishedPlayerIds.map((playerId) => this.players.get(playerId)).filter(Boolean) as PlayerSession[];
+    const finishers = this.finishedPlayerIds
+      .map((playerId) => this.players.get(playerId))
+      .filter(Boolean) as PlayerSession[];
     const dnfs = playersInOrder.filter((p) => !finishedSet.has(p.playerId));
     const ordered = [...finishers, ...dnfs];
 
     const roundResults: RoundResultPlayer[] = ordered.map((player, idx) => {
       const isDnf = !finishedSet.has(player.playerId);
       const finishPlace = isDnf ? null : idx + 1;
-      const pointsEarned = isDnf ? 0 : this.pointsForPlace(finishPlace);
+      const pointsEarned = isDnf ? 0 : this.pointsForPlace(idx + 1);
       const nextPoints = (this.pointsByPlayer.get(player.playerId) ?? 0) + pointsEarned;
       this.pointsByPlayer.set(player.playerId, nextPoints);
 
@@ -347,7 +349,10 @@ export class Match {
   }
 
   setPhase(val: MatchPhase) {
-    if ((this.phase === 'WAITING' || this.phase === 'ROUND_END' || this.phase === 'MATCH_END') && val === 'IN_PROGRESS') {
+    if (
+      (this.phase === 'WAITING' || this.phase === 'ROUND_END' || this.phase === 'MATCH_END') &&
+      val === 'IN_PROGRESS'
+    ) {
       this.phase = 'IN_PROGRESS_QUEUED';
       this.awaitingAcks.clear();
       this.setAllPlayersReady(false);
@@ -425,7 +430,7 @@ export class Match {
         this.resetForNewMatch();
       }
 
-      if (this.phase === 'WAITING' || this.phase === 'ROUND_END' || this.phase === 'MATCH_END') {
+      if (this.phase === 'WAITING' || this.phase === 'MATCH_END') {
         this.setPhase('IN_PROGRESS');
       }
       return;
