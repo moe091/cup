@@ -77,6 +77,7 @@ export class WaitingRoomScene extends Phaser.Scene {
         isCreator ? this.onScoreGoalSelected.bind(this) : undefined,
       );
       this.waitingRoomUI.setScoreGoal(this.scoreGoal, this.scoreGoalLocked);
+      this.waitingRoomUI.setReadyButtonVisible(true);
 
       // Update with any pending player status
       if (this.pendingStatus) {
@@ -151,6 +152,8 @@ export class WaitingRoomScene extends Phaser.Scene {
       ready: p.ready,
       isMe: p.playerId === this.playerId,
       points: p.points,
+      wins: p.wins,
+      isLeader: p.role === 'creator',
     }));
 
     this.waitingRoomUI?.updatePlayers(players);
@@ -165,6 +168,19 @@ export class WaitingRoomScene extends Phaser.Scene {
     this.scoreGoal = status.scoreGoal;
     this.scoreGoalLocked = status.scoreGoalLocked;
     this.waitingRoomUI?.setScoreGoal(this.scoreGoal, this.scoreGoalLocked);
+
+    if (status.phase === 'ROUND_END') {
+      const nonLeaders = status.players.filter((p) => p.role !== 'creator');
+      const readyCount = nonLeaders.filter((p) => p.ready).length;
+      const total = nonLeaders.length;
+      const info =
+        total > 0 ? `Waiting for players: ${readyCount}/${total}` : 'Waiting for players: 0/0';
+      this.waitingRoomUI?.setRoundEndInfo(info, total === 0 || readyCount >= total);
+      this.waitingRoomUI?.setReadyButtonVisible(this.role === 'creator');
+    } else {
+      this.waitingRoomUI?.setRoundEndInfo(null, false);
+      this.waitingRoomUI?.setReadyButtonVisible(true);
+    }
 
     this.updatePlayerList(status);
   }

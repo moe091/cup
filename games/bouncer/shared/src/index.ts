@@ -11,6 +11,7 @@ export type MatchPhase =
   | 'COUNTDOWN'
   | 'IN_PROGRESS'
   | 'ROUND_END'
+  | 'MATCH_END'
   | 'PAUSED';
 
 export type MatchStatus = {
@@ -19,7 +20,7 @@ export type MatchStatus = {
   minPlayers: number;
   scoreGoal: ScoreGoal;
   scoreGoalLocked: boolean;
-  players: Array<{ playerId: string; displayName: string; ready: boolean; role: string; points: number }>;
+  players: Array<{ playerId: string; displayName: string; ready: boolean; role: string; points: number; wins: number }>;
 };
 
 export type MatchCountdown = {
@@ -82,10 +83,24 @@ export type RoundResultsUpdate = {
   reason: RoundEndReason;
   firstFinisherAtMs: number | null;
   roundEndedAtMs: number;
-  waitingAtMs: number;
   scoreGoal: ScoreGoal;
   winners: string[];
   players: RoundResultPlayer[];
+};
+
+export type MatchResultPlayer = {
+  playerId: string;
+  displayName: string;
+  totalPoints: number;
+  rank: number;
+  finalRoundPlace: number | null;
+};
+
+export type MatchResultsUpdate = {
+  scoreGoal: Exclude<ScoreGoal, 'NEVER'>;
+  winners: string[];
+  roundsPlayed: number;
+  players: MatchResultPlayer[];
 };
 
 export type Ball = {

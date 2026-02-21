@@ -9,6 +9,7 @@ import type {
   PlayerStateUpdate,
   RemotePlayerStateUpdate,
   RoundResultsUpdate,
+  MatchResultsUpdate,
 } from '@cup/bouncer-shared';
 import { InputController } from '../misc/InputController';
 import { ParallaxBackground } from '../misc/ParallaxBackground';
@@ -73,6 +74,7 @@ export class GameplayScene extends Phaser.Scene {
   private hasReportedFinish = false;
   private finishedOrder: string[] = [];
   private roundResultsModal: Phaser.GameObjects.Container | null = null;
+  private matchResultsModal: Phaser.GameObjects.Container | null = null;
 
   constructor(
     private playerId: string,
@@ -440,9 +442,11 @@ export class GameplayScene extends Phaser.Scene {
     this.emit('player_finished', {});
   }
 
-  showRoundResultsModal(results: RoundResultsUpdate) {
+  showRoundResultsModal(results: RoundResultsUpdate, onContinue: () => void) {
     this.roundResultsModal?.destroy(true);
     this.roundResultsModal = null;
+    this.matchResultsModal?.destroy(true);
+    this.matchResultsModal = null;
 
     const width = this.scale.width;
     const height = this.scale.height;
@@ -617,9 +621,8 @@ export class GameplayScene extends Phaser.Scene {
       root.add([placeText, orb, name, timeText, deltaText, pointsText, totalText]);
     });
 
-    const secondsLeft = Math.max(0, Math.ceil((results.waitingAtMs - Date.now()) / 1000));
     const footer = this.add
-      .text(cx, cy + modalHeight / 2 - 24, `Waiting room in ${secondsLeft}s`, {
+      .text(cx, cy + modalHeight / 2 - 64, 'Press Continue when you are ready for the next round', {
         fontFamily: 'Arial',
         fontSize: '16px',
         color: '#a9bddf',
@@ -627,8 +630,202 @@ export class GameplayScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setScrollFactor(0);
 
-    root.add(footer);
+    const continueBtnY = cy + modalHeight / 2 - 26;
+    const continueBtnBg = this.add
+      .rectangle(cx, continueBtnY, 196, 42, 0x2d6a4f, 1)
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setInteractive({ useHandCursor: true });
+    continueBtnBg.setStrokeStyle(2, 0x6fc79a, 1);
+    const continueBtnText = this.add
+      .text(cx, continueBtnY, 'Continue', {
+        fontFamily: 'Arial',
+        fontSize: '20px',
+        color: '#f4fff7',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0);
+
+    continueBtnBg.on('pointerover', () => continueBtnBg.setFillStyle(0x3d8a6f, 1));
+    continueBtnBg.on('pointerout', () => continueBtnBg.setFillStyle(0x2d6a4f, 1));
+    continueBtnBg.on('pointerdown', () => {
+      if (!this.roundResultsModal) {
+        return;
+      }
+      this.roundResultsModal.destroy(true);
+      this.roundResultsModal = null;
+      onContinue();
+    });
+
+    root.add([footer, continueBtnBg, continueBtnText]);
     this.roundResultsModal = root;
+  }
+
+  showMatchResultsModal(results: MatchResultsUpdate, onContinue: () => void) {
+    this.matchResultsModal?.destroy(true);
+    this.matchResultsModal = null;
+    this.roundResultsModal?.destroy(true);
+    this.roundResultsModal = null;
+
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const modalWidth = Math.floor(width * 0.86);
+    const modalHeight = Math.floor(height * 0.8);
+    const cx = width / 2;
+    const cy = height / 2;
+
+    const zoom = this.cameras.main.zoom || 1;
+    const uiScaleCompensation = 1 / zoom;
+
+    const root = this.add
+      .container(cx * (1 - uiScaleCompensation), cy * (1 - uiScaleCompensation))
+      .setDepth(10_200)
+      .setScrollFactor(0)
+      .setScale(uiScaleCompensation);
+
+    const backdrop = this.add.rectangle(cx, cy, width, height, 0x03050a, 0.72).setScrollFactor(0).setOrigin(0.5);
+    const panel = this.add
+      .rectangle(cx, cy, modalWidth, modalHeight, 0x131a2b, 0.96)
+      .setScrollFactor(0)
+      .setOrigin(0.5);
+    panel.setStrokeStyle(2, 0x536c9b, 0.95);
+
+    const winnerName = this.resolveWinnerLabel(results);
+    const title = this.add
+      .text(cx, cy - modalHeight / 2 + 44, `${winnerName} Wins!`, {
+        fontFamily: 'Arial',
+        fontSize: '44px',
+        color: '#ffe58f',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0);
+
+    const subtitle = this.add
+      .text(cx, cy - modalHeight / 2 + 86, `First to ${results.scoreGoal} • ${results.roundsPlayed} rounds`, {
+        fontFamily: 'Arial',
+        fontSize: '18px',
+        color: '#b9c9e8',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0);
+
+    const left = cx - modalWidth / 2 + 50;
+    const rowStartY = cy - modalHeight / 2 + 140;
+    const rowGap = 52;
+    const rankX = left;
+    const orbX = left + 68;
+    const nameX = left + 98;
+    const scoreX = left + 390;
+
+    const rankHeader = this.add.text(rankX, rowStartY - 30, 'Rank', { fontFamily: 'Arial', fontSize: '15px', color: '#98accf' }).setScrollFactor(0);
+    const playerHeader = this.add.text(nameX, rowStartY - 30, 'Player', { fontFamily: 'Arial', fontSize: '15px', color: '#98accf' }).setScrollFactor(0);
+    const scoreHeader = this.add.text(scoreX, rowStartY - 30, 'Total Points', { fontFamily: 'Arial', fontSize: '15px', color: '#98accf' }).setScrollFactor(0);
+
+    root.add([backdrop, panel, title, subtitle, rankHeader, playerHeader, scoreHeader]);
+
+    results.players.slice(0, 8).forEach((player, idx) => {
+      const y = rowStartY + idx * rowGap;
+      const rankColor = player.rank === 1 ? '#ffe27d' : '#d2e1ff';
+      const isWinner = results.winners.includes(player.playerId);
+      const rank = this.add
+        .text(rankX, y, this.formatPlace(player.rank, false), {
+          fontFamily: 'Arial',
+          fontSize: '24px',
+          color: rankColor,
+          fontStyle: 'bold',
+        })
+        .setOrigin(0, 0.5)
+        .setScrollFactor(0);
+
+      const isMe = player.playerId === this.playerId;
+      const orb = this.add
+        .sprite(orbX, y, isMe ? 'ball_green' : 'ball_red')
+        .setDisplaySize(24, 24)
+        .setOrigin(0.5)
+        .setScrollFactor(0);
+
+      const name = this.add
+        .text(nameX, y, isMe ? 'YOU' : player.displayName, {
+          fontFamily: 'Arial',
+          fontSize: '22px',
+          color: isWinner ? '#ffe8a0' : '#eef4ff',
+          fontStyle: isWinner ? 'bold' : 'normal',
+        })
+        .setOrigin(0, 0.5)
+        .setScrollFactor(0);
+
+      const total = this.add
+        .text(scoreX, y, String(player.totalPoints), {
+          fontFamily: 'Arial',
+          fontSize: '24px',
+          color: '#b9dcff',
+          fontStyle: 'bold',
+        })
+        .setOrigin(0, 0.5)
+        .setScrollFactor(0);
+
+      root.add([rank, orb, name, total]);
+    });
+
+    const footer = this.add
+      .text(cx, cy + modalHeight / 2 - 64, 'Press Continue to return to lobby', {
+        fontFamily: 'Arial',
+        fontSize: '16px',
+        color: '#a9bddf',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0);
+
+    const continueBtnY = cy + modalHeight / 2 - 26;
+    const continueBtnBg = this.add
+      .rectangle(cx, continueBtnY, 196, 42, 0x2d6a4f, 1)
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setInteractive({ useHandCursor: true });
+    continueBtnBg.setStrokeStyle(2, 0x6fc79a, 1);
+    const continueBtnText = this.add
+      .text(cx, continueBtnY, 'Continue', {
+        fontFamily: 'Arial',
+        fontSize: '20px',
+        color: '#f4fff7',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0);
+
+    continueBtnBg.on('pointerover', () => continueBtnBg.setFillStyle(0x3d8a6f, 1));
+    continueBtnBg.on('pointerout', () => continueBtnBg.setFillStyle(0x2d6a4f, 1));
+    continueBtnBg.on('pointerdown', () => {
+      if (!this.matchResultsModal) {
+        return;
+      }
+      this.matchResultsModal.destroy(true);
+      this.matchResultsModal = null;
+      onContinue();
+    });
+
+    root.add([footer, continueBtnBg, continueBtnText]);
+
+    this.matchResultsModal = root;
+  }
+
+  private resolveWinnerLabel(results: MatchResultsUpdate): string {
+    if (results.winners.length === 0) {
+      return 'Match';
+    }
+
+    const firstWinner = results.players.find((p) => p.playerId === results.winners[0]);
+    if (!firstWinner) {
+      return 'Match';
+    }
+
+    if (firstWinner.playerId === this.playerId) {
+      return 'You';
+    }
+
+    return firstWinner.displayName;
   }
 
   private formatPlace(place: number | null, dnf: boolean): string {
@@ -801,6 +998,8 @@ export class GameplayScene extends Phaser.Scene {
     this.parallaxBg = null;
     this.roundResultsModal?.destroy(true);
     this.roundResultsModal = null;
+    this.matchResultsModal?.destroy(true);
+    this.matchResultsModal = null;
     this.remoteSmoother.clearAll();
   }
 }

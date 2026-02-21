@@ -11,6 +11,7 @@ import {
   MatchStatus,
   RemotePlayerStateUpdate,
   RoundResultsUpdate,
+  MatchResultsUpdate,
 } from '@cup/bouncer-shared';
 import { WaitingRoomScene } from './scenes/WaitingRoom';
 import { BootScene } from './scenes/Boot';
@@ -32,9 +33,13 @@ export class BouncerClient {
   private pendingGameplayStatus: MatchStatus | null = null;
   private pendingRoundEndStatus: MatchStatus | null = null;
   private pendingRoundResults: RoundResultsUpdate | null = null;
+  private pendingMatchEndStatus: MatchStatus | null = null;
+  private pendingMatchResults: MatchResultsUpdate | null = null;
   private wantsGameplay = false;
   private isGameplayStarted = false;
   private hasSentClientReadyForQueue = false;
+  private matchEndModalActive = false;
+  private roundEndModalActive = false;
 
   constructor(socket: Socket, containerEl: HTMLElement) {
     this.socket = socket;
@@ -77,13 +82,33 @@ export class BouncerClient {
     console.log(`[BouncerClient.onMatchStatusUpdate] (SocketID :: ${this.socket.id}) Match Status = `, status);
     if (status.phase === 'ROUND_END') {
       this.pendingRoundEndStatus = status;
+      this.waitingRoomScene?.statusUpdate(status);
       this.tryShowRoundResults();
+      return;
+    }
+
+    if (status.phase === 'MATCH_END') {
+      this.pendingMatchEndStatus = status;
+      if (this.tryShowMatchResults()) {
+        return;
+      }
+
+      if (!this.game.scene.isActive('gameplay')) {
+        this.wantsGameplay = false;
+        this.pendingGameplayStatus = null;
+        this.hasSentClientReadyForQueue = false;
+        this.startOrContinueWaiting(status);
+      }
       return;
     }
 
     if (status.phase === 'WAITING') {
       this.pendingRoundEndStatus = null;
       this.pendingRoundResults = null;
+      this.pendingMatchEndStatus = null;
+      this.pendingMatchResults = null;
+      this.matchEndModalActive = false;
+      this.roundEndModalActive = false;
 
       this.wantsGameplay = false;
       this.pendingGameplayStatus = null;
@@ -145,6 +170,12 @@ export class BouncerClient {
     this.tryShowRoundResults();
   }
 
+  onMatchResultsUpdate(update: MatchResultsUpdate) {
+    console.log('[BouncerClient.onMatchResultsUpdate]', update);
+    this.pendingMatchResults = update;
+    this.tryShowMatchResults();
+  }
+
   // ------------- Scene Helpers -------------- \\
   startOrContinueWaiting(status: MatchStatus) {
     const waitingActive = this.game.scene.isActive('waitingRoom');
@@ -161,6 +192,10 @@ export class BouncerClient {
     this.pendingGameplayStatus = null;
     this.pendingRoundEndStatus = null;
     this.pendingRoundResults = null;
+    this.pendingMatchEndStatus = null;
+    this.pendingMatchResults = null;
+    this.matchEndModalActive = false;
+    this.roundEndModalActive = false;
     this.hasSentClientReadyForQueue = false;
     this.waitingRoomScene?.statusUpdate(status);
   }
@@ -220,14 +255,63 @@ export class BouncerClient {
     if (!this.game.scene.isActive('gameplay')) {
       return false;
     }
+    if (this.roundEndModalActive) {
+      return true;
+    }
+    if (!this.pendingRoundEndStatus) {
+      return false;
+    }
 
     this.wantsGameplay = false;
     this.pendingGameplayStatus = null;
     this.hasSentClientReadyForQueue = false;
+    this.roundEndModalActive = true;
 
-    this.gameplayScene?.showRoundResultsModal(this.pendingRoundResults);
+    const roundEndStatus = this.pendingRoundEndStatus;
+    const isCreator = this.isCreatorInStatus(roundEndStatus);
+
+    this.gameplayScene?.showRoundResultsModal(this.pendingRoundResults, () => {
+      this.roundEndModalActive = false;
+      if (!isCreator) {
+        this.emitMessage('set_ready', { ready: true });
+      }
+      this.startOrContinueWaiting(this.pendingRoundEndStatus ?? roundEndStatus);
+    });
+
     this.pendingRoundResults = null;
 
+    return true;
+  }
+
+  private isCreatorInStatus(status: MatchStatus): boolean {
+    const player = status.players.find((p) => p.playerId === this.socket.id);
+    return player?.role === 'creator';
+  }
+
+  private tryShowMatchResults(): boolean {
+    if (!this.pendingMatchEndStatus || !this.pendingMatchResults) {
+      return false;
+    }
+    if (!this.game.scene.isActive('gameplay')) {
+      return false;
+    }
+    if (this.matchEndModalActive) {
+      return true;
+    }
+
+    const matchEndStatus = this.pendingMatchEndStatus;
+    this.wantsGameplay = false;
+    this.pendingGameplayStatus = null;
+    this.hasSentClientReadyForQueue = false;
+    this.matchEndModalActive = true;
+
+    this.gameplayScene?.showMatchResultsModal(this.pendingMatchResults, () => {
+      this.matchEndModalActive = false;
+      this.startOrContinueWaiting(this.pendingMatchEndStatus ?? matchEndStatus);
+    });
+
+    this.pendingMatchEndStatus = null;
+    this.pendingMatchResults = null;
     return true;
   }
 }

@@ -9,6 +9,7 @@ import {
   type MatchCountdown,
   type RemotePlayerStateUpdate,
   type RoundResultsUpdate,
+  type MatchResultsUpdate,
   MatchJoinInfo,
   LevelListItem,
 } from '@cup/bouncer-shared';
@@ -80,6 +81,10 @@ export function connectBouncer(url: string, ticket: string, containerEl: HTMLEle
 
   socket.on('round_results', (data: RoundResultsUpdate) => {
     bouncerClient?.onRoundResultsUpdate(data);
+  });
+
+  socket.on('match_results', (data: MatchResultsUpdate) => {
+    bouncerClient?.onMatchResultsUpdate(data);
   });
 
   socket.on('disconnect', () => {

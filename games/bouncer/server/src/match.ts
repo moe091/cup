@@ -13,16 +13,18 @@ import type {
   RoundResultPlayer,
   RoundEndReason,
   ScoreGoal,
+  MatchResultsUpdate,
+  MatchResultPlayer,
 } from '@cup/bouncer-shared';
 import type { PlayerId, SocketId, PlayerSession, Broadcast, BroadcastExcept } from './types.js';
 import { loadLevelDef } from './api/helpers.js';
 
 const FINISH_TIMEOUT_MS = 30_000;
-const ROUND_END_DURATION_MS = 7_000;
 
 export class Match {
   private players = new Map<PlayerId, PlayerSession>();
   private pointsByPlayer = new Map<PlayerId, number>();
+  private winsByPlayer = new Map<PlayerId, number>();
   private phase: MatchPhase = 'WAITING';
   private minPlayers = 1;
   private countdownSeconds = 1;
@@ -35,10 +37,10 @@ export class Match {
   private firstFinisherAtMs: number | null = null;
   private roundStartAtMs: number | null = null;
   private finishTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
-  private roundEndTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
   private scoreGoal: ScoreGoal = 30;
   private scoreGoalLocked = false;
   private hasStartedFirstRound = false;
+  private roundsPlayed = 0;
 
   constructor(
     public matchId: string,
@@ -50,6 +52,9 @@ export class Match {
     this.players.set(playerId, { playerId, socketId, displayName, role, ready: false });
     if (!this.pointsByPlayer.has(playerId)) {
       this.pointsByPlayer.set(playerId, 0);
+    }
+    if (!this.winsByPlayer.has(playerId)) {
+      this.winsByPlayer.set(playerId, 0);
     }
   }
 
@@ -112,6 +117,87 @@ export class Match {
     return this.scoreGoal;
   }
 
+  private finalRoundPlaceFor(playerId: PlayerId, roundResults: RoundResultPlayer[]): number | null {
+    return roundResults.find((result) => result.playerId === playerId)?.finishPlace ?? null;
+  }
+
+  private compareFinalRoundPlaceAsc(a: number | null, b: number | null): number {
+    const aVal = a ?? Number.POSITIVE_INFINITY;
+    const bVal = b ?? Number.POSITIVE_INFINITY;
+    return aVal - bVal;
+  }
+
+  private buildMatchResults(roundResults: RoundResultPlayer[], winners: PlayerId[]): MatchResultsUpdate | null {
+    if (this.scoreGoal === 'NEVER') {
+      return null;
+    }
+
+    const standings: MatchResultPlayer[] = Array.from(this.players.values()).map((player) => {
+      const finalRoundPlace = this.finalRoundPlaceFor(player.playerId, roundResults);
+      return {
+        playerId: player.playerId,
+        displayName: player.displayName,
+        totalPoints: this.pointsByPlayer.get(player.playerId) ?? 0,
+        rank: 0,
+        finalRoundPlace,
+      };
+    });
+
+    standings.sort((a, b) => {
+      if (b.totalPoints !== a.totalPoints) {
+        return b.totalPoints - a.totalPoints;
+      }
+      return this.compareFinalRoundPlaceAsc(a.finalRoundPlace, b.finalRoundPlace);
+    });
+
+    standings.forEach((player, idx) => {
+      player.rank = idx + 1;
+    });
+
+    return {
+      scoreGoal: this.scoreGoal,
+      winners,
+      roundsPlayed: this.roundsPlayed,
+      players: standings,
+    };
+  }
+
+  private resetForNewMatch() {
+    this.resetPointsOnly();
+    this.players.forEach((player) => {
+      player.ready = false;
+    });
+    this.scoreGoalLocked = false;
+    this.hasStartedFirstRound = false;
+    this.roundsPlayed = 0;
+  }
+
+  private resetPointsOnly() {
+    this.pointsByPlayer.forEach((_, playerId) => {
+      this.pointsByPlayer.set(playerId, 0);
+    });
+  }
+
+  private setAllPlayersReady(ready: boolean) {
+    this.players.forEach((player) => {
+      player.ready = ready;
+    });
+  }
+
+  private areAllNonCreatorPlayersReady(): boolean {
+    for (const player of this.players.values()) {
+      if (player.role === 'creator') {
+        continue;
+      }
+
+      if (!player.ready) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   private resetRoundState() {
     this.finishedPlayerIds = [];
     this.finishTimesMs.clear();
@@ -120,10 +206,6 @@ export class Match {
     if (this.finishTimeoutHandle) {
       clearTimeout(this.finishTimeoutHandle);
       this.finishTimeoutHandle = null;
-    }
-    if (this.roundEndTimeoutHandle) {
-      clearTimeout(this.roundEndTimeoutHandle);
-      this.roundEndTimeoutHandle = null;
     }
   }
 
@@ -171,33 +253,51 @@ export class Match {
       };
     });
 
+    this.roundsPlayed += 1;
+
     const goalThreshold = this.getGoalThreshold();
-    const winners =
-      goalThreshold === null
-        ? []
-        : roundResults.filter((result) => result.totalPoints >= goalThreshold).map((result) => result.playerId);
-
-    this.setPhase('ROUND_END');
-
-    const waitingAtMs = Date.now() + ROUND_END_DURATION_MS;
-
-    const resultsUpdate: RoundResultsUpdate = {
-      reason,
-      firstFinisherAtMs: this.firstFinisherAtMs,
-      roundEndedAtMs: Date.now(),
-      waitingAtMs,
-      scoreGoal: this.scoreGoal,
-      winners,
-      players: roundResults,
-    };
-    this.broadcast('round_results', resultsUpdate);
-
-    this.roundEndTimeoutHandle = setTimeout(() => {
-      this.roundEndTimeoutHandle = null;
-      if (this.phase === 'ROUND_END') {
-        this.setPhase('WAITING');
+    let winners: PlayerId[] = [];
+    if (goalThreshold !== null) {
+      const contenders = roundResults.filter((result) => result.totalPoints >= goalThreshold);
+      if (contenders.length > 0) {
+        contenders.sort((a, b) => {
+          if (b.totalPoints !== a.totalPoints) {
+            return b.totalPoints - a.totalPoints;
+          }
+          return this.compareFinalRoundPlaceAsc(a.finishPlace, b.finishPlace);
+        });
+        winners = [contenders[0].playerId as PlayerId];
       }
-    }, ROUND_END_DURATION_MS);
+    }
+
+    if (winners.length > 0 && this.scoreGoal !== 'NEVER') {
+      this.setPhase('MATCH_END');
+      const matchResults = this.buildMatchResults(roundResults, winners);
+      if (matchResults) {
+        this.broadcast('match_results', matchResults);
+      }
+
+      winners.forEach((winnerId) => {
+        const nextWins = (this.winsByPlayer.get(winnerId) ?? 0) + 1;
+        this.winsByPlayer.set(winnerId, nextWins);
+      });
+
+      this.resetForNewMatch();
+      this.broadcastStatus();
+    } else {
+      this.setAllPlayersReady(false);
+      this.setPhase('ROUND_END');
+
+      const resultsUpdate: RoundResultsUpdate = {
+        reason,
+        firstFinisherAtMs: this.firstFinisherAtMs,
+        roundEndedAtMs: Date.now(),
+        scoreGoal: this.scoreGoal,
+        winners,
+        players: roundResults,
+      };
+      this.broadcast('round_results', resultsUpdate);
+    }
 
     this.finishedPlayerIds = [];
     this.finishTimesMs.clear();
@@ -218,6 +318,7 @@ export class Match {
         ready: player.ready,
         role: player.role,
         points: this.pointsByPlayer.get(player.playerId) ?? 0,
+        wins: this.winsByPlayer.get(player.playerId) ?? 0,
       })),
     };
 
@@ -246,9 +347,10 @@ export class Match {
   }
 
   setPhase(val: MatchPhase) {
-    if ((this.phase === 'WAITING' || this.phase === 'ROUND_END') && val === 'IN_PROGRESS') {
+    if ((this.phase === 'WAITING' || this.phase === 'ROUND_END' || this.phase === 'MATCH_END') && val === 'IN_PROGRESS') {
       this.phase = 'IN_PROGRESS_QUEUED';
       this.awaitingAcks.clear();
+      this.setAllPlayersReady(false);
 
       if (!this.hasStartedFirstRound) {
         this.hasStartedFirstRound = true;
@@ -297,18 +399,39 @@ export class Match {
   }
 
   onSetReady(socket: Socket, data: { ready: boolean }) {
+    const playerId = socket.data.playerId as PlayerId;
+    const player = this.players.get(playerId);
+    if (!player) {
+      return;
+    }
+
+    if (this.phase === 'ROUND_END') {
+      if (socket.data.role === 'creator') {
+        if (data.ready && this.areAllNonCreatorPlayersReady()) {
+          this.setPhase('IN_PROGRESS');
+        } else {
+          this.broadcastStatus();
+        }
+        return;
+      }
+
+      player.ready = data.ready;
+      this.broadcastStatus();
+      return;
+    }
+
     if (socket.data.role === 'creator') {
-      if (this.phase === 'WAITING' || this.phase === 'ROUND_END') {
+      if (this.phase === 'MATCH_END') {
+        this.resetForNewMatch();
+      }
+
+      if (this.phase === 'WAITING' || this.phase === 'ROUND_END' || this.phase === 'MATCH_END') {
         this.setPhase('IN_PROGRESS');
       }
       return;
     }
 
-    const playerId = socket.data.playerId as PlayerId;
-    const player = this.players.get(playerId);
-    if (player) {
-      player.ready = data.ready;
-    }
+    player.ready = data.ready;
 
     this.broadcastStatus();
   }
@@ -323,7 +446,7 @@ export class Match {
     if (socket.data.role !== 'creator') {
       return;
     }
-    if (this.scoreGoalLocked || this.phase !== 'WAITING') {
+    if (this.scoreGoalLocked || (this.phase !== 'WAITING' && this.phase !== 'MATCH_END')) {
       return;
     }
 
@@ -395,6 +518,7 @@ export class Match {
     if (playerId) {
       this.players.delete(playerId);
       this.pointsByPlayer.delete(playerId);
+      this.winsByPlayer.delete(playerId);
       this.awaitingAcks.delete(playerId);
       this.finishedPlayerIds = this.finishedPlayerIds.filter((id) => id !== playerId);
       this.finishTimesMs.delete(playerId);
@@ -415,6 +539,7 @@ export class Match {
     this.awaitingAcks.clear();
     this.afterAcks = null;
     this.pointsByPlayer.clear();
+    this.winsByPlayer.clear();
     this.resetRoundState();
   }
 

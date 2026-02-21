@@ -7,6 +7,8 @@ type PlayerInfo = {
   ready: boolean;
   isMe: boolean;
   points: number;
+  wins: number;
+  isLeader: boolean;
 };
 
 const SCORE_GOAL_OPTIONS: ScoreGoal[] = [20, 30, 50, 100, 'NEVER'];
@@ -20,6 +22,8 @@ export class WaitingRoomUI {
   private players: PlayerInfo[] = [];
   private scoreGoal: ScoreGoal = 30;
   private scoreGoalLocked = false;
+  private roundEndInfo: string | null = null;
+  private roundEndInfoReady = false;
 
   constructor(
     scene: Phaser.Scene,
@@ -36,10 +40,13 @@ export class WaitingRoomUI {
   }
 
   private injectStyles() {
-    if (document.getElementById('waiting-room-ui-styles')) return;
+    let style = document.getElementById('waiting-room-ui-styles') as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'waiting-room-ui-styles';
+      document.head.appendChild(style);
+    }
 
-    const style = document.createElement('style');
-    style.id = 'waiting-room-ui-styles';
     style.textContent = `
       .waiting-room-ui {
         width: 640px;
@@ -52,7 +59,7 @@ export class WaitingRoomUI {
 
       .waiting-room-players {
         flex: 1;
-        padding: 28px 40px 20px 40px;
+        padding: 14px 36px 10px 36px;
       }
 
       .waiting-room-title {
@@ -69,7 +76,7 @@ export class WaitingRoomUI {
         align-items: center;
         justify-content: center;
         gap: 10px;
-        margin-bottom: 18px;
+        margin-bottom: 24px;
       }
 
       .score-goal-label {
@@ -103,28 +110,43 @@ export class WaitingRoomUI {
         color: #8897b9;
       }
 
+      .round-end-info {
+        width: 100%;
+        margin: 0 0 8px 0;
+        text-align: center;
+        font-size: 12px;
+        color: #f0b35a;
+        font-weight: 600;
+      }
+
+      .round-end-info.ready {
+        color: #42c978;
+      }
+
       .player-list {
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 20px;
       }
 
       .player-item {
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #3a3a3a;
       }
 
       .player-ball {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
         flex-shrink: 0;
       }
 
       .player-info {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 2px;
         min-width: 0;
         flex: 1;
       }
@@ -136,21 +158,41 @@ export class WaitingRoomUI {
         gap: 12px;
       }
 
+      .player-meta-row {
+        display: grid;
+        grid-template-columns: 1fr 86px 96px;
+        align-items: center;
+        gap: 10px;
+      }
+
       .player-name {
-        font-size: 18px;
+        font-size: 16px;
         color: #ffffff;
         font-weight: 500;
       }
 
       .player-points {
-        font-size: 13px;
+        font-size: 12px;
         color: #8fc0ff;
         font-weight: 700;
         white-space: nowrap;
+        text-align: right;
+      }
+
+      .player-wins {
+        font-size: 12px;
+        color: #ffffff;
+        font-weight: 700;
+        white-space: nowrap;
+        text-align: right;
+      }
+
+      .player-wins.top {
+        color: #ffd46b;
       }
 
       .player-status {
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 600;
       }
 
@@ -162,19 +204,27 @@ export class WaitingRoomUI {
         color: #bb2233;
       }
 
+      .player-status.leader {
+        color: #ffffff;
+      }
+
       .waiting-room-footer {
-        padding: 26px 40px 34px 40px;
+        padding: 16px 40px 26px 40px;
         display: flex;
+        flex-direction: column !important;
         justify-content: center;
+        align-items: center !important;
+        width: 100%;
+        box-sizing: border-box;
       }
 
       .ready-button {
-        padding: 14px 32px;
+        padding: 12px 28px;
         background: #2d6a4f;
         color: white;
         border: none;
         border-radius: 8px;
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
@@ -189,7 +239,6 @@ export class WaitingRoomUI {
         transform: translateY(0);
       }
     `;
-    document.head.appendChild(style);
   }
 
   private createHTML(): string {
@@ -205,7 +254,6 @@ export class WaitingRoomUI {
     return `
       <div class="waiting-room-ui">
         <div class="waiting-room-players">
-          <h2 class="waiting-room-title">Players</h2>
           <div class="score-goal-row">
             <span class="score-goal-label" data-score-goal-label>${this.scoreGoalLabel(this.scoreGoal)}</span>
             ${canEditGoal ? '<button class="score-goal-change" data-score-goal-change>Change</button>' : ''}
@@ -216,6 +264,7 @@ export class WaitingRoomUI {
         </div>
 
         <div class="waiting-room-footer">
+          ${this.roundEndInfo ? `<div class="round-end-info ${this.roundEndInfoReady ? 'ready' : ''}" data-round-end-info>${this.roundEndInfo}</div>` : ''}
           <button class="ready-button" data-ready-btn>${buttonText}</button>
         </div>
       </div>
@@ -300,6 +349,23 @@ export class WaitingRoomUI {
     this.rebuild();
   }
 
+  setReadyButtonVisible(visible: boolean) {
+    if (!this.container) return;
+    const element = this.container.node as HTMLElement;
+    const readyBtn = element.querySelector('[data-ready-btn]') as HTMLButtonElement;
+    if (!readyBtn) return;
+    readyBtn.style.display = visible ? 'inline-block' : 'none';
+  }
+
+  setRoundEndInfo(info: string | null, allReady = false) {
+    if (this.roundEndInfo === info && this.roundEndInfoReady === allReady) {
+      return;
+    }
+    this.roundEndInfo = info;
+    this.roundEndInfoReady = allReady;
+    this.rebuild();
+  }
+
   private rebuild() {
     const prevPlayers = this.players;
     this.container?.destroy();
@@ -317,12 +383,14 @@ export class WaitingRoomUI {
     if (!listEl) return;
 
     let html = '';
+    const maxWins = this.players.reduce((max, player) => Math.max(max, player.wins), 0);
 
     this.players.forEach((player) => {
-      const statusClass = player.ready ? 'ready' : 'waiting';
-      const statusText = player.ready ? 'READY' : 'Waiting...';
+      const statusClass = player.isLeader ? 'leader' : player.ready ? 'ready' : 'waiting';
+      const statusText = player.isLeader ? 'Leader' : player.ready ? 'READY' : 'Waiting...';
       const displayName = player.isMe ? 'YOU' : player.displayName;
       const ballColor = player.isMe ? '#22bb33' : '#bb2233';
+      const winsClass = player.wins === maxWins && maxWins > 0 ? 'top' : '';
 
       html += `
         <div class="player-item">
@@ -332,9 +400,12 @@ export class WaitingRoomUI {
           <div class="player-info">
             <div class="player-main-row">
               <div class="player-name">${displayName}</div>
+            </div>
+            <div class="player-meta-row">
+              <div class="player-status ${statusClass}">${statusText}</div>
+              <div class="player-wins ${winsClass}">Wins: ${player.wins}</div>
               <div class="player-points">Points: ${player.points}</div>
             </div>
-            <div class="player-status ${statusClass}">${statusText}</div>
           </div>
         </div>
       `;
