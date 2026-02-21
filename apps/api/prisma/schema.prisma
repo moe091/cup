@@ -10,6 +10,10 @@ generator client {
   moduleFormat = "cjs"
 }
 
+generator clientBasic {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
 }
@@ -20,13 +24,17 @@ datasource db {
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
-  displayName  String
+  displayName  String 
   passwordHash String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   oauthAccounts OAuthAccount[]
-  @@map("user") 
+
+  lobbiesCreated Lobby[] @relation("LobbyCreatedBy")
+  bouncerLevels BouncerLevel[]
+
+  @@map("user")
 }
 
 model OAuthAccount {
@@ -40,6 +48,65 @@ model OAuthAccount {
   @@unique([provider, providerAccountId])
   @@index([userId])
 }
+
+
+enum LobbyStatus {
+  OPEN
+  IN_PROGRESS
+  ENDED
+  EXPIRED
+}
+
+model Lobby {
+  matchId String @id @default(uuid())
+
+  gameId  String
+  status  LobbyStatus @default(OPEN)
+
+  socketUrl  String
+  maxPlayers Int @default(4)
+
+  createdByUserId String?
+  createdBy User? @relation("LobbyCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  createdByGuestId String?
+
+  meta Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expiresAt DateTime?
+
+  @@index([gameId, status])
+  @@index([expiresAt])
+  @@map("lobby")
+}
+
+
+
+model BouncerLevel {
+  id           String   @id @default(uuid())
+  name         String
+  data         Json
+  ownerUserId  String?
+  visibility   BouncerLevelVisibility @default(PRIVATE)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ownerUser    User?    @relation(fields: [ownerUserId], references: [id])
+
+  @@index([ownerUserId])
+  @@index([visibility])
+  @@unique([ownerUserId, name])
+}
+
+enum BouncerLevelVisibility {
+  PRIVATE
+  PUBLIC
+  SYSTEM
+}
+
+
 
 
 model Message {

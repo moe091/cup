@@ -8,5 +8,19 @@
  * 🟢 You can import this file directly.
  */
 
-// This file is empty because there are no enums in the schema.
-export {};
+export const LobbyStatus = {
+  OPEN: 'OPEN',
+  IN_PROGRESS: 'IN_PROGRESS',
+  ENDED: 'ENDED',
+  EXPIRED: 'EXPIRED',
+} as const;
+
+export type LobbyStatus = (typeof LobbyStatus)[keyof typeof LobbyStatus];
+
+export const BouncerLevelVisibility = {
+  PRIVATE: 'PRIVATE',
+  PUBLIC: 'PUBLIC',
+  SYSTEM: 'SYSTEM',
+} as const;
+
+export type BouncerLevelVisibility = (typeof BouncerLevelVisibility)[keyof typeof BouncerLevelVisibility];

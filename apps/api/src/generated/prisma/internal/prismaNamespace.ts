@@ -363,6 +363,8 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   User: 'User',
   OAuthAccount: 'OAuthAccount',
+  Lobby: 'Lobby',
+  BouncerLevel: 'BouncerLevel',
   Message: 'Message',
 } as const;
 
@@ -383,7 +385,7 @@ export type TypeMap<
     omit: GlobalOmitOptions;
   };
   meta: {
-    modelProps: 'user' | 'oAuthAccount' | 'message';
+    modelProps: 'user' | 'oAuthAccount' | 'lobby' | 'bouncerLevel' | 'message';
     txIsolationLevel: TransactionIsolationLevel;
   };
   model: {
@@ -535,6 +537,154 @@ export type TypeMap<
         };
       };
     };
+    Lobby: {
+      payload: Prisma.$LobbyPayload<ExtArgs>;
+      fields: Prisma.LobbyFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.LobbyFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LobbyPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.LobbyFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LobbyPayload>;
+        };
+        findFirst: {
+          args: Prisma.LobbyFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LobbyPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.LobbyFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LobbyPayload>;
+        };
+        findMany: {
+          args: Prisma.LobbyFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LobbyPayload>[];
+        };
+        create: {
+          args: Prisma.LobbyCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LobbyPayload>;
+        };
+        createMany: {
+          args: Prisma.LobbyCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.LobbyCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LobbyPayload>[];
+        };
+        delete: {
+          args: Prisma.LobbyDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LobbyPayload>;
+        };
+        update: {
+          args: Prisma.LobbyUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LobbyPayload>;
+        };
+        deleteMany: {
+          args: Prisma.LobbyDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.LobbyUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.LobbyUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LobbyPayload>[];
+        };
+        upsert: {
+          args: Prisma.LobbyUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LobbyPayload>;
+        };
+        aggregate: {
+          args: Prisma.LobbyAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateLobby>;
+        };
+        groupBy: {
+          args: Prisma.LobbyGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.LobbyGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.LobbyCountArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.LobbyCountAggregateOutputType> | number;
+        };
+      };
+    };
+    BouncerLevel: {
+      payload: Prisma.$BouncerLevelPayload<ExtArgs>;
+      fields: Prisma.BouncerLevelFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.BouncerLevelFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BouncerLevelPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.BouncerLevelFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BouncerLevelPayload>;
+        };
+        findFirst: {
+          args: Prisma.BouncerLevelFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BouncerLevelPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.BouncerLevelFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BouncerLevelPayload>;
+        };
+        findMany: {
+          args: Prisma.BouncerLevelFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BouncerLevelPayload>[];
+        };
+        create: {
+          args: Prisma.BouncerLevelCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BouncerLevelPayload>;
+        };
+        createMany: {
+          args: Prisma.BouncerLevelCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.BouncerLevelCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BouncerLevelPayload>[];
+        };
+        delete: {
+          args: Prisma.BouncerLevelDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BouncerLevelPayload>;
+        };
+        update: {
+          args: Prisma.BouncerLevelUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BouncerLevelPayload>;
+        };
+        deleteMany: {
+          args: Prisma.BouncerLevelDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.BouncerLevelUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.BouncerLevelUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BouncerLevelPayload>[];
+        };
+        upsert: {
+          args: Prisma.BouncerLevelUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BouncerLevelPayload>;
+        };
+        aggregate: {
+          args: Prisma.BouncerLevelAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBouncerLevel>;
+        };
+        groupBy: {
+          args: Prisma.BouncerLevelGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.BouncerLevelGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.BouncerLevelCountArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.BouncerLevelCountAggregateOutputType> | number;
+        };
+      };
+    };
     Message: {
       payload: Prisma.$MessagePayload<ExtArgs>;
       fields: Prisma.MessageFieldRefs;
@@ -669,6 +819,35 @@ export const OAuthAccountScalarFieldEnum = {
 export type OAuthAccountScalarFieldEnum =
   (typeof OAuthAccountScalarFieldEnum)[keyof typeof OAuthAccountScalarFieldEnum];
 
+export const LobbyScalarFieldEnum = {
+  matchId: 'matchId',
+  gameId: 'gameId',
+  status: 'status',
+  socketUrl: 'socketUrl',
+  maxPlayers: 'maxPlayers',
+  createdByUserId: 'createdByUserId',
+  createdByGuestId: 'createdByGuestId',
+  meta: 'meta',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  expiresAt: 'expiresAt',
+} as const;
+
+export type LobbyScalarFieldEnum = (typeof LobbyScalarFieldEnum)[keyof typeof LobbyScalarFieldEnum];
+
+export const BouncerLevelScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  data: 'data',
+  ownerUserId: 'ownerUserId',
+  visibility: 'visibility',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+} as const;
+
+export type BouncerLevelScalarFieldEnum =
+  (typeof BouncerLevelScalarFieldEnum)[keyof typeof BouncerLevelScalarFieldEnum];
+
 export const MessageScalarFieldEnum = {
   id: 'id',
   hello: 'hello',
@@ -683,6 +862,19 @@ export const SortOrder = {
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
 
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+} as const;
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput];
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull,
+} as const;
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput];
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive',
@@ -696,6 +888,14 @@ export const NullsOrder = {
 } as const;
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder];
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull,
+} as const;
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter];
 
 /**
  * Field references
@@ -722,6 +922,16 @@ export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel
 export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>;
 
 /**
+ * Reference to a field of type 'LobbyStatus'
+ */
+export type EnumLobbyStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LobbyStatus'>;
+
+/**
+ * Reference to a field of type 'LobbyStatus[]'
+ */
+export type ListEnumLobbyStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LobbyStatus[]'>;
+
+/**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>;
@@ -730,6 +940,42 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>;
+
+/**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>;
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>;
+
+/**
+ * Reference to a field of type 'BouncerLevelVisibility'
+ */
+export type EnumBouncerLevelVisibilityFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  'BouncerLevelVisibility'
+>;
+
+/**
+ * Reference to a field of type 'BouncerLevelVisibility[]'
+ */
+export type ListEnumBouncerLevelVisibilityFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  'BouncerLevelVisibility[]'
+>;
+
+/**
+ * Reference to a field of type 'Float'
+ */
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>;
+
+/**
+ * Reference to a field of type 'Float[]'
+ */
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>;
 
 /**
  * Batch Payload for updateMany & deleteMany & createMany
@@ -835,6 +1081,8 @@ export type PrismaClientOptions = (
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit;
   oAuthAccount?: Prisma.OAuthAccountOmit;
+  lobby?: Prisma.LobbyOmit;
+  bouncerLevel?: Prisma.BouncerLevelOmit;
   message?: Prisma.MessageOmit;
 };
 
