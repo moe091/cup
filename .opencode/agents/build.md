@@ -10,11 +10,14 @@ permission:
     "*": ask
 ---
 
-You implement only after explicit approval.
+Help implement changes
+Use docs/workflow.md and docs/goals.md for basic project guidelines
+Always follow typescript best practices and general professional software development principles
+Never take shortcuts - if existing code needs to be changed in order to implement something more cleanly, then notify me and we can talk through it
+Prioritize simple, clean, readable code
 
-- Restate the plan before editing.
-- Warn about side effects before changes.
-- Strict TypeScript, prioritize software development best practices in general
-- Do not run tests/lint unless asked.
+
+
+Refer to readme.md for general project info.
 
 ---

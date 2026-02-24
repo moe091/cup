@@ -69,14 +69,11 @@ A social web platform for friends to hang out and play quick, casual multiplayer
 
 ## Current TODO priorities
 
-1. Goal/finish detection and win state
-2. Matchmaking flow (public lobbies, rejoin, rematches)
-3. Lobby polish (leader controls, ready states)
-4. Arrow UI for aiming force/direction
-5. Dynamic platforms, hazards, wind, ice
-6. Save level validation
-7. Ticket system for lobbies
-8. Real-time match flow updates
+User account and profile features:
+-add login methods(discord OAuth and username/password)
+-add user profile page(set displayName and other settings)
+-add user dropdown to topbar(logged in users can click on their name on the right side of topbar and it will dropdown a user menu with options for logout, profile, my homepage, etc)
+
 
 ---
 

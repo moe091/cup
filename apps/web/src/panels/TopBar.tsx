@@ -1,8 +1,72 @@
+import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth";
+import { LoginModal } from "../auth/LoginModal";
 
 export default function TopBar() {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuContainerRef = useRef<HTMLDivElement | null>(null);
+  const userMenuId = useId();
+
+  const openLoginModal = () => {
+    setIsLoginModalOpen(true);
+  };
+
+  const closeLoginModal = () => {
+    setIsLoginModalOpen(false);
+  };
+
+  const handleLogout = async () => {
+    setIsUserMenuOpen(false);
+
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Logout failed with status ${response.status}`);
+      }
+
+      await refresh();
+    } catch {
+      alert("Logout failed.");
+    }
+  };
+
+  useEffect(() => {
+    if (!isUserMenuOpen) {
+      return;
+    }
+
+    const onDocumentMouseDown = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (!userMenuContainerRef.current?.contains(target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    const onDocumentKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onDocumentMouseDown);
+    document.addEventListener("keydown", onDocumentKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", onDocumentMouseDown);
+      document.removeEventListener("keydown", onDocumentKeyDown);
+    };
+  }, [isUserMenuOpen]);
 
   return (
     <div className="fixed top-0 z-10 w-full border-b border-[color:var(--line)] bg-[color:var(--panel)]/80 backdrop-blur">
@@ -41,27 +105,66 @@ export default function TopBar() {
         {/* Right: auth */}
         <div className="flex items-center gap-3 text-[color:var(--muted)]">
           {user ? (
-            <button className="hover:text-[color:var(--text)] transition">
-              {user.displayName}
-            </button>
+            <div className="relative" ref={userMenuContainerRef}>
+              <button
+                type="button"
+                className="hover:text-[color:var(--text)] transition"
+                onClick={() => setIsUserMenuOpen((prev) => !prev)}
+                aria-haspopup="menu"
+                aria-expanded={isUserMenuOpen}
+                aria-controls={userMenuId}
+              >
+                {user.displayName}
+              </button>
+
+              {isUserMenuOpen && (
+                <div
+                  id={userMenuId}
+                  role="menu"
+                  aria-label="User menu"
+                  className="absolute right-0 top-full mt-2 w-44 rounded-lg border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1 shadow-[0_10px_30px_rgba(0,0,0,0.35)]"
+                >
+                  <Link
+                    to="/profile"
+                    role="menuitem"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="block rounded-md px-3 py-2 text-sm text-[color:var(--text)] transition hover:bg-[color:var(--panel)]"
+                  >
+                    Profile
+                  </Link>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={handleLogout}
+                    className="block w-full rounded-md px-3 py-2 text-left text-sm text-[color:var(--text)] transition hover:bg-[color:var(--panel)]"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <>
-              <a
-                href="/api/auth/google"
+              <button
+                type="button"
+                onClick={openLoginModal}
                 className="px-4 py-2 rounded-full border border-[color:var(--line)] hover:border-[color:var(--text)] hover:text-[color:var(--text)] transition"
               >
                 Login
-              </a>
-              <a
-                href="/api/auth/google"
+              </button>
+              <button
+                type="button"
+                onClick={openLoginModal}
                 className="px-4 py-2 rounded-full border border-[color:var(--line)] hover:border-[color:var(--text)] hover:text-[color:var(--text)] transition"
               >
                 Sign Up
-              </a>
+              </button>
             </>
           )}
         </div>
       </div>
+
+      <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
     </div>
   );
 }

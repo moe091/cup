@@ -1,5 +1,14 @@
-import { Controller, Get, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
-import type { AuthedRequest } from './auth.types';
+import {
+  Controller,
+  Get,
+  InternalServerErrorException,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
+import type { AuthedRequest, LogoutRequest } from './auth.types';
 import type { Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -39,5 +48,45 @@ export class AuthController {
     });
 
     res.redirect('http://localhost:5173/games'); //TODO:: redirect to previous page
+  }
+
+  @Post('logout')
+  async logout(@Req() req: LogoutRequest, @Res({ passthrough: true }) res: Response) {
+    await new Promise<void>((resolve, reject) => {
+      req.logOut((err?: Error | null) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        resolve();
+      });
+    }).catch((err: unknown) => {
+      throw new InternalServerErrorException(err instanceof Error ? err.message : 'Failed to logout');
+    });
+
+    if (req.session) {
+      await new Promise<void>((resolve, reject) => {
+        req.session?.destroy((err?: Error | null) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          resolve();
+        });
+      }).catch((err: unknown) => {
+        throw new InternalServerErrorException(err instanceof Error ? err.message : 'Failed to destroy session');
+      });
+    }
+
+    res.clearCookie('connect.sid', {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+
+    return { ok: true };
   }
 }
