@@ -24,12 +24,12 @@ export class AuthController {
 
   @Get('csrf')
   csrf(@Req() req: SessionRequest) {
-    const token = req.session?.[CSRF_SESSION_KEY];
-    if (typeof token !== 'string') {
+    const rawToken = req.session?.[CSRF_SESSION_KEY] as unknown;
+    if (typeof rawToken !== 'string') {
       throw new ForbiddenException('Unable to initialize CSRF token.');
     }
 
-    return { csrfToken: token };
+    return { csrfToken: rawToken };
   }
 
   @Get('me')
