@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import bouncerScreen from "../../../assets/bouncer_screen.jpg";
+import { buildCsrfHeaders } from "../../../api/csrf";
 
 export function BouncerLanding() {
   const navigate = useNavigate();
@@ -8,7 +9,9 @@ export function BouncerLanding() {
     try {
       const res = await fetch("/api/games/bouncer/create", {
         method: "POST",
+        credentials: "include",
         headers: {
+          ...(await buildCsrfHeaders()),
           "Content-Type": "application/json",
         },
       });

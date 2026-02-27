@@ -2,15 +2,24 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth";
 import { LoginModal } from "../auth/LoginModal";
+import type { AuthMode } from "../auth/LoginModal";
+import { buildCsrfHeaders } from "../api/csrf";
 
 export default function TopBar() {
   const { user, refresh } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [loginModalInitialMode, setLoginModalInitialMode] = useState<AuthMode>("login");
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuContainerRef = useRef<HTMLDivElement | null>(null);
   const userMenuId = useId();
 
   const openLoginModal = () => {
+    setLoginModalInitialMode("login");
+    setIsLoginModalOpen(true);
+  };
+
+  const openSignupModal = () => {
+    setLoginModalInitialMode("signup");
     setIsLoginModalOpen(true);
   };
 
@@ -25,6 +34,7 @@ export default function TopBar() {
       const response = await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
+        headers: await buildCsrfHeaders(),
       });
 
       if (!response.ok) {
@@ -36,6 +46,20 @@ export default function TopBar() {
       alert("Logout failed.");
     }
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const authError = params.get("authError");
+    if (!authError) {
+      return;
+    }
+
+    alert(authError);
+    params.delete("authError");
+    const nextQuery = params.toString();
+    const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}${window.location.hash}`;
+    window.history.replaceState(null, "", nextUrl);
+  }, []);
 
   useEffect(() => {
     if (!isUserMenuOpen) {
@@ -154,7 +178,7 @@ export default function TopBar() {
               </button>
               <button
                 type="button"
-                onClick={openLoginModal}
+                onClick={openSignupModal}
                 className="px-4 py-2 rounded-full border border-[color:var(--line)] hover:border-[color:var(--text)] hover:text-[color:var(--text)] transition"
               >
                 Sign Up
@@ -164,7 +188,11 @@ export default function TopBar() {
         </div>
       </div>
 
-      <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={closeLoginModal}
+        initialMode={loginModalInitialMode}
+      />
     </div>
   );
 }

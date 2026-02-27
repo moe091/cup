@@ -419,3 +419,5 @@ export class WaitingRoomUI {
     this.container = null;
   }
 }
+
+export default WaitingRoomUI;

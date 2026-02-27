@@ -9,7 +9,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await fetch("/api/auth/me", { credentials: "include" });
+      const res = await fetch("/api/auth/me", {
+        credentials: "include",
+        cache: "no-store",
+      });
       const data = res.ok ? await res.json() : null;
       setUser(data);
     } finally {

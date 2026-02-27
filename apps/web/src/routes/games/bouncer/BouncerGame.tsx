@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom";
 import { useEffect, useRef } from "react";
 import { connectBouncer, type BouncerConnection } from "@cup/bouncer-client";
 import type { LobbyJoinResponse } from "@cup/shared-types";
+import { buildCsrfHeaders } from "../../../api/csrf";
 
 type Params = { matchId: string };
 
@@ -33,21 +34,27 @@ export function BouncerGame() {
     const controller = new AbortController();
     let conn: BouncerConnection | null = null;
 
-    fetch(`/api/games/bouncer/join/${matchId}`, {
-      method: "POST",
-      signal: controller.signal,
-      credentials: "include",
-    })
+    const joinLobby = async () => {
+      const response = await fetch(`/api/games/bouncer/join/${matchId}`, {
+        method: "POST",
+        signal: controller.signal,
+        credentials: "include",
+        headers: await buildCsrfHeaders(),
+      });
+
+      if (response.ok) {
+        return response.json() as Promise<LobbyJoinResponse>;
+      }
+      if (response.status == 404) throw new Error("Lobby not found");
+      if (response.status == 410) throw new Error("Lobby has expired");
+      if (response.status == 409) throw new Error("Lobby is not open for joining");
+      throw new Error("Failed to join lobby: " + response.statusText);
+    };
+
+    joinLobby()
       .then((res) => {
-        if (res.ok) return res.json();
-        if (res.status == 404) throw new Error("Lobby not found");
-        if (res.status == 410) throw new Error("Lobby has expired");
-        if (res.status == 409) throw new Error("Lobby is not open for joining");
-        throw new Error("Failed to join lobby: " + res.statusText);
-      })
-      .then((data: LobbyJoinResponse) => {
-        console.log("Joining lobby with data:", data);
-        conn = connectToLobby(data, gameEl);
+        console.log("Joining lobby with data:", res);
+        conn = connectToLobby(res, gameEl);
       })
       .catch((err) => {
         if (err?.name === "AbortError") return;

@@ -4,6 +4,7 @@ import {
   type BouncerEditorConnection,
 } from "@cup/bouncer-client";
 import { listLevels, type LevelListItem } from "../../../api/bouncer";
+import { buildCsrfHeaders } from "../../../api/csrf";
 
 export function BouncerEditor() {
   const editorRef = useRef<BouncerEditorConnection | null>(null);
@@ -70,7 +71,11 @@ export function BouncerEditor() {
 
       const res = await fetch("/api/games/bouncer/levels", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: {
+          ...(await buildCsrfHeaders()),
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       });
 
