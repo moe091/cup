@@ -133,6 +133,26 @@ describe('AuthService', () => {
     });
   });
 
+  it('should login with email identifier', async () => {
+    prismaServiceMock.user.findFirst.mockResolvedValue({
+      id: 'user-id-123',
+      username: 'fakeuser',
+      email: 'fake@example.com',
+      displayName: 'Fake User',
+      passwordHash: 'hashed-password',
+    });
+    verifyPasswordMock.mockResolvedValue(true);
+
+    const result = await service.loginLocal({ identifier: 'fake@example.com', password: 'password123' });
+
+    expect(result).toEqual({
+      id: 'user-id-123',
+      username: 'fakeuser',
+      email: 'fake@example.com',
+      displayName: 'Fake User',
+    });
+  });
+
   it('should reject login with invalid credentials', async () => {
     prismaServiceMock.user.findFirst.mockResolvedValue(null);
 
