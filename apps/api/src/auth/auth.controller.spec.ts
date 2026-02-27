@@ -3,7 +3,7 @@ import { ForbiddenException, InternalServerErrorException, UnauthorizedException
 import type { Response } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { AuthedRequest, LoginRequest, LogoutRequest } from './auth.types';
+import { AuthedRequest, LoginRequest, LogoutRequest, SessionRequest } from './auth.types';
 import { CSRF_SESSION_KEY } from 'src/security/security.constants';
 
 describe('AuthController', () => {
@@ -62,7 +62,7 @@ describe('AuthController', () => {
       session: {
         [CSRF_SESSION_KEY]: 'csrf-token-value',
       },
-    } as unknown as AuthedRequest;
+    } as unknown as SessionRequest;
 
     const result = controller.csrf(req);
 
@@ -72,7 +72,7 @@ describe('AuthController', () => {
   it('should throw forbidden when csrf token missing', () => {
     const req = {
       session: {},
-    } as unknown as AuthedRequest;
+    } as unknown as SessionRequest;
 
     expect(() => controller.csrf(req)).toThrow(ForbiddenException);
   });

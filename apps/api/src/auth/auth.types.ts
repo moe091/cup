@@ -1,8 +1,11 @@
 import type { Request } from 'express';
+import type { Session, SessionData } from 'express-session';
 import type { SessionUser } from '@cup/shared-types';
 
+type SessionShape = Session & Partial<SessionData>;
+
 export type SessionRequest = Request & {
-  session?: Record<string, unknown>;
+  session?: SessionShape;
 };
 
 export type AuthedRequest = Request & {
@@ -12,7 +15,7 @@ export type AuthedRequest = Request & {
 export type LoginRequest = Request & {
   body: unknown;
   logIn: (user: SessionUser, callback: (err?: Error | null) => void) => void;
-  session?: Record<string, unknown>;
+  session?: SessionShape;
 };
 
 export type LogoutRequest = AuthedRequest & {
