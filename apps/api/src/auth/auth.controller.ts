@@ -1,19 +1,37 @@
 import {
+  Body,
   Controller,
+  ForbiddenException,
   Get,
   InternalServerErrorException,
   Post,
   Req,
   Res,
   UnauthorizedException,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
-import type { AuthedRequest, LogoutRequest } from './auth.types';
+import type { AuthedRequest, LoginRequest, LogoutRequest, SessionRequest } from './auth.types';
 import type { Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
+import { AuthService } from './auth.service';
+import { OAuthErrorRedirectFilter } from './oauth-error-redirect.filter';
+import { CSRF_SESSION_KEY } from 'src/security/security.constants';
 
 @Controller('auth')
 export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
+  @Get('csrf')
+  csrf(@Req() req: SessionRequest) {
+    const token = req.session?.[CSRF_SESSION_KEY];
+    if (typeof token !== 'string') {
+      throw new ForbiddenException('Unable to initialize CSRF token.');
+    }
+
+    return { csrfToken: token };
+  }
+
   @Get('me')
   me(@Req() req: AuthedRequest) {
     console.log('AuthController.me called, req.user = ', req.user);
@@ -33,6 +51,7 @@ export class AuthController {
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
+  @UseFilters(OAuthErrorRedirectFilter)
   async googleCallback(@Req() req: AuthedRequest, @Res() res: Response) {
     console.log('AuthController.googleCallback called, req.user = ', req.user);
 
@@ -40,14 +59,43 @@ export class AuthController {
       throw new UnauthorizedException();
     }
 
-    // prettier-ignore
-    await new Promise<void>((resolve, reject) => {
-      (req).logIn(req.user!, (err: Error) =>
-        err ? reject(err) : resolve(err),
-      );
-    });
+    await this.loginSession(req as LoginRequest, req.user);
 
-    res.redirect('http://localhost:5173/games'); //TODO:: redirect to previous page
+    res.redirect('http://localhost:5173/profile'); //TODO:: redirect to previous page
+  }
+
+  @Get('discord')
+  @UseGuards(AuthGuard('discord'))
+  discord() {
+    // guard redirects to Discord OAuth
+  }
+
+  @Get('discord/callback')
+  @UseGuards(AuthGuard('discord'))
+  @UseFilters(OAuthErrorRedirectFilter)
+  async discordCallback(@Req() req: AuthedRequest, @Res() res: Response) {
+    if (!req.user) {
+      throw new UnauthorizedException();
+    }
+
+    await this.loginSession(req as LoginRequest, req.user);
+    res.redirect('http://localhost:5173/profile'); //TODO:: redirect to previous page
+  }
+
+  @Post('local/signup')
+  async localSignup(@Body() body: unknown, @Req() req: LoginRequest) {
+    const sessionUser = await this.authService.signupLocal(body);
+    await this.loginSession(req, sessionUser);
+
+    return { ok: true, user: sessionUser };
+  }
+
+  @Post('local/login')
+  async localLogin(@Body() body: unknown, @Req() req: LoginRequest) {
+    const sessionUser = await this.authService.loginLocal(body);
+    await this.loginSession(req, sessionUser);
+
+    return { ok: true, user: sessionUser };
   }
 
   @Post('logout')
@@ -88,5 +136,20 @@ export class AuthController {
     });
 
     return { ok: true };
+  }
+
+  private async loginSession(req: LoginRequest, user: NonNullable<AuthedRequest['user']>): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      req.logIn(user, (err?: Error | null) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        resolve();
+      });
+    }).catch((err: unknown) => {
+      throw new InternalServerErrorException(err instanceof Error ? err.message : 'Failed to initialize session');
+    });
   }
 }

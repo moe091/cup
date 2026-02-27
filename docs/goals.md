@@ -69,11 +69,36 @@ A social web platform for friends to hang out and play quick, casual multiplayer
 
 ## Current TODO priorities
 
-User account and profile features:
--add login methods(discord OAuth and username/password)
--add user profile page(set displayName and other settings)
--add user dropdown to topbar(logged in users can click on their name on the right side of topbar and it will dropdown a user menu with options for logout, profile, my homepage, etc)
+### Users / Accounts
+
+- Replace remaining `alert(...)` auth/profile errors with inline or toast UI feedback.
+- Remove auth/debug `console.log` output from backend controllers.
+- Decide and implement account linking strategy for local + Google + Discord accounts.
+- Polish topbar identity fallback behavior when `displayName` is missing.
+- Add integration/e2e coverage for signup/login/logout, OAuth callbacks, and profile updates.
+- Improve unauthenticated `/profile` redirect/UX behavior.
+- Add email verification + password reset flows (post-v1 hardening).
+
+### Chat Rooms
+
+- Use one modular chat system with a unified `Conversation` model and `kind` (`dm`, `meeting`, `room`, `guild_channel`, `game_page`).
+- Build one reusable frontend chat component that takes `conversationId` and can be embedded on profile rooms, guild halls, game pages, and DM views.
+- Use one realtime chat gateway/service with Socket.IO rooms keyed by `conversationId` (do not spin up one server per chat).
+- Persist all messages in a shared `Message` table keyed by `conversationId` (no per-chat tables), with strong indexing and cursor pagination.
+- Enforce access via membership/policy checks on every read/send/subscription action.
+- Start with simple permissions by conversation kind; evolve to role-based permission overrides later.
+- Keep chat history durable and queryable (recent messages + older pagination) for all chat surfaces.
+- Plan now for future scale: stateless gateway nodes + Redis adapter + DB indexing/retention strategy.
+
+#### Chat Rooms TODO (Phase 1)
+
+- Define Prisma schema for `Conversation`, `ConversationMember`, `Message`, and basic policy fields.
+- Implement chat backend REST + socket contract (join, leave, send, ack, fetch history).
+- Add server-side authorization checks for `canView` and `canPost` per conversation kind.
+- Implement frontend chat component with message list, composer, optimistic send, and history pagination.
+- Embed the component first in one surface (recommended: user room chat) to validate contracts before rolling out everywhere.
+- Add moderation/event fields (`editedAt`, `deletedAt`, `system` messages) even if UI support is minimal at first.
+- Add integration tests for auth + permissions + realtime delivery + history consistency.
 
 
 ---
-

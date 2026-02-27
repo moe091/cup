@@ -20,7 +20,7 @@ describe('SessionSerializer', () => {
     it('serializes to user id', () => {
       const done = jest.fn();
 
-      serializer.serializeUser({ id: 'user-id-123', email: 'a@b.com', displayName: 'Alice' }, done);
+      serializer.serializeUser({ id: 'user-id-123', username: 'alice', email: 'a@b.com', displayName: 'Alice' }, done);
 
       expect(done).toHaveBeenCalledWith(null, 'user-id-123');
     });
@@ -30,6 +30,7 @@ describe('SessionSerializer', () => {
     it('deserializes id into SessionUser when found', async () => {
       prismaMock.user.findUnique = jest.fn().mockResolvedValue({
         id: 'user-id-123',
+        username: 'alice',
         email: 'a@b.com',
         displayName: 'Alice',
       });
@@ -40,6 +41,7 @@ describe('SessionSerializer', () => {
 
       expect(done).toHaveBeenCalledWith(null, {
         id: 'user-id-123',
+        username: 'alice',
         email: 'a@b.com',
         displayName: 'Alice',
       });

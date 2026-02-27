@@ -1,15 +1,29 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { Routes, Route, Link, Outlet } from "react-router-dom";
 import type { SessionUser } from "@cup/shared-types";
-import { BouncerGame } from "./routes/games/bouncer/BouncerGame";
-import { BouncerLanding } from "./routes/games/bouncer/BouncerLanding";
-import { BouncerEditor } from "./routes/games/bouncer/BouncerEditor";
-import BouncerLayout from "./routes/games/bouncer/BouncerLayout";
 import { useAuth } from "./auth";
 import TopBar from "./panels/TopBar";
-import Browse from "./routes/games/Browse";
-import GamesLayout from "./routes/games/GamesLayout";
+import ProfilePage from "./routes/profile/ProfilePage";
 //import './assets/games.css';
+
+const GamesLayout = lazy(() => import("./routes/games/GamesLayout"));
+const Browse = lazy(() => import("./routes/games/Browse"));
+const BouncerLayout = lazy(() => import("./routes/games/bouncer/BouncerLayout"));
+const BouncerLanding = lazy(() =>
+  import("./routes/games/bouncer/BouncerLanding").then((module) => ({
+    default: module.BouncerLanding,
+  })),
+);
+const BouncerEditor = lazy(() =>
+  import("./routes/games/bouncer/BouncerEditor").then((module) => ({
+    default: module.BouncerEditor,
+  })),
+);
+const BouncerGame = lazy(() =>
+  import("./routes/games/bouncer/BouncerGame").then((module) => ({
+    default: module.BouncerGame,
+  })),
+);
 
 function LoginSignupCard() {
   const [username, setUsername] = useState("");
@@ -115,12 +129,55 @@ export default function App() {
     <Routes>
       <Route element={<AppLayout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/games" element={<GamesLayout />}>
-          <Route index element={<Browse />} />
-          <Route path="bouncer" element={<BouncerLayout />}>
-            <Route index element={<BouncerLanding />} />
-            <Route path="editor" element={<BouncerEditor />} />
-            <Route path=":matchId" element={<BouncerGame />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route
+          path="/games"
+          element={
+            <Suspense fallback={null}>
+              <GamesLayout />
+            </Suspense>
+          }
+        >
+          <Route
+            index
+            element={
+              <Suspense fallback={null}>
+                <Browse />
+              </Suspense>
+            }
+          />
+          <Route
+            path="bouncer"
+            element={
+              <Suspense fallback={null}>
+                <BouncerLayout />
+              </Suspense>
+            }
+          >
+            <Route
+              index
+              element={
+                <Suspense fallback={null}>
+                  <BouncerLanding />
+                </Suspense>
+              }
+            />
+            <Route
+              path="editor"
+              element={
+                <Suspense fallback={null}>
+                  <BouncerEditor />
+                </Suspense>
+              }
+            />
+            <Route
+              path=":matchId"
+              element={
+                <Suspense fallback={null}>
+                  <BouncerGame />
+                </Suspense>
+              }
+            />
           </Route>
         </Route>
       </Route>

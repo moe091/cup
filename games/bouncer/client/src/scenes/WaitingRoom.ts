@@ -1,7 +1,7 @@
 import type { MatchJoinInfo, MatchStatus, LevelListItem, ScoreGoal } from '@cup/bouncer-shared';
 import { listLevels } from '../api/levels';
 import { LevelSelectorSidebar } from '../misc/LevelSelectorSidebar';
-import { WaitingRoomUI } from '../misc/WaitingRoomUI';
+import WaitingRoomUI from '../misc/WaitingRoomUI';
 
 export class WaitingRoomScene extends Phaser.Scene {
   private role = '';

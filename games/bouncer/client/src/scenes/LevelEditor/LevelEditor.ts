@@ -222,7 +222,6 @@ export class LevelEditorScene extends Phaser.Scene {
 
   private onDestroy() {
     this.tools[this.activeTool].disable();
-    this.scene.stop('level-editor-ui');
     this.gridGraphics?.destroy();
     this.objectViews.forEach(({ view }) => view.destroy());
     this.objectViews = [];
