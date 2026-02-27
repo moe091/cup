@@ -203,7 +203,7 @@ describe('AuthService', () => {
       username: 'DiscordUser',
       global_name: 'Discord Display',
       email: null,
-    } as DiscordProfile;
+    } as unknown as DiscordProfile;
 
     prismaServiceMock.oAuthAccount.findUnique.mockResolvedValue(null);
     prismaServiceMock.user.findUnique.mockResolvedValue(null);
@@ -240,7 +240,7 @@ describe('AuthService', () => {
       username: 'DiscordUser',
       global_name: 'Discord Display',
       email: 'fake@example.com',
-    } as DiscordProfile;
+    } as unknown as DiscordProfile;
 
     prismaServiceMock.oAuthAccount.findUnique.mockResolvedValue(null);
     prismaServiceMock.user.findUnique.mockResolvedValue({ id: 'existing-user-id' });
