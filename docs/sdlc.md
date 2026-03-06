@@ -9,12 +9,12 @@ description: SDLC, environments, database workflows, seeding strategy, testing, 
 - Run all main dev processes in monorepo: `pnpm run dev`
 - Run API only (watch): `pnpm run dev:api`
 - Run web only (watch): `pnpm run dev:web`
-- Run API migrations (local dev): `pnpm --filter @cup/api exec prisma migrate dev --name <migration_name>`
-- Generate Prisma client: `pnpm --filter @cup/api exec prisma generate`
-- Seed API database: `pnpm --filter @cup/api seed`
-- Seed API database (dev mode): `pnpm --filter @cup/api seed:dev`
-- Seed API database (test mode): `pnpm --filter @cup/api seed:test`
-- Seed API database (base mode): `pnpm --filter @cup/api seed:base`
+- Run API migrations (local dev): `pnpm exec prisma migrate dev --name <migration_name>`
+- Generate Prisma client: `pnpm exec prisma generate`
+- Seed API database: `pnpm @cup/api seed`
+- Seed API database (dev mode): `pnpm seed:dev`
+- Seed API database (test mode): `pnpm seed:test`
+- Seed API database (base mode): `pnpm seed:base`
 - Lint all packages: `pnpm lint`
 - Auto-fix lint: `pnpm lint:fix`
 - Typecheck all packages: `pnpm typecheck`

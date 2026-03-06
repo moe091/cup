@@ -1,5 +1,9 @@
 let csrfToken: string | null = null;
 
+export function clearCsrfTokenCache(): void {
+  csrfToken = null;
+}
+
 export async function getCsrfToken(): Promise<string> {
   if (csrfToken) {
     return csrfToken;
