@@ -11,13 +11,14 @@ import jwt from 'jsonwebtoken';
 
 @WebSocketGateway({
   namespace: '/chat',
-  cors: { //TODO:: DEPLOY:: update .env with correct domains/origins for CORS when deploying
+  cors: {
+    //TODO:: DEPLOY:: update .env with correct domains/origins for CORS when deploying
     origin: (origin, callback) => {
       const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS ?? '')
         .split(',')
         .map((v) => v.trim())
         .filter(Boolean);
-        
+
       if (!origin) {
         callback(null, true);
         return;
@@ -34,10 +35,10 @@ import jwt from 'jsonwebtoken';
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleConnection(socket: ChatSocket) {
-    const token = socket.handshake.auth?.token;
+    const token = (socket.handshake.auth as { token?: unknown } | undefined)?.token;
     if (typeof token !== 'string' || token.trim().length === 0) {
-        socket.disconnect();
-        return;
+      socket.disconnect();
+      return;
     }
 
     const secret = process.env.CHAT_TOKEN_SECRET;
@@ -63,7 +64,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('chat:join')
-  handleJoin(@ConnectedSocket() socket: ChatSocket, @MessageBody() body: unknown) {
+  async handleJoin(@ConnectedSocket() socket: ChatSocket, @MessageBody() body: unknown) {
     const userId = socket.data?.userId;
     if (typeof userId !== 'string' || userId.length === 0) {
       socket.emit('chat:error', { code: 'UNAUTHORIZED', message: 'Unauthorized socket' });
@@ -77,12 +78,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
     const channelId = payload.channelId.trim();
     const roomName = `channel:${channelId}`;
-    socket.join(roomName);
+    await socket.join(roomName);
     socket.emit('chat:join:ack', { ok: true, channelId });
   }
 
   @SubscribeMessage('chat:leave')
-  handleLeave(@ConnectedSocket() socket: ChatSocket, @MessageBody() body: unknown) {
+  async handleLeave(@ConnectedSocket() socket: ChatSocket, @MessageBody() body: unknown) {
     const userId = socket.data?.userId;
     if (typeof userId !== 'string' || userId.length === 0) {
       socket.emit('chat:error', { code: 'UNAUTHORIZED', message: 'Unauthorized socket' });
@@ -96,10 +97,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
     const channelId = payload.channelId.trim();
     const roomName = `channel:${channelId}`;
-    socket.leave(roomName);
+    await socket.leave(roomName);
     socket.emit('chat:leave:ack', { ok: true, channelId });
   }
 
-  handleDisconnect(_socket: ChatSocket) {}
-
+  handleDisconnect() {}
 }

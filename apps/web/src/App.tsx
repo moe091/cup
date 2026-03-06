@@ -24,6 +24,7 @@ const BouncerGame = lazy(() =>
     default: module.BouncerGame,
   })),
 );
+const ChatSocketTest = lazy(() => import('./routes/chat/ChatSocketTest'));
 
 function LoginSignupCard() {
   const [username, setUsername] = useState("");
@@ -130,6 +131,14 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route
+          path="/chat-test"
+          element={
+            <Suspense fallback={null}>
+              <ChatSocketTest />
+            </Suspense>
+          }
+        />
         <Route
           path="/games"
           element={

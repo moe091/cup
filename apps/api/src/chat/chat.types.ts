@@ -2,7 +2,6 @@ import type { Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 export type { ChatTokenResponse, JoinLeaveAck } from '@cup/shared-types';
 
-
 export type ChatTokenClaims = jwt.JwtPayload & {
   sub: string;
   ver: number;
