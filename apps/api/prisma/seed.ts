@@ -1,6 +1,6 @@
 import fs from 'node:fs';
-import { PrismaClient } from '@prisma/client';
-import type { Prisma } from '@prisma/client';
+import { PrismaClient } from '../src/generated/prisma/client';
+import type { Prisma } from '../src/generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import 'dotenv/config';
 import { hashPassword } from '../src/auth/password.util';
