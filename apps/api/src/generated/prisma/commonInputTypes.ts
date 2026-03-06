@@ -321,6 +321,57 @@ export type EnumBouncerLevelVisibilityWithAggregatesFilter<$PrismaModel = never>
   _max?: Prisma.NestedEnumBouncerLevelVisibilityFilter<$PrismaModel>;
 };
 
+export type EnumChannelKindFilter<$PrismaModel = never> = {
+  equals?: $Enums.ChannelKind | Prisma.EnumChannelKindFieldRefInput<$PrismaModel>;
+  in?: $Enums.ChannelKind[] | Prisma.ListEnumChannelKindFieldRefInput<$PrismaModel>;
+  notIn?: $Enums.ChannelKind[] | Prisma.ListEnumChannelKindFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumChannelKindFilter<$PrismaModel> | $Enums.ChannelKind;
+};
+
+export type EnumChannelVisibilityFilter<$PrismaModel = never> = {
+  equals?: $Enums.ChannelVisibility | Prisma.EnumChannelVisibilityFieldRefInput<$PrismaModel>;
+  in?: $Enums.ChannelVisibility[] | Prisma.ListEnumChannelVisibilityFieldRefInput<$PrismaModel>;
+  notIn?: $Enums.ChannelVisibility[] | Prisma.ListEnumChannelVisibilityFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumChannelVisibilityFilter<$PrismaModel> | $Enums.ChannelVisibility;
+};
+
+export type EnumChannelKindWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ChannelKind | Prisma.EnumChannelKindFieldRefInput<$PrismaModel>;
+  in?: $Enums.ChannelKind[] | Prisma.ListEnumChannelKindFieldRefInput<$PrismaModel>;
+  notIn?: $Enums.ChannelKind[] | Prisma.ListEnumChannelKindFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumChannelKindWithAggregatesFilter<$PrismaModel> | $Enums.ChannelKind;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumChannelKindFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumChannelKindFilter<$PrismaModel>;
+};
+
+export type EnumChannelVisibilityWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ChannelVisibility | Prisma.EnumChannelVisibilityFieldRefInput<$PrismaModel>;
+  in?: $Enums.ChannelVisibility[] | Prisma.ListEnumChannelVisibilityFieldRefInput<$PrismaModel>;
+  notIn?: $Enums.ChannelVisibility[] | Prisma.ListEnumChannelVisibilityFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumChannelVisibilityWithAggregatesFilter<$PrismaModel> | $Enums.ChannelVisibility;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumChannelVisibilityFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumChannelVisibilityFilter<$PrismaModel>;
+};
+
+export type EnumMembershipSourceFilter<$PrismaModel = never> = {
+  equals?: $Enums.MembershipSource | Prisma.EnumMembershipSourceFieldRefInput<$PrismaModel>;
+  in?: $Enums.MembershipSource[] | Prisma.ListEnumMembershipSourceFieldRefInput<$PrismaModel>;
+  notIn?: $Enums.MembershipSource[] | Prisma.ListEnumMembershipSourceFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumMembershipSourceFilter<$PrismaModel> | $Enums.MembershipSource;
+};
+
+export type EnumMembershipSourceWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.MembershipSource | Prisma.EnumMembershipSourceFieldRefInput<$PrismaModel>;
+  in?: $Enums.MembershipSource[] | Prisma.ListEnumMembershipSourceFieldRefInput<$PrismaModel>;
+  notIn?: $Enums.MembershipSource[] | Prisma.ListEnumMembershipSourceFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumMembershipSourceWithAggregatesFilter<$PrismaModel> | $Enums.MembershipSource;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumMembershipSourceFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumMembershipSourceFilter<$PrismaModel>;
+};
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>;
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>;
@@ -581,4 +632,55 @@ export type NestedEnumBouncerLevelVisibilityWithAggregatesFilter<$PrismaModel = 
   _count?: Prisma.NestedIntFilter<$PrismaModel>;
   _min?: Prisma.NestedEnumBouncerLevelVisibilityFilter<$PrismaModel>;
   _max?: Prisma.NestedEnumBouncerLevelVisibilityFilter<$PrismaModel>;
+};
+
+export type NestedEnumChannelKindFilter<$PrismaModel = never> = {
+  equals?: $Enums.ChannelKind | Prisma.EnumChannelKindFieldRefInput<$PrismaModel>;
+  in?: $Enums.ChannelKind[] | Prisma.ListEnumChannelKindFieldRefInput<$PrismaModel>;
+  notIn?: $Enums.ChannelKind[] | Prisma.ListEnumChannelKindFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumChannelKindFilter<$PrismaModel> | $Enums.ChannelKind;
+};
+
+export type NestedEnumChannelVisibilityFilter<$PrismaModel = never> = {
+  equals?: $Enums.ChannelVisibility | Prisma.EnumChannelVisibilityFieldRefInput<$PrismaModel>;
+  in?: $Enums.ChannelVisibility[] | Prisma.ListEnumChannelVisibilityFieldRefInput<$PrismaModel>;
+  notIn?: $Enums.ChannelVisibility[] | Prisma.ListEnumChannelVisibilityFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumChannelVisibilityFilter<$PrismaModel> | $Enums.ChannelVisibility;
+};
+
+export type NestedEnumChannelKindWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ChannelKind | Prisma.EnumChannelKindFieldRefInput<$PrismaModel>;
+  in?: $Enums.ChannelKind[] | Prisma.ListEnumChannelKindFieldRefInput<$PrismaModel>;
+  notIn?: $Enums.ChannelKind[] | Prisma.ListEnumChannelKindFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumChannelKindWithAggregatesFilter<$PrismaModel> | $Enums.ChannelKind;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumChannelKindFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumChannelKindFilter<$PrismaModel>;
+};
+
+export type NestedEnumChannelVisibilityWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ChannelVisibility | Prisma.EnumChannelVisibilityFieldRefInput<$PrismaModel>;
+  in?: $Enums.ChannelVisibility[] | Prisma.ListEnumChannelVisibilityFieldRefInput<$PrismaModel>;
+  notIn?: $Enums.ChannelVisibility[] | Prisma.ListEnumChannelVisibilityFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumChannelVisibilityWithAggregatesFilter<$PrismaModel> | $Enums.ChannelVisibility;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumChannelVisibilityFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumChannelVisibilityFilter<$PrismaModel>;
+};
+
+export type NestedEnumMembershipSourceFilter<$PrismaModel = never> = {
+  equals?: $Enums.MembershipSource | Prisma.EnumMembershipSourceFieldRefInput<$PrismaModel>;
+  in?: $Enums.MembershipSource[] | Prisma.ListEnumMembershipSourceFieldRefInput<$PrismaModel>;
+  notIn?: $Enums.MembershipSource[] | Prisma.ListEnumMembershipSourceFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumMembershipSourceFilter<$PrismaModel> | $Enums.MembershipSource;
+};
+
+export type NestedEnumMembershipSourceWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.MembershipSource | Prisma.EnumMembershipSourceFieldRefInput<$PrismaModel>;
+  in?: $Enums.MembershipSource[] | Prisma.ListEnumMembershipSourceFieldRefInput<$PrismaModel>;
+  notIn?: $Enums.MembershipSource[] | Prisma.ListEnumMembershipSourceFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumMembershipSourceWithAggregatesFilter<$PrismaModel> | $Enums.MembershipSource;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumMembershipSourceFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumMembershipSourceFilter<$PrismaModel>;
 };

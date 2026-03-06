@@ -34,7 +34,6 @@ export class AuthController {
 
   @Get('me')
   me(@Req() req: AuthedRequest) {
-    console.log('AuthController.me called, req.user = ', req.user);
     if (!req.user) {
       throw new UnauthorizedException();
     }

@@ -24,3 +24,26 @@ export const BouncerLevelVisibility = {
 } as const;
 
 export type BouncerLevelVisibility = (typeof BouncerLevelVisibility)[keyof typeof BouncerLevelVisibility];
+
+export const ChannelKind = {
+  COMMUNITY: 'COMMUNITY',
+  DM: 'DM',
+  GAME_PAGE: 'GAME_PAGE',
+  ROOM: 'ROOM',
+} as const;
+
+export type ChannelKind = (typeof ChannelKind)[keyof typeof ChannelKind];
+
+export const ChannelVisibility = {
+  PUBLIC: 'PUBLIC',
+  PRIVATE: 'PRIVATE',
+} as const;
+
+export type ChannelVisibility = (typeof ChannelVisibility)[keyof typeof ChannelVisibility];
+
+export const MembershipSource = {
+  MANUAL: 'MANUAL',
+  DERIVED: 'DERIVED',
+} as const;
+
+export type MembershipSource = (typeof MembershipSource)[keyof typeof MembershipSource];

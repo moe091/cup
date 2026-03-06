@@ -365,6 +365,10 @@ export const ModelName = {
   OAuthAccount: 'OAuthAccount',
   Lobby: 'Lobby',
   BouncerLevel: 'BouncerLevel',
+  Community: 'Community',
+  CommunityMember: 'CommunityMember',
+  Channel: 'Channel',
+  ChannelMember: 'ChannelMember',
   Message: 'Message',
 } as const;
 
@@ -385,7 +389,16 @@ export type TypeMap<
     omit: GlobalOmitOptions;
   };
   meta: {
-    modelProps: 'user' | 'oAuthAccount' | 'lobby' | 'bouncerLevel' | 'message';
+    modelProps:
+      | 'user'
+      | 'oAuthAccount'
+      | 'lobby'
+      | 'bouncerLevel'
+      | 'community'
+      | 'communityMember'
+      | 'channel'
+      | 'channelMember'
+      | 'message';
     txIsolationLevel: TransactionIsolationLevel;
   };
   model: {
@@ -685,6 +698,302 @@ export type TypeMap<
         };
       };
     };
+    Community: {
+      payload: Prisma.$CommunityPayload<ExtArgs>;
+      fields: Prisma.CommunityFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.CommunityFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.CommunityFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityPayload>;
+        };
+        findFirst: {
+          args: Prisma.CommunityFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.CommunityFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityPayload>;
+        };
+        findMany: {
+          args: Prisma.CommunityFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityPayload>[];
+        };
+        create: {
+          args: Prisma.CommunityCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityPayload>;
+        };
+        createMany: {
+          args: Prisma.CommunityCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.CommunityCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityPayload>[];
+        };
+        delete: {
+          args: Prisma.CommunityDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityPayload>;
+        };
+        update: {
+          args: Prisma.CommunityUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityPayload>;
+        };
+        deleteMany: {
+          args: Prisma.CommunityDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.CommunityUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.CommunityUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityPayload>[];
+        };
+        upsert: {
+          args: Prisma.CommunityUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityPayload>;
+        };
+        aggregate: {
+          args: Prisma.CommunityAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCommunity>;
+        };
+        groupBy: {
+          args: Prisma.CommunityGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.CommunityGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.CommunityCountArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.CommunityCountAggregateOutputType> | number;
+        };
+      };
+    };
+    CommunityMember: {
+      payload: Prisma.$CommunityMemberPayload<ExtArgs>;
+      fields: Prisma.CommunityMemberFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.CommunityMemberFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityMemberPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.CommunityMemberFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityMemberPayload>;
+        };
+        findFirst: {
+          args: Prisma.CommunityMemberFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityMemberPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.CommunityMemberFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityMemberPayload>;
+        };
+        findMany: {
+          args: Prisma.CommunityMemberFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityMemberPayload>[];
+        };
+        create: {
+          args: Prisma.CommunityMemberCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityMemberPayload>;
+        };
+        createMany: {
+          args: Prisma.CommunityMemberCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.CommunityMemberCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityMemberPayload>[];
+        };
+        delete: {
+          args: Prisma.CommunityMemberDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityMemberPayload>;
+        };
+        update: {
+          args: Prisma.CommunityMemberUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityMemberPayload>;
+        };
+        deleteMany: {
+          args: Prisma.CommunityMemberDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.CommunityMemberUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.CommunityMemberUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityMemberPayload>[];
+        };
+        upsert: {
+          args: Prisma.CommunityMemberUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommunityMemberPayload>;
+        };
+        aggregate: {
+          args: Prisma.CommunityMemberAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCommunityMember>;
+        };
+        groupBy: {
+          args: Prisma.CommunityMemberGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.CommunityMemberGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.CommunityMemberCountArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.CommunityMemberCountAggregateOutputType> | number;
+        };
+      };
+    };
+    Channel: {
+      payload: Prisma.$ChannelPayload<ExtArgs>;
+      fields: Prisma.ChannelFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.ChannelFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.ChannelFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelPayload>;
+        };
+        findFirst: {
+          args: Prisma.ChannelFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.ChannelFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelPayload>;
+        };
+        findMany: {
+          args: Prisma.ChannelFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelPayload>[];
+        };
+        create: {
+          args: Prisma.ChannelCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelPayload>;
+        };
+        createMany: {
+          args: Prisma.ChannelCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.ChannelCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelPayload>[];
+        };
+        delete: {
+          args: Prisma.ChannelDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelPayload>;
+        };
+        update: {
+          args: Prisma.ChannelUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelPayload>;
+        };
+        deleteMany: {
+          args: Prisma.ChannelDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.ChannelUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.ChannelUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelPayload>[];
+        };
+        upsert: {
+          args: Prisma.ChannelUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelPayload>;
+        };
+        aggregate: {
+          args: Prisma.ChannelAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateChannel>;
+        };
+        groupBy: {
+          args: Prisma.ChannelGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.ChannelGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.ChannelCountArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.ChannelCountAggregateOutputType> | number;
+        };
+      };
+    };
+    ChannelMember: {
+      payload: Prisma.$ChannelMemberPayload<ExtArgs>;
+      fields: Prisma.ChannelMemberFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.ChannelMemberFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelMemberPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.ChannelMemberFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelMemberPayload>;
+        };
+        findFirst: {
+          args: Prisma.ChannelMemberFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelMemberPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.ChannelMemberFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelMemberPayload>;
+        };
+        findMany: {
+          args: Prisma.ChannelMemberFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelMemberPayload>[];
+        };
+        create: {
+          args: Prisma.ChannelMemberCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelMemberPayload>;
+        };
+        createMany: {
+          args: Prisma.ChannelMemberCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.ChannelMemberCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelMemberPayload>[];
+        };
+        delete: {
+          args: Prisma.ChannelMemberDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelMemberPayload>;
+        };
+        update: {
+          args: Prisma.ChannelMemberUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelMemberPayload>;
+        };
+        deleteMany: {
+          args: Prisma.ChannelMemberDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.ChannelMemberUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.ChannelMemberUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelMemberPayload>[];
+        };
+        upsert: {
+          args: Prisma.ChannelMemberUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChannelMemberPayload>;
+        };
+        aggregate: {
+          args: Prisma.ChannelMemberAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateChannelMember>;
+        };
+        groupBy: {
+          args: Prisma.ChannelMemberGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.ChannelMemberGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.ChannelMemberCountArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.ChannelMemberCountAggregateOutputType> | number;
+        };
+      };
+    };
     Message: {
       payload: Prisma.$MessagePayload<ExtArgs>;
       fields: Prisma.MessageFieldRefs;
@@ -850,9 +1159,58 @@ export const BouncerLevelScalarFieldEnum = {
 export type BouncerLevelScalarFieldEnum =
   (typeof BouncerLevelScalarFieldEnum)[keyof typeof BouncerLevelScalarFieldEnum];
 
+export const CommunityScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  slug: 'slug',
+  ownerUserId: 'ownerUserId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+} as const;
+
+export type CommunityScalarFieldEnum = (typeof CommunityScalarFieldEnum)[keyof typeof CommunityScalarFieldEnum];
+
+export const CommunityMemberScalarFieldEnum = {
+  communityId: 'communityId',
+  userId: 'userId',
+  primaryRole: 'primaryRole',
+  joinedAt: 'joinedAt',
+} as const;
+
+export type CommunityMemberScalarFieldEnum =
+  (typeof CommunityMemberScalarFieldEnum)[keyof typeof CommunityMemberScalarFieldEnum];
+
+export const ChannelScalarFieldEnum = {
+  id: 'id',
+  communityId: 'communityId',
+  name: 'name',
+  kind: 'kind',
+  visibility: 'visibility',
+  createdByUserId: 'createdByUserId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+} as const;
+
+export type ChannelScalarFieldEnum = (typeof ChannelScalarFieldEnum)[keyof typeof ChannelScalarFieldEnum];
+
+export const ChannelMemberScalarFieldEnum = {
+  channelId: 'channelId',
+  userId: 'userId',
+  source: 'source',
+  joinedAt: 'joinedAt',
+} as const;
+
+export type ChannelMemberScalarFieldEnum =
+  (typeof ChannelMemberScalarFieldEnum)[keyof typeof ChannelMemberScalarFieldEnum];
+
 export const MessageScalarFieldEnum = {
   id: 'id',
-  hello: 'hello',
+  channelId: 'channelId',
+  authorUserId: 'authorUserId',
+  body: 'body',
+  createdAt: 'createdAt',
+  editedAt: 'editedAt',
+  deletedAt: 'deletedAt',
 } as const;
 
 export type MessageScalarFieldEnum = (typeof MessageScalarFieldEnum)[keyof typeof MessageScalarFieldEnum];
@@ -975,6 +1333,39 @@ export type ListEnumBouncerLevelVisibilityFieldRefInput<$PrismaModel> = FieldRef
 >;
 
 /**
+ * Reference to a field of type 'ChannelKind'
+ */
+export type EnumChannelKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ChannelKind'>;
+
+/**
+ * Reference to a field of type 'ChannelKind[]'
+ */
+export type ListEnumChannelKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ChannelKind[]'>;
+
+/**
+ * Reference to a field of type 'ChannelVisibility'
+ */
+export type EnumChannelVisibilityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ChannelVisibility'>;
+
+/**
+ * Reference to a field of type 'ChannelVisibility[]'
+ */
+export type ListEnumChannelVisibilityFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  'ChannelVisibility[]'
+>;
+
+/**
+ * Reference to a field of type 'MembershipSource'
+ */
+export type EnumMembershipSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MembershipSource'>;
+
+/**
+ * Reference to a field of type 'MembershipSource[]'
+ */
+export type ListEnumMembershipSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MembershipSource[]'>;
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>;
@@ -1090,6 +1481,10 @@ export type GlobalOmitConfig = {
   oAuthAccount?: Prisma.OAuthAccountOmit;
   lobby?: Prisma.LobbyOmit;
   bouncerLevel?: Prisma.BouncerLevelOmit;
+  community?: Prisma.CommunityOmit;
+  communityMember?: Prisma.CommunityMemberOmit;
+  channel?: Prisma.ChannelOmit;
+  channelMember?: Prisma.ChannelMemberOmit;
   message?: Prisma.MessageOmit;
 };
 

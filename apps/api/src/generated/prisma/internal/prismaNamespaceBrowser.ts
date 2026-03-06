@@ -52,6 +52,10 @@ export const ModelName = {
   OAuthAccount: 'OAuthAccount',
   Lobby: 'Lobby',
   BouncerLevel: 'BouncerLevel',
+  Community: 'Community',
+  CommunityMember: 'CommunityMember',
+  Channel: 'Channel',
+  ChannelMember: 'ChannelMember',
   Message: 'Message',
 } as const;
 
@@ -123,9 +127,58 @@ export const BouncerLevelScalarFieldEnum = {
 export type BouncerLevelScalarFieldEnum =
   (typeof BouncerLevelScalarFieldEnum)[keyof typeof BouncerLevelScalarFieldEnum];
 
+export const CommunityScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  slug: 'slug',
+  ownerUserId: 'ownerUserId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+} as const;
+
+export type CommunityScalarFieldEnum = (typeof CommunityScalarFieldEnum)[keyof typeof CommunityScalarFieldEnum];
+
+export const CommunityMemberScalarFieldEnum = {
+  communityId: 'communityId',
+  userId: 'userId',
+  primaryRole: 'primaryRole',
+  joinedAt: 'joinedAt',
+} as const;
+
+export type CommunityMemberScalarFieldEnum =
+  (typeof CommunityMemberScalarFieldEnum)[keyof typeof CommunityMemberScalarFieldEnum];
+
+export const ChannelScalarFieldEnum = {
+  id: 'id',
+  communityId: 'communityId',
+  name: 'name',
+  kind: 'kind',
+  visibility: 'visibility',
+  createdByUserId: 'createdByUserId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+} as const;
+
+export type ChannelScalarFieldEnum = (typeof ChannelScalarFieldEnum)[keyof typeof ChannelScalarFieldEnum];
+
+export const ChannelMemberScalarFieldEnum = {
+  channelId: 'channelId',
+  userId: 'userId',
+  source: 'source',
+  joinedAt: 'joinedAt',
+} as const;
+
+export type ChannelMemberScalarFieldEnum =
+  (typeof ChannelMemberScalarFieldEnum)[keyof typeof ChannelMemberScalarFieldEnum];
+
 export const MessageScalarFieldEnum = {
   id: 'id',
-  hello: 'hello',
+  channelId: 'channelId',
+  authorUserId: 'authorUserId',
+  body: 'body',
+  createdAt: 'createdAt',
+  editedAt: 'editedAt',
+  deletedAt: 'deletedAt',
 } as const;
 
 export type MessageScalarFieldEnum = (typeof MessageScalarFieldEnum)[keyof typeof MessageScalarFieldEnum];

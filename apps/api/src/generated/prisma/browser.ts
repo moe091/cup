@@ -37,6 +37,26 @@ export type Lobby = Prisma.LobbyModel;
  */
 export type BouncerLevel = Prisma.BouncerLevelModel;
 /**
+ * Model Community
+ *
+ */
+export type Community = Prisma.CommunityModel;
+/**
+ * Model CommunityMember
+ *
+ */
+export type CommunityMember = Prisma.CommunityMemberModel;
+/**
+ * Model Channel
+ *
+ */
+export type Channel = Prisma.ChannelModel;
+/**
+ * Model ChannelMember
+ *
+ */
+export type ChannelMember = Prisma.ChannelMemberModel;
+/**
  * Model Message
  *
  */

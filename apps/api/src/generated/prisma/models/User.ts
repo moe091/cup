@@ -205,6 +205,11 @@ export type UserWhereInput = {
   oauthAccounts?: Prisma.OAuthAccountListRelationFilter;
   lobbiesCreated?: Prisma.LobbyListRelationFilter;
   bouncerLevels?: Prisma.BouncerLevelListRelationFilter;
+  communitiesOwned?: Prisma.CommunityListRelationFilter;
+  communityMemberships?: Prisma.CommunityMemberListRelationFilter;
+  channelsCreated?: Prisma.ChannelListRelationFilter;
+  channelMemberships?: Prisma.ChannelMemberListRelationFilter;
+  messagesAuthored?: Prisma.MessageListRelationFilter;
 };
 
 export type UserOrderByWithRelationInput = {
@@ -219,6 +224,11 @@ export type UserOrderByWithRelationInput = {
   oauthAccounts?: Prisma.OAuthAccountOrderByRelationAggregateInput;
   lobbiesCreated?: Prisma.LobbyOrderByRelationAggregateInput;
   bouncerLevels?: Prisma.BouncerLevelOrderByRelationAggregateInput;
+  communitiesOwned?: Prisma.CommunityOrderByRelationAggregateInput;
+  communityMemberships?: Prisma.CommunityMemberOrderByRelationAggregateInput;
+  channelsCreated?: Prisma.ChannelOrderByRelationAggregateInput;
+  channelMemberships?: Prisma.ChannelMemberOrderByRelationAggregateInput;
+  messagesAuthored?: Prisma.MessageOrderByRelationAggregateInput;
 };
 
 export type UserWhereUniqueInput = Prisma.AtLeast<
@@ -237,6 +247,11 @@ export type UserWhereUniqueInput = Prisma.AtLeast<
     oauthAccounts?: Prisma.OAuthAccountListRelationFilter;
     lobbiesCreated?: Prisma.LobbyListRelationFilter;
     bouncerLevels?: Prisma.BouncerLevelListRelationFilter;
+    communitiesOwned?: Prisma.CommunityListRelationFilter;
+    communityMemberships?: Prisma.CommunityMemberListRelationFilter;
+    channelsCreated?: Prisma.ChannelListRelationFilter;
+    channelMemberships?: Prisma.ChannelMemberListRelationFilter;
+    messagesAuthored?: Prisma.MessageListRelationFilter;
   },
   'id' | 'username' | 'email'
 >;
@@ -281,6 +296,11 @@ export type UserCreateInput = {
   oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
   lobbiesCreated?: Prisma.LobbyCreateNestedManyWithoutCreatedByInput;
   bouncerLevels?: Prisma.BouncerLevelCreateNestedManyWithoutOwnerUserInput;
+  communitiesOwned?: Prisma.CommunityCreateNestedManyWithoutOwnerInput;
+  communityMemberships?: Prisma.CommunityMemberCreateNestedManyWithoutUserInput;
+  channelsCreated?: Prisma.ChannelCreateNestedManyWithoutCreatedByInput;
+  channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput;
+  messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput;
 };
 
 export type UserUncheckedCreateInput = {
@@ -295,6 +315,11 @@ export type UserUncheckedCreateInput = {
   oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
   lobbiesCreated?: Prisma.LobbyUncheckedCreateNestedManyWithoutCreatedByInput;
   bouncerLevels?: Prisma.BouncerLevelUncheckedCreateNestedManyWithoutOwnerUserInput;
+  communitiesOwned?: Prisma.CommunityUncheckedCreateNestedManyWithoutOwnerInput;
+  communityMemberships?: Prisma.CommunityMemberUncheckedCreateNestedManyWithoutUserInput;
+  channelsCreated?: Prisma.ChannelUncheckedCreateNestedManyWithoutCreatedByInput;
+  channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput;
+  messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput;
 };
 
 export type UserUpdateInput = {
@@ -309,6 +334,11 @@ export type UserUpdateInput = {
   oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
   lobbiesCreated?: Prisma.LobbyUpdateManyWithoutCreatedByNestedInput;
   bouncerLevels?: Prisma.BouncerLevelUpdateManyWithoutOwnerUserNestedInput;
+  communitiesOwned?: Prisma.CommunityUpdateManyWithoutOwnerNestedInput;
+  communityMemberships?: Prisma.CommunityMemberUpdateManyWithoutUserNestedInput;
+  channelsCreated?: Prisma.ChannelUpdateManyWithoutCreatedByNestedInput;
+  channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput;
+  messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput;
 };
 
 export type UserUncheckedUpdateInput = {
@@ -323,6 +353,11 @@ export type UserUncheckedUpdateInput = {
   oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
   lobbiesCreated?: Prisma.LobbyUncheckedUpdateManyWithoutCreatedByNestedInput;
   bouncerLevels?: Prisma.BouncerLevelUncheckedUpdateManyWithoutOwnerUserNestedInput;
+  communitiesOwned?: Prisma.CommunityUncheckedUpdateManyWithoutOwnerNestedInput;
+  communityMemberships?: Prisma.CommunityMemberUncheckedUpdateManyWithoutUserNestedInput;
+  channelsCreated?: Prisma.ChannelUncheckedUpdateManyWithoutCreatedByNestedInput;
+  channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput;
+  messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput;
 };
 
 export type UserCreateManyInput = {
@@ -478,6 +513,140 @@ export type UserUpdateOneWithoutBouncerLevelsNestedInput = {
   >;
 };
 
+export type UserCreateNestedOneWithoutCommunitiesOwnedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutCommunitiesOwnedInput,
+    Prisma.UserUncheckedCreateWithoutCommunitiesOwnedInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCommunitiesOwnedInput;
+  connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneWithoutCommunitiesOwnedNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutCommunitiesOwnedInput,
+    Prisma.UserUncheckedCreateWithoutCommunitiesOwnedInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCommunitiesOwnedInput;
+  upsert?: Prisma.UserUpsertWithoutCommunitiesOwnedInput;
+  disconnect?: Prisma.UserWhereInput | boolean;
+  delete?: Prisma.UserWhereInput | boolean;
+  connect?: Prisma.UserWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.UserUpdateToOneWithWhereWithoutCommunitiesOwnedInput,
+      Prisma.UserUpdateWithoutCommunitiesOwnedInput
+    >,
+    Prisma.UserUncheckedUpdateWithoutCommunitiesOwnedInput
+  >;
+};
+
+export type UserCreateNestedOneWithoutCommunityMembershipsInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutCommunityMembershipsInput,
+    Prisma.UserUncheckedCreateWithoutCommunityMembershipsInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCommunityMembershipsInput;
+  connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneRequiredWithoutCommunityMembershipsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutCommunityMembershipsInput,
+    Prisma.UserUncheckedCreateWithoutCommunityMembershipsInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCommunityMembershipsInput;
+  upsert?: Prisma.UserUpsertWithoutCommunityMembershipsInput;
+  connect?: Prisma.UserWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.UserUpdateToOneWithWhereWithoutCommunityMembershipsInput,
+      Prisma.UserUpdateWithoutCommunityMembershipsInput
+    >,
+    Prisma.UserUncheckedUpdateWithoutCommunityMembershipsInput
+  >;
+};
+
+export type UserCreateNestedOneWithoutChannelsCreatedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutChannelsCreatedInput,
+    Prisma.UserUncheckedCreateWithoutChannelsCreatedInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutChannelsCreatedInput;
+  connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneWithoutChannelsCreatedNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutChannelsCreatedInput,
+    Prisma.UserUncheckedCreateWithoutChannelsCreatedInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutChannelsCreatedInput;
+  upsert?: Prisma.UserUpsertWithoutChannelsCreatedInput;
+  disconnect?: Prisma.UserWhereInput | boolean;
+  delete?: Prisma.UserWhereInput | boolean;
+  connect?: Prisma.UserWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.UserUpdateToOneWithWhereWithoutChannelsCreatedInput,
+      Prisma.UserUpdateWithoutChannelsCreatedInput
+    >,
+    Prisma.UserUncheckedUpdateWithoutChannelsCreatedInput
+  >;
+};
+
+export type UserCreateNestedOneWithoutChannelMembershipsInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutChannelMembershipsInput,
+    Prisma.UserUncheckedCreateWithoutChannelMembershipsInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutChannelMembershipsInput;
+  connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneRequiredWithoutChannelMembershipsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutChannelMembershipsInput,
+    Prisma.UserUncheckedCreateWithoutChannelMembershipsInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutChannelMembershipsInput;
+  upsert?: Prisma.UserUpsertWithoutChannelMembershipsInput;
+  connect?: Prisma.UserWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.UserUpdateToOneWithWhereWithoutChannelMembershipsInput,
+      Prisma.UserUpdateWithoutChannelMembershipsInput
+    >,
+    Prisma.UserUncheckedUpdateWithoutChannelMembershipsInput
+  >;
+};
+
+export type UserCreateNestedOneWithoutMessagesAuthoredInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutMessagesAuthoredInput,
+    Prisma.UserUncheckedCreateWithoutMessagesAuthoredInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutMessagesAuthoredInput;
+  connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneRequiredWithoutMessagesAuthoredNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutMessagesAuthoredInput,
+    Prisma.UserUncheckedCreateWithoutMessagesAuthoredInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutMessagesAuthoredInput;
+  upsert?: Prisma.UserUpsertWithoutMessagesAuthoredInput;
+  connect?: Prisma.UserWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.UserUpdateToOneWithWhereWithoutMessagesAuthoredInput,
+      Prisma.UserUpdateWithoutMessagesAuthoredInput
+    >,
+    Prisma.UserUncheckedUpdateWithoutMessagesAuthoredInput
+  >;
+};
+
 export type UserCreateWithoutOauthAccountsInput = {
   id?: string;
   username: string;
@@ -489,6 +658,11 @@ export type UserCreateWithoutOauthAccountsInput = {
   updatedAt?: Date | string;
   lobbiesCreated?: Prisma.LobbyCreateNestedManyWithoutCreatedByInput;
   bouncerLevels?: Prisma.BouncerLevelCreateNestedManyWithoutOwnerUserInput;
+  communitiesOwned?: Prisma.CommunityCreateNestedManyWithoutOwnerInput;
+  communityMemberships?: Prisma.CommunityMemberCreateNestedManyWithoutUserInput;
+  channelsCreated?: Prisma.ChannelCreateNestedManyWithoutCreatedByInput;
+  channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput;
+  messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput;
 };
 
 export type UserUncheckedCreateWithoutOauthAccountsInput = {
@@ -502,6 +676,11 @@ export type UserUncheckedCreateWithoutOauthAccountsInput = {
   updatedAt?: Date | string;
   lobbiesCreated?: Prisma.LobbyUncheckedCreateNestedManyWithoutCreatedByInput;
   bouncerLevels?: Prisma.BouncerLevelUncheckedCreateNestedManyWithoutOwnerUserInput;
+  communitiesOwned?: Prisma.CommunityUncheckedCreateNestedManyWithoutOwnerInput;
+  communityMemberships?: Prisma.CommunityMemberUncheckedCreateNestedManyWithoutUserInput;
+  channelsCreated?: Prisma.ChannelUncheckedCreateNestedManyWithoutCreatedByInput;
+  channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput;
+  messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput;
 };
 
 export type UserCreateOrConnectWithoutOauthAccountsInput = {
@@ -531,6 +710,11 @@ export type UserUpdateWithoutOauthAccountsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   lobbiesCreated?: Prisma.LobbyUpdateManyWithoutCreatedByNestedInput;
   bouncerLevels?: Prisma.BouncerLevelUpdateManyWithoutOwnerUserNestedInput;
+  communitiesOwned?: Prisma.CommunityUpdateManyWithoutOwnerNestedInput;
+  communityMemberships?: Prisma.CommunityMemberUpdateManyWithoutUserNestedInput;
+  channelsCreated?: Prisma.ChannelUpdateManyWithoutCreatedByNestedInput;
+  channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput;
+  messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutOauthAccountsInput = {
@@ -544,6 +728,11 @@ export type UserUncheckedUpdateWithoutOauthAccountsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   lobbiesCreated?: Prisma.LobbyUncheckedUpdateManyWithoutCreatedByNestedInput;
   bouncerLevels?: Prisma.BouncerLevelUncheckedUpdateManyWithoutOwnerUserNestedInput;
+  communitiesOwned?: Prisma.CommunityUncheckedUpdateManyWithoutOwnerNestedInput;
+  communityMemberships?: Prisma.CommunityMemberUncheckedUpdateManyWithoutUserNestedInput;
+  channelsCreated?: Prisma.ChannelUncheckedUpdateManyWithoutCreatedByNestedInput;
+  channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput;
+  messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput;
 };
 
 export type UserCreateWithoutLobbiesCreatedInput = {
@@ -557,6 +746,11 @@ export type UserCreateWithoutLobbiesCreatedInput = {
   updatedAt?: Date | string;
   oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
   bouncerLevels?: Prisma.BouncerLevelCreateNestedManyWithoutOwnerUserInput;
+  communitiesOwned?: Prisma.CommunityCreateNestedManyWithoutOwnerInput;
+  communityMemberships?: Prisma.CommunityMemberCreateNestedManyWithoutUserInput;
+  channelsCreated?: Prisma.ChannelCreateNestedManyWithoutCreatedByInput;
+  channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput;
+  messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput;
 };
 
 export type UserUncheckedCreateWithoutLobbiesCreatedInput = {
@@ -570,6 +764,11 @@ export type UserUncheckedCreateWithoutLobbiesCreatedInput = {
   updatedAt?: Date | string;
   oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
   bouncerLevels?: Prisma.BouncerLevelUncheckedCreateNestedManyWithoutOwnerUserInput;
+  communitiesOwned?: Prisma.CommunityUncheckedCreateNestedManyWithoutOwnerInput;
+  communityMemberships?: Prisma.CommunityMemberUncheckedCreateNestedManyWithoutUserInput;
+  channelsCreated?: Prisma.ChannelUncheckedCreateNestedManyWithoutCreatedByInput;
+  channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput;
+  messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput;
 };
 
 export type UserCreateOrConnectWithoutLobbiesCreatedInput = {
@@ -599,6 +798,11 @@ export type UserUpdateWithoutLobbiesCreatedInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
   bouncerLevels?: Prisma.BouncerLevelUpdateManyWithoutOwnerUserNestedInput;
+  communitiesOwned?: Prisma.CommunityUpdateManyWithoutOwnerNestedInput;
+  communityMemberships?: Prisma.CommunityMemberUpdateManyWithoutUserNestedInput;
+  channelsCreated?: Prisma.ChannelUpdateManyWithoutCreatedByNestedInput;
+  channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput;
+  messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutLobbiesCreatedInput = {
@@ -612,6 +816,11 @@ export type UserUncheckedUpdateWithoutLobbiesCreatedInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
   bouncerLevels?: Prisma.BouncerLevelUncheckedUpdateManyWithoutOwnerUserNestedInput;
+  communitiesOwned?: Prisma.CommunityUncheckedUpdateManyWithoutOwnerNestedInput;
+  communityMemberships?: Prisma.CommunityMemberUncheckedUpdateManyWithoutUserNestedInput;
+  channelsCreated?: Prisma.ChannelUncheckedUpdateManyWithoutCreatedByNestedInput;
+  channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput;
+  messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput;
 };
 
 export type UserCreateWithoutBouncerLevelsInput = {
@@ -625,6 +834,11 @@ export type UserCreateWithoutBouncerLevelsInput = {
   updatedAt?: Date | string;
   oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
   lobbiesCreated?: Prisma.LobbyCreateNestedManyWithoutCreatedByInput;
+  communitiesOwned?: Prisma.CommunityCreateNestedManyWithoutOwnerInput;
+  communityMemberships?: Prisma.CommunityMemberCreateNestedManyWithoutUserInput;
+  channelsCreated?: Prisma.ChannelCreateNestedManyWithoutCreatedByInput;
+  channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput;
+  messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput;
 };
 
 export type UserUncheckedCreateWithoutBouncerLevelsInput = {
@@ -638,6 +852,11 @@ export type UserUncheckedCreateWithoutBouncerLevelsInput = {
   updatedAt?: Date | string;
   oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
   lobbiesCreated?: Prisma.LobbyUncheckedCreateNestedManyWithoutCreatedByInput;
+  communitiesOwned?: Prisma.CommunityUncheckedCreateNestedManyWithoutOwnerInput;
+  communityMemberships?: Prisma.CommunityMemberUncheckedCreateNestedManyWithoutUserInput;
+  channelsCreated?: Prisma.ChannelUncheckedCreateNestedManyWithoutCreatedByInput;
+  channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput;
+  messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput;
 };
 
 export type UserCreateOrConnectWithoutBouncerLevelsInput = {
@@ -667,6 +886,11 @@ export type UserUpdateWithoutBouncerLevelsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
   lobbiesCreated?: Prisma.LobbyUpdateManyWithoutCreatedByNestedInput;
+  communitiesOwned?: Prisma.CommunityUpdateManyWithoutOwnerNestedInput;
+  communityMemberships?: Prisma.CommunityMemberUpdateManyWithoutUserNestedInput;
+  channelsCreated?: Prisma.ChannelUpdateManyWithoutCreatedByNestedInput;
+  channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput;
+  messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutBouncerLevelsInput = {
@@ -680,6 +904,508 @@ export type UserUncheckedUpdateWithoutBouncerLevelsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
   lobbiesCreated?: Prisma.LobbyUncheckedUpdateManyWithoutCreatedByNestedInput;
+  communitiesOwned?: Prisma.CommunityUncheckedUpdateManyWithoutOwnerNestedInput;
+  communityMemberships?: Prisma.CommunityMemberUncheckedUpdateManyWithoutUserNestedInput;
+  channelsCreated?: Prisma.ChannelUncheckedUpdateManyWithoutCreatedByNestedInput;
+  channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput;
+  messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput;
+};
+
+export type UserCreateWithoutCommunitiesOwnedInput = {
+  id?: string;
+  username: string;
+  usernameAutoGenerated?: boolean;
+  email?: string | null;
+  displayName?: string | null;
+  passwordHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
+  lobbiesCreated?: Prisma.LobbyCreateNestedManyWithoutCreatedByInput;
+  bouncerLevels?: Prisma.BouncerLevelCreateNestedManyWithoutOwnerUserInput;
+  communityMemberships?: Prisma.CommunityMemberCreateNestedManyWithoutUserInput;
+  channelsCreated?: Prisma.ChannelCreateNestedManyWithoutCreatedByInput;
+  channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput;
+  messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput;
+};
+
+export type UserUncheckedCreateWithoutCommunitiesOwnedInput = {
+  id?: string;
+  username: string;
+  usernameAutoGenerated?: boolean;
+  email?: string | null;
+  displayName?: string | null;
+  passwordHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
+  lobbiesCreated?: Prisma.LobbyUncheckedCreateNestedManyWithoutCreatedByInput;
+  bouncerLevels?: Prisma.BouncerLevelUncheckedCreateNestedManyWithoutOwnerUserInput;
+  communityMemberships?: Prisma.CommunityMemberUncheckedCreateNestedManyWithoutUserInput;
+  channelsCreated?: Prisma.ChannelUncheckedCreateNestedManyWithoutCreatedByInput;
+  channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput;
+  messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput;
+};
+
+export type UserCreateOrConnectWithoutCommunitiesOwnedInput = {
+  where: Prisma.UserWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutCommunitiesOwnedInput,
+    Prisma.UserUncheckedCreateWithoutCommunitiesOwnedInput
+  >;
+};
+
+export type UserUpsertWithoutCommunitiesOwnedInput = {
+  update: Prisma.XOR<
+    Prisma.UserUpdateWithoutCommunitiesOwnedInput,
+    Prisma.UserUncheckedUpdateWithoutCommunitiesOwnedInput
+  >;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutCommunitiesOwnedInput,
+    Prisma.UserUncheckedCreateWithoutCommunitiesOwnedInput
+  >;
+  where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutCommunitiesOwnedInput = {
+  where?: Prisma.UserWhereInput;
+  data: Prisma.XOR<
+    Prisma.UserUpdateWithoutCommunitiesOwnedInput,
+    Prisma.UserUncheckedUpdateWithoutCommunitiesOwnedInput
+  >;
+};
+
+export type UserUpdateWithoutCommunitiesOwnedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  username?: Prisma.StringFieldUpdateOperationsInput | string;
+  usernameAutoGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
+  lobbiesCreated?: Prisma.LobbyUpdateManyWithoutCreatedByNestedInput;
+  bouncerLevels?: Prisma.BouncerLevelUpdateManyWithoutOwnerUserNestedInput;
+  communityMemberships?: Prisma.CommunityMemberUpdateManyWithoutUserNestedInput;
+  channelsCreated?: Prisma.ChannelUpdateManyWithoutCreatedByNestedInput;
+  channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput;
+  messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutCommunitiesOwnedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  username?: Prisma.StringFieldUpdateOperationsInput | string;
+  usernameAutoGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
+  lobbiesCreated?: Prisma.LobbyUncheckedUpdateManyWithoutCreatedByNestedInput;
+  bouncerLevels?: Prisma.BouncerLevelUncheckedUpdateManyWithoutOwnerUserNestedInput;
+  communityMemberships?: Prisma.CommunityMemberUncheckedUpdateManyWithoutUserNestedInput;
+  channelsCreated?: Prisma.ChannelUncheckedUpdateManyWithoutCreatedByNestedInput;
+  channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput;
+  messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput;
+};
+
+export type UserCreateWithoutCommunityMembershipsInput = {
+  id?: string;
+  username: string;
+  usernameAutoGenerated?: boolean;
+  email?: string | null;
+  displayName?: string | null;
+  passwordHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
+  lobbiesCreated?: Prisma.LobbyCreateNestedManyWithoutCreatedByInput;
+  bouncerLevels?: Prisma.BouncerLevelCreateNestedManyWithoutOwnerUserInput;
+  communitiesOwned?: Prisma.CommunityCreateNestedManyWithoutOwnerInput;
+  channelsCreated?: Prisma.ChannelCreateNestedManyWithoutCreatedByInput;
+  channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput;
+  messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput;
+};
+
+export type UserUncheckedCreateWithoutCommunityMembershipsInput = {
+  id?: string;
+  username: string;
+  usernameAutoGenerated?: boolean;
+  email?: string | null;
+  displayName?: string | null;
+  passwordHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
+  lobbiesCreated?: Prisma.LobbyUncheckedCreateNestedManyWithoutCreatedByInput;
+  bouncerLevels?: Prisma.BouncerLevelUncheckedCreateNestedManyWithoutOwnerUserInput;
+  communitiesOwned?: Prisma.CommunityUncheckedCreateNestedManyWithoutOwnerInput;
+  channelsCreated?: Prisma.ChannelUncheckedCreateNestedManyWithoutCreatedByInput;
+  channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput;
+  messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput;
+};
+
+export type UserCreateOrConnectWithoutCommunityMembershipsInput = {
+  where: Prisma.UserWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutCommunityMembershipsInput,
+    Prisma.UserUncheckedCreateWithoutCommunityMembershipsInput
+  >;
+};
+
+export type UserUpsertWithoutCommunityMembershipsInput = {
+  update: Prisma.XOR<
+    Prisma.UserUpdateWithoutCommunityMembershipsInput,
+    Prisma.UserUncheckedUpdateWithoutCommunityMembershipsInput
+  >;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutCommunityMembershipsInput,
+    Prisma.UserUncheckedCreateWithoutCommunityMembershipsInput
+  >;
+  where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutCommunityMembershipsInput = {
+  where?: Prisma.UserWhereInput;
+  data: Prisma.XOR<
+    Prisma.UserUpdateWithoutCommunityMembershipsInput,
+    Prisma.UserUncheckedUpdateWithoutCommunityMembershipsInput
+  >;
+};
+
+export type UserUpdateWithoutCommunityMembershipsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  username?: Prisma.StringFieldUpdateOperationsInput | string;
+  usernameAutoGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
+  lobbiesCreated?: Prisma.LobbyUpdateManyWithoutCreatedByNestedInput;
+  bouncerLevels?: Prisma.BouncerLevelUpdateManyWithoutOwnerUserNestedInput;
+  communitiesOwned?: Prisma.CommunityUpdateManyWithoutOwnerNestedInput;
+  channelsCreated?: Prisma.ChannelUpdateManyWithoutCreatedByNestedInput;
+  channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput;
+  messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutCommunityMembershipsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  username?: Prisma.StringFieldUpdateOperationsInput | string;
+  usernameAutoGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
+  lobbiesCreated?: Prisma.LobbyUncheckedUpdateManyWithoutCreatedByNestedInput;
+  bouncerLevels?: Prisma.BouncerLevelUncheckedUpdateManyWithoutOwnerUserNestedInput;
+  communitiesOwned?: Prisma.CommunityUncheckedUpdateManyWithoutOwnerNestedInput;
+  channelsCreated?: Prisma.ChannelUncheckedUpdateManyWithoutCreatedByNestedInput;
+  channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput;
+  messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput;
+};
+
+export type UserCreateWithoutChannelsCreatedInput = {
+  id?: string;
+  username: string;
+  usernameAutoGenerated?: boolean;
+  email?: string | null;
+  displayName?: string | null;
+  passwordHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
+  lobbiesCreated?: Prisma.LobbyCreateNestedManyWithoutCreatedByInput;
+  bouncerLevels?: Prisma.BouncerLevelCreateNestedManyWithoutOwnerUserInput;
+  communitiesOwned?: Prisma.CommunityCreateNestedManyWithoutOwnerInput;
+  communityMemberships?: Prisma.CommunityMemberCreateNestedManyWithoutUserInput;
+  channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput;
+  messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput;
+};
+
+export type UserUncheckedCreateWithoutChannelsCreatedInput = {
+  id?: string;
+  username: string;
+  usernameAutoGenerated?: boolean;
+  email?: string | null;
+  displayName?: string | null;
+  passwordHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
+  lobbiesCreated?: Prisma.LobbyUncheckedCreateNestedManyWithoutCreatedByInput;
+  bouncerLevels?: Prisma.BouncerLevelUncheckedCreateNestedManyWithoutOwnerUserInput;
+  communitiesOwned?: Prisma.CommunityUncheckedCreateNestedManyWithoutOwnerInput;
+  communityMemberships?: Prisma.CommunityMemberUncheckedCreateNestedManyWithoutUserInput;
+  channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput;
+  messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput;
+};
+
+export type UserCreateOrConnectWithoutChannelsCreatedInput = {
+  where: Prisma.UserWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutChannelsCreatedInput,
+    Prisma.UserUncheckedCreateWithoutChannelsCreatedInput
+  >;
+};
+
+export type UserUpsertWithoutChannelsCreatedInput = {
+  update: Prisma.XOR<
+    Prisma.UserUpdateWithoutChannelsCreatedInput,
+    Prisma.UserUncheckedUpdateWithoutChannelsCreatedInput
+  >;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutChannelsCreatedInput,
+    Prisma.UserUncheckedCreateWithoutChannelsCreatedInput
+  >;
+  where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutChannelsCreatedInput = {
+  where?: Prisma.UserWhereInput;
+  data: Prisma.XOR<Prisma.UserUpdateWithoutChannelsCreatedInput, Prisma.UserUncheckedUpdateWithoutChannelsCreatedInput>;
+};
+
+export type UserUpdateWithoutChannelsCreatedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  username?: Prisma.StringFieldUpdateOperationsInput | string;
+  usernameAutoGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
+  lobbiesCreated?: Prisma.LobbyUpdateManyWithoutCreatedByNestedInput;
+  bouncerLevels?: Prisma.BouncerLevelUpdateManyWithoutOwnerUserNestedInput;
+  communitiesOwned?: Prisma.CommunityUpdateManyWithoutOwnerNestedInput;
+  communityMemberships?: Prisma.CommunityMemberUpdateManyWithoutUserNestedInput;
+  channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput;
+  messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutChannelsCreatedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  username?: Prisma.StringFieldUpdateOperationsInput | string;
+  usernameAutoGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
+  lobbiesCreated?: Prisma.LobbyUncheckedUpdateManyWithoutCreatedByNestedInput;
+  bouncerLevels?: Prisma.BouncerLevelUncheckedUpdateManyWithoutOwnerUserNestedInput;
+  communitiesOwned?: Prisma.CommunityUncheckedUpdateManyWithoutOwnerNestedInput;
+  communityMemberships?: Prisma.CommunityMemberUncheckedUpdateManyWithoutUserNestedInput;
+  channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput;
+  messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput;
+};
+
+export type UserCreateWithoutChannelMembershipsInput = {
+  id?: string;
+  username: string;
+  usernameAutoGenerated?: boolean;
+  email?: string | null;
+  displayName?: string | null;
+  passwordHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
+  lobbiesCreated?: Prisma.LobbyCreateNestedManyWithoutCreatedByInput;
+  bouncerLevels?: Prisma.BouncerLevelCreateNestedManyWithoutOwnerUserInput;
+  communitiesOwned?: Prisma.CommunityCreateNestedManyWithoutOwnerInput;
+  communityMemberships?: Prisma.CommunityMemberCreateNestedManyWithoutUserInput;
+  channelsCreated?: Prisma.ChannelCreateNestedManyWithoutCreatedByInput;
+  messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput;
+};
+
+export type UserUncheckedCreateWithoutChannelMembershipsInput = {
+  id?: string;
+  username: string;
+  usernameAutoGenerated?: boolean;
+  email?: string | null;
+  displayName?: string | null;
+  passwordHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
+  lobbiesCreated?: Prisma.LobbyUncheckedCreateNestedManyWithoutCreatedByInput;
+  bouncerLevels?: Prisma.BouncerLevelUncheckedCreateNestedManyWithoutOwnerUserInput;
+  communitiesOwned?: Prisma.CommunityUncheckedCreateNestedManyWithoutOwnerInput;
+  communityMemberships?: Prisma.CommunityMemberUncheckedCreateNestedManyWithoutUserInput;
+  channelsCreated?: Prisma.ChannelUncheckedCreateNestedManyWithoutCreatedByInput;
+  messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput;
+};
+
+export type UserCreateOrConnectWithoutChannelMembershipsInput = {
+  where: Prisma.UserWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutChannelMembershipsInput,
+    Prisma.UserUncheckedCreateWithoutChannelMembershipsInput
+  >;
+};
+
+export type UserUpsertWithoutChannelMembershipsInput = {
+  update: Prisma.XOR<
+    Prisma.UserUpdateWithoutChannelMembershipsInput,
+    Prisma.UserUncheckedUpdateWithoutChannelMembershipsInput
+  >;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutChannelMembershipsInput,
+    Prisma.UserUncheckedCreateWithoutChannelMembershipsInput
+  >;
+  where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutChannelMembershipsInput = {
+  where?: Prisma.UserWhereInput;
+  data: Prisma.XOR<
+    Prisma.UserUpdateWithoutChannelMembershipsInput,
+    Prisma.UserUncheckedUpdateWithoutChannelMembershipsInput
+  >;
+};
+
+export type UserUpdateWithoutChannelMembershipsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  username?: Prisma.StringFieldUpdateOperationsInput | string;
+  usernameAutoGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
+  lobbiesCreated?: Prisma.LobbyUpdateManyWithoutCreatedByNestedInput;
+  bouncerLevels?: Prisma.BouncerLevelUpdateManyWithoutOwnerUserNestedInput;
+  communitiesOwned?: Prisma.CommunityUpdateManyWithoutOwnerNestedInput;
+  communityMemberships?: Prisma.CommunityMemberUpdateManyWithoutUserNestedInput;
+  channelsCreated?: Prisma.ChannelUpdateManyWithoutCreatedByNestedInput;
+  messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutChannelMembershipsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  username?: Prisma.StringFieldUpdateOperationsInput | string;
+  usernameAutoGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
+  lobbiesCreated?: Prisma.LobbyUncheckedUpdateManyWithoutCreatedByNestedInput;
+  bouncerLevels?: Prisma.BouncerLevelUncheckedUpdateManyWithoutOwnerUserNestedInput;
+  communitiesOwned?: Prisma.CommunityUncheckedUpdateManyWithoutOwnerNestedInput;
+  communityMemberships?: Prisma.CommunityMemberUncheckedUpdateManyWithoutUserNestedInput;
+  channelsCreated?: Prisma.ChannelUncheckedUpdateManyWithoutCreatedByNestedInput;
+  messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput;
+};
+
+export type UserCreateWithoutMessagesAuthoredInput = {
+  id?: string;
+  username: string;
+  usernameAutoGenerated?: boolean;
+  email?: string | null;
+  displayName?: string | null;
+  passwordHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput;
+  lobbiesCreated?: Prisma.LobbyCreateNestedManyWithoutCreatedByInput;
+  bouncerLevels?: Prisma.BouncerLevelCreateNestedManyWithoutOwnerUserInput;
+  communitiesOwned?: Prisma.CommunityCreateNestedManyWithoutOwnerInput;
+  communityMemberships?: Prisma.CommunityMemberCreateNestedManyWithoutUserInput;
+  channelsCreated?: Prisma.ChannelCreateNestedManyWithoutCreatedByInput;
+  channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput;
+};
+
+export type UserUncheckedCreateWithoutMessagesAuthoredInput = {
+  id?: string;
+  username: string;
+  usernameAutoGenerated?: boolean;
+  email?: string | null;
+  displayName?: string | null;
+  passwordHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput;
+  lobbiesCreated?: Prisma.LobbyUncheckedCreateNestedManyWithoutCreatedByInput;
+  bouncerLevels?: Prisma.BouncerLevelUncheckedCreateNestedManyWithoutOwnerUserInput;
+  communitiesOwned?: Prisma.CommunityUncheckedCreateNestedManyWithoutOwnerInput;
+  communityMemberships?: Prisma.CommunityMemberUncheckedCreateNestedManyWithoutUserInput;
+  channelsCreated?: Prisma.ChannelUncheckedCreateNestedManyWithoutCreatedByInput;
+  channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput;
+};
+
+export type UserCreateOrConnectWithoutMessagesAuthoredInput = {
+  where: Prisma.UserWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutMessagesAuthoredInput,
+    Prisma.UserUncheckedCreateWithoutMessagesAuthoredInput
+  >;
+};
+
+export type UserUpsertWithoutMessagesAuthoredInput = {
+  update: Prisma.XOR<
+    Prisma.UserUpdateWithoutMessagesAuthoredInput,
+    Prisma.UserUncheckedUpdateWithoutMessagesAuthoredInput
+  >;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutMessagesAuthoredInput,
+    Prisma.UserUncheckedCreateWithoutMessagesAuthoredInput
+  >;
+  where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutMessagesAuthoredInput = {
+  where?: Prisma.UserWhereInput;
+  data: Prisma.XOR<
+    Prisma.UserUpdateWithoutMessagesAuthoredInput,
+    Prisma.UserUncheckedUpdateWithoutMessagesAuthoredInput
+  >;
+};
+
+export type UserUpdateWithoutMessagesAuthoredInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  username?: Prisma.StringFieldUpdateOperationsInput | string;
+  usernameAutoGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput;
+  lobbiesCreated?: Prisma.LobbyUpdateManyWithoutCreatedByNestedInput;
+  bouncerLevels?: Prisma.BouncerLevelUpdateManyWithoutOwnerUserNestedInput;
+  communitiesOwned?: Prisma.CommunityUpdateManyWithoutOwnerNestedInput;
+  communityMemberships?: Prisma.CommunityMemberUpdateManyWithoutUserNestedInput;
+  channelsCreated?: Prisma.ChannelUpdateManyWithoutCreatedByNestedInput;
+  channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutMessagesAuthoredInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  username?: Prisma.StringFieldUpdateOperationsInput | string;
+  usernameAutoGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput;
+  lobbiesCreated?: Prisma.LobbyUncheckedUpdateManyWithoutCreatedByNestedInput;
+  bouncerLevels?: Prisma.BouncerLevelUncheckedUpdateManyWithoutOwnerUserNestedInput;
+  communitiesOwned?: Prisma.CommunityUncheckedUpdateManyWithoutOwnerNestedInput;
+  communityMemberships?: Prisma.CommunityMemberUncheckedUpdateManyWithoutUserNestedInput;
+  channelsCreated?: Prisma.ChannelUncheckedUpdateManyWithoutCreatedByNestedInput;
+  channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput;
 };
 
 /**
@@ -690,6 +1416,11 @@ export type UserCountOutputType = {
   oauthAccounts: number;
   lobbiesCreated: number;
   bouncerLevels: number;
+  communitiesOwned: number;
+  communityMemberships: number;
+  channelsCreated: number;
+  channelMemberships: number;
+  messagesAuthored: number;
 };
 
 export type UserCountOutputTypeSelect<
@@ -698,6 +1429,11 @@ export type UserCountOutputTypeSelect<
   oauthAccounts?: boolean | UserCountOutputTypeCountOauthAccountsArgs;
   lobbiesCreated?: boolean | UserCountOutputTypeCountLobbiesCreatedArgs;
   bouncerLevels?: boolean | UserCountOutputTypeCountBouncerLevelsArgs;
+  communitiesOwned?: boolean | UserCountOutputTypeCountCommunitiesOwnedArgs;
+  communityMemberships?: boolean | UserCountOutputTypeCountCommunityMembershipsArgs;
+  channelsCreated?: boolean | UserCountOutputTypeCountChannelsCreatedArgs;
+  channelMemberships?: boolean | UserCountOutputTypeCountChannelMembershipsArgs;
+  messagesAuthored?: boolean | UserCountOutputTypeCountMessagesAuthoredArgs;
 };
 
 /**
@@ -739,6 +1475,51 @@ export type UserCountOutputTypeCountBouncerLevelsArgs<
   where?: Prisma.BouncerLevelWhereInput;
 };
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountCommunitiesOwnedArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.CommunityWhereInput;
+};
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountCommunityMembershipsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.CommunityMemberWhereInput;
+};
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountChannelsCreatedArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.ChannelWhereInput;
+};
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountChannelMembershipsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.ChannelMemberWhereInput;
+};
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountMessagesAuthoredArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.MessageWhereInput;
+};
+
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> =
   runtime.Types.Extensions.GetSelect<
     {
@@ -753,6 +1534,11 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
       oauthAccounts?: boolean | Prisma.User$oauthAccountsArgs<ExtArgs>;
       lobbiesCreated?: boolean | Prisma.User$lobbiesCreatedArgs<ExtArgs>;
       bouncerLevels?: boolean | Prisma.User$bouncerLevelsArgs<ExtArgs>;
+      communitiesOwned?: boolean | Prisma.User$communitiesOwnedArgs<ExtArgs>;
+      communityMemberships?: boolean | Prisma.User$communityMembershipsArgs<ExtArgs>;
+      channelsCreated?: boolean | Prisma.User$channelsCreatedArgs<ExtArgs>;
+      channelMemberships?: boolean | Prisma.User$channelMembershipsArgs<ExtArgs>;
+      messagesAuthored?: boolean | Prisma.User$messagesAuthoredArgs<ExtArgs>;
       _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
     },
     ExtArgs['result']['user']
@@ -811,6 +1597,11 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     oauthAccounts?: boolean | Prisma.User$oauthAccountsArgs<ExtArgs>;
     lobbiesCreated?: boolean | Prisma.User$lobbiesCreatedArgs<ExtArgs>;
     bouncerLevels?: boolean | Prisma.User$bouncerLevelsArgs<ExtArgs>;
+    communitiesOwned?: boolean | Prisma.User$communitiesOwnedArgs<ExtArgs>;
+    communityMemberships?: boolean | Prisma.User$communityMembershipsArgs<ExtArgs>;
+    channelsCreated?: boolean | Prisma.User$channelsCreatedArgs<ExtArgs>;
+    channelMemberships?: boolean | Prisma.User$channelMembershipsArgs<ExtArgs>;
+    messagesAuthored?: boolean | Prisma.User$messagesAuthoredArgs<ExtArgs>;
     _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
   };
 export type UserIncludeCreateManyAndReturn<
@@ -827,6 +1618,11 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
       oauthAccounts: Prisma.$OAuthAccountPayload<ExtArgs>[];
       lobbiesCreated: Prisma.$LobbyPayload<ExtArgs>[];
       bouncerLevels: Prisma.$BouncerLevelPayload<ExtArgs>[];
+      communitiesOwned: Prisma.$CommunityPayload<ExtArgs>[];
+      communityMemberships: Prisma.$CommunityMemberPayload<ExtArgs>[];
+      channelsCreated: Prisma.$ChannelPayload<ExtArgs>[];
+      channelMemberships: Prisma.$ChannelMemberPayload<ExtArgs>[];
+      messagesAuthored: Prisma.$MessagePayload<ExtArgs>[];
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<
       {
@@ -1329,6 +2125,31 @@ export interface Prisma__UserClient<
     args?: Prisma.Subset<T, Prisma.User$bouncerLevelsArgs<ExtArgs>>,
   ): Prisma.PrismaPromise<
     runtime.Types.Result.GetResult<Prisma.$BouncerLevelPayload<ExtArgs>, T, 'findMany', GlobalOmitOptions> | Null
+  >;
+  communitiesOwned<T extends Prisma.User$communitiesOwnedArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.User$communitiesOwnedArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    runtime.Types.Result.GetResult<Prisma.$CommunityPayload<ExtArgs>, T, 'findMany', GlobalOmitOptions> | Null
+  >;
+  communityMemberships<T extends Prisma.User$communityMembershipsArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.User$communityMembershipsArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    runtime.Types.Result.GetResult<Prisma.$CommunityMemberPayload<ExtArgs>, T, 'findMany', GlobalOmitOptions> | Null
+  >;
+  channelsCreated<T extends Prisma.User$channelsCreatedArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.User$channelsCreatedArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    runtime.Types.Result.GetResult<Prisma.$ChannelPayload<ExtArgs>, T, 'findMany', GlobalOmitOptions> | Null
+  >;
+  channelMemberships<T extends Prisma.User$channelMembershipsArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.User$channelMembershipsArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    runtime.Types.Result.GetResult<Prisma.$ChannelMemberPayload<ExtArgs>, T, 'findMany', GlobalOmitOptions> | Null
+  >;
+  messagesAuthored<T extends Prisma.User$messagesAuthoredArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.User$messagesAuthoredArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    runtime.Types.Result.GetResult<Prisma.$MessagePayload<ExtArgs>, T, 'findMany', GlobalOmitOptions> | Null
   >;
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1859,6 +2680,136 @@ export type User$bouncerLevelsArgs<
   take?: number;
   skip?: number;
   distinct?: Prisma.BouncerLevelScalarFieldEnum | Prisma.BouncerLevelScalarFieldEnum[];
+};
+
+/**
+ * User.communitiesOwned
+ */
+export type User$communitiesOwnedArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the Community
+   */
+  select?: Prisma.CommunitySelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the Community
+   */
+  omit?: Prisma.CommunityOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CommunityInclude<ExtArgs> | null;
+  where?: Prisma.CommunityWhereInput;
+  orderBy?: Prisma.CommunityOrderByWithRelationInput | Prisma.CommunityOrderByWithRelationInput[];
+  cursor?: Prisma.CommunityWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?: Prisma.CommunityScalarFieldEnum | Prisma.CommunityScalarFieldEnum[];
+};
+
+/**
+ * User.communityMemberships
+ */
+export type User$communityMembershipsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the CommunityMember
+   */
+  select?: Prisma.CommunityMemberSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the CommunityMember
+   */
+  omit?: Prisma.CommunityMemberOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CommunityMemberInclude<ExtArgs> | null;
+  where?: Prisma.CommunityMemberWhereInput;
+  orderBy?: Prisma.CommunityMemberOrderByWithRelationInput | Prisma.CommunityMemberOrderByWithRelationInput[];
+  cursor?: Prisma.CommunityMemberWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?: Prisma.CommunityMemberScalarFieldEnum | Prisma.CommunityMemberScalarFieldEnum[];
+};
+
+/**
+ * User.channelsCreated
+ */
+export type User$channelsCreatedArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the Channel
+   */
+  select?: Prisma.ChannelSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the Channel
+   */
+  omit?: Prisma.ChannelOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ChannelInclude<ExtArgs> | null;
+  where?: Prisma.ChannelWhereInput;
+  orderBy?: Prisma.ChannelOrderByWithRelationInput | Prisma.ChannelOrderByWithRelationInput[];
+  cursor?: Prisma.ChannelWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?: Prisma.ChannelScalarFieldEnum | Prisma.ChannelScalarFieldEnum[];
+};
+
+/**
+ * User.channelMemberships
+ */
+export type User$channelMembershipsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the ChannelMember
+   */
+  select?: Prisma.ChannelMemberSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the ChannelMember
+   */
+  omit?: Prisma.ChannelMemberOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ChannelMemberInclude<ExtArgs> | null;
+  where?: Prisma.ChannelMemberWhereInput;
+  orderBy?: Prisma.ChannelMemberOrderByWithRelationInput | Prisma.ChannelMemberOrderByWithRelationInput[];
+  cursor?: Prisma.ChannelMemberWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?: Prisma.ChannelMemberScalarFieldEnum | Prisma.ChannelMemberScalarFieldEnum[];
+};
+
+/**
+ * User.messagesAuthored
+ */
+export type User$messagesAuthoredArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the Message
+   */
+  select?: Prisma.MessageSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the Message
+   */
+  omit?: Prisma.MessageOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MessageInclude<ExtArgs> | null;
+  where?: Prisma.MessageWhereInput;
+  orderBy?: Prisma.MessageOrderByWithRelationInput | Prisma.MessageOrderByWithRelationInput[];
+  cursor?: Prisma.MessageWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?: Prisma.MessageScalarFieldEnum | Prisma.MessageScalarFieldEnum[];
 };
 
 /**

@@ -5,11 +5,12 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { GamesModule } from './games/games.module';
 import { UsersModule } from './users/users.module';
+import { ChatModule } from './chat/chat.module';
 import { CsrfMiddleware } from './security/csrf.middleware';
 import { RateLimitMiddleware } from './security/rate-limit.middleware';
 
 @Module({
-  imports: [PrismaModule, AuthModule, GamesModule, UsersModule],
+  imports: [PrismaModule, AuthModule, GamesModule, UsersModule, ChatModule],
   controllers: [AppController],
   providers: [AppService],
 })
