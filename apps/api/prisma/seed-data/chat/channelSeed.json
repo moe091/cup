@@ -1,0 +1,42 @@
+[
+  {
+    "id": "seed-channel-archive-general",
+    "communityId": "seed-community-archive",
+    "name": "general",
+    "kind": "COMMUNITY",
+    "visibility": "PUBLIC",
+    "createdByUserId": "seed-user-jung",
+    "createdAt": "2026-01-15T18:05:00.000Z",
+    "updatedAt": "2026-01-15T18:05:00.000Z"
+  },
+  {
+    "id": "seed-channel-archive-mod-lounge",
+    "communityId": "seed-community-archive",
+    "name": "mod-lounge",
+    "kind": "COMMUNITY",
+    "visibility": "PRIVATE",
+    "createdByUserId": "seed-user-jung",
+    "createdAt": "2026-01-15T18:06:00.000Z",
+    "updatedAt": "2026-01-15T18:06:00.000Z"
+  },
+  {
+    "id": "seed-channel-dm-jung-freud",
+    "communityId": null,
+    "name": "dm-jung-freud",
+    "kind": "DM",
+    "visibility": "PRIVATE",
+    "createdByUserId": "seed-user-jung",
+    "createdAt": "2026-01-15T18:07:00.000Z",
+    "updatedAt": "2026-01-15T18:07:00.000Z"
+  },
+  {
+    "id": "seed-channel-bouncer-hall",
+    "communityId": null,
+    "name": "bouncer-hall",
+    "kind": "GAME_PAGE",
+    "visibility": "PUBLIC",
+    "createdByUserId": "seed-user-adler",
+    "createdAt": "2026-01-15T18:08:00.000Z",
+    "updatedAt": "2026-01-15T18:08:00.000Z"
+  }
+]

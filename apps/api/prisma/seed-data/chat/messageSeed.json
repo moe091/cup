@@ -1,0 +1,110 @@
+[
+  {
+    "id": "seed-msg-general-001",
+    "channelId": "seed-channel-archive-general",
+    "authorUserId": "seed-user-jung",
+    "body": "Welcome to the archive. Keep findings concise and useful.",
+    "createdAt": "2026-01-15T18:10:00.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-general-002",
+    "channelId": "seed-channel-archive-general",
+    "authorUserId": "seed-user-freud",
+    "body": "Noted. I will add a short write-up on dream symbols tomorrow.",
+    "createdAt": "2026-01-15T18:10:35.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-general-003",
+    "channelId": "seed-channel-archive-general",
+    "authorUserId": "seed-user-adler",
+    "body": "Can we also track practical outcomes, not just interpretations?",
+    "createdAt": "2026-01-15T18:11:10.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-general-004",
+    "channelId": "seed-channel-archive-general",
+    "authorUserId": "seed-user-jung",
+    "body": "Yes, outcome metrics are part of the next revision.",
+    "createdAt": "2026-01-15T18:12:04.000Z",
+    "editedAt": "2026-01-15T18:12:45.000Z",
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-general-005",
+    "channelId": "seed-channel-archive-general",
+    "authorUserId": "seed-user-adler",
+    "body": "[deleted]",
+    "createdAt": "2026-01-15T18:13:22.000Z",
+    "editedAt": null,
+    "deletedAt": "2026-01-15T18:20:00.000Z"
+  },
+  {
+    "id": "seed-msg-mod-001",
+    "channelId": "seed-channel-archive-mod-lounge",
+    "authorUserId": "seed-user-jung",
+    "body": "Please review channel moderation defaults this week.",
+    "createdAt": "2026-01-15T18:14:00.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-mod-002",
+    "channelId": "seed-channel-archive-mod-lounge",
+    "authorUserId": "seed-user-freud",
+    "body": "Will do. I will draft a short policy checklist.",
+    "createdAt": "2026-01-15T18:14:31.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-dm-001",
+    "channelId": "seed-channel-dm-jung-freud",
+    "authorUserId": "seed-user-freud",
+    "body": "Can we talk through role structure before announcing it?",
+    "createdAt": "2026-01-15T18:15:05.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-dm-002",
+    "channelId": "seed-channel-dm-jung-freud",
+    "authorUserId": "seed-user-jung",
+    "body": "Yes. Let us keep v1 simple and expand after testing.",
+    "createdAt": "2026-01-15T18:15:50.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-bouncer-001",
+    "channelId": "seed-channel-bouncer-hall",
+    "authorUserId": "seed-user-adler",
+    "body": "Lobby starts in five minutes. Bring your best shortcuts.",
+    "createdAt": "2026-01-15T18:16:30.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-bouncer-002",
+    "channelId": "seed-channel-bouncer-hall",
+    "authorUserId": "seed-user-jung",
+    "body": "I am in. Testing a new route on level two.",
+    "createdAt": "2026-01-15T18:17:02.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-bouncer-003",
+    "channelId": "seed-channel-bouncer-hall",
+    "authorUserId": "seed-user-freud",
+    "body": "Saving replay clips this time for review.",
+    "createdAt": "2026-01-15T18:17:48.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  }
+]

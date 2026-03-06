@@ -1,0 +1,23 @@
+[
+  {
+    "id": "seed-user-jung",
+    "username": "Jung1",
+    "displayName": "Jung",
+    "email": "jung1@seed.local",
+    "password": "SeedPass!123"
+  },
+  {
+    "id": "seed-user-freud",
+    "username": "Freud2",
+    "displayName": "Freud",
+    "email": "freud2@seed.local",
+    "password": "SeedPass!123"
+  },
+  {
+    "id": "seed-user-adler",
+    "username": "Adler3",
+    "displayName": "Adler",
+    "email": "adler3@seed.local",
+    "password": "SeedPass!123"
+  }
+]

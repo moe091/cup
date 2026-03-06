@@ -1,0 +1,62 @@
+[
+  {
+    "channelId": "seed-channel-archive-general",
+    "userId": "seed-user-jung",
+    "source": "DERIVED",
+    "joinedAt": "2026-01-15T18:05:30.000Z"
+  },
+  {
+    "channelId": "seed-channel-archive-general",
+    "userId": "seed-user-freud",
+    "source": "DERIVED",
+    "joinedAt": "2026-01-15T18:05:30.000Z"
+  },
+  {
+    "channelId": "seed-channel-archive-general",
+    "userId": "seed-user-adler",
+    "source": "DERIVED",
+    "joinedAt": "2026-01-15T18:05:30.000Z"
+  },
+  {
+    "channelId": "seed-channel-archive-mod-lounge",
+    "userId": "seed-user-jung",
+    "source": "MANUAL",
+    "joinedAt": "2026-01-15T18:06:30.000Z"
+  },
+  {
+    "channelId": "seed-channel-archive-mod-lounge",
+    "userId": "seed-user-freud",
+    "source": "MANUAL",
+    "joinedAt": "2026-01-15T18:06:30.000Z"
+  },
+  {
+    "channelId": "seed-channel-dm-jung-freud",
+    "userId": "seed-user-jung",
+    "source": "MANUAL",
+    "joinedAt": "2026-01-15T18:07:30.000Z"
+  },
+  {
+    "channelId": "seed-channel-dm-jung-freud",
+    "userId": "seed-user-freud",
+    "source": "MANUAL",
+    "joinedAt": "2026-01-15T18:07:30.000Z"
+  },
+  {
+    "channelId": "seed-channel-bouncer-hall",
+    "userId": "seed-user-jung",
+    "source": "MANUAL",
+    "joinedAt": "2026-01-15T18:08:30.000Z"
+  },
+  {
+    "channelId": "seed-channel-bouncer-hall",
+    "userId": "seed-user-freud",
+    "source": "MANUAL",
+    "joinedAt": "2026-01-15T18:08:30.000Z"
+  },
+  {
+    "channelId": "seed-channel-bouncer-hall",
+    "userId": "seed-user-adler",
+    "source": "MANUAL",
+    "joinedAt": "2026-01-15T18:08:30.000Z"
+  }
+]

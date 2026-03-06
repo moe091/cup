@@ -17,9 +17,9 @@ export class AppController {
   @Get('message')
   async getMessage() {
     const message = await this.prisma.message.findFirst({
-      orderBy: { id: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
-    return { message: message?.hello || 'No message found' };
+    return { message: message?.body || 'No message found' };
   }
 
   @Get('/db-health')
