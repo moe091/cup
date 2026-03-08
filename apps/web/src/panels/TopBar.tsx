@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../auth";
 import { LoginModal } from "../auth/LoginModal";
 import type { AuthMode } from "../auth/LoginModal";
-import { buildCsrfHeaders } from "../api/csrf";
+import { buildCsrfHeaders, clearCsrfTokenCache } from "../api/csrf";
 
 export default function TopBar() {
   const { user, refresh } = useAuth();
@@ -41,6 +41,7 @@ export default function TopBar() {
         throw new Error(`Logout failed with status ${response.status}`);
       }
 
+      clearCsrfTokenCache();
       await refresh();
     } catch {
       alert("Logout failed.");

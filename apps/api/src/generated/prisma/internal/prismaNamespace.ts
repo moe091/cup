@@ -1175,6 +1175,7 @@ export type BouncerLevelScalarFieldEnum = (typeof BouncerLevelScalarFieldEnum)[k
 export const CommunityScalarFieldEnum = {
   id: 'id',
   name: 'name',
+  description: 'description',
   slug: 'slug',
   ownerUserId: 'ownerUserId',
   createdAt: 'createdAt',

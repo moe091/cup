@@ -24,6 +24,7 @@ type BouncerSeedLevel = {
 type CommunitySeed = {
   id: string;
   name: string;
+  description: string | null;
   slug: string | null;
   ownerUserId: string | null;
   createdAt: string;
@@ -192,6 +193,7 @@ async function main() {
       where: { id: community.id },
       update: {
         name: community.name,
+        description: community.description,
         slug: community.slug,
         ownerUserId: community.ownerUserId,
         createdAt: new Date(community.createdAt),
@@ -200,6 +202,7 @@ async function main() {
       create: {
         id: community.id,
         name: community.name,
+        description: community.description,
         slug: community.slug,
         ownerUserId: community.ownerUserId,
         createdAt: new Date(community.createdAt),

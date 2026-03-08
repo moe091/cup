@@ -72,6 +72,17 @@ Creation behavior in local docker:
 - Migration policy: `prisma migrate deploy`.
 - No dev/demo seed data.
 
+### Production HTTPS/TLS Plan (AWS)
+
+- Terminate TLS at AWS edge/load balancer using ACM certificates (no plaintext public traffic).
+- Use Route53 DNS + ACM cert validation for production domain and any required subdomains.
+- Route browser traffic over `https://` only and redirect `http://` to `https://`.
+- Keep session cookies as `httpOnly: true`, `sameSite: 'lax'`, `secure: true` in production.
+- Verify app is proxy-aware in production networking (so secure cookie/session behavior is correct behind ALB/reverse proxy).
+- Set strict `CORS_ALLOWED_ORIGINS` to deployed frontend origins only (no wildcard with credentials).
+- Update OAuth callback/base URLs to production HTTPS domains before launch.
+- Add post-deploy check: login, logout, CSRF token issuance, and authenticated API requests over HTTPS.
+
 ## Seeding Strategy
 
 ### Current (Implemented)
