@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { CommunityChannelDto, CommunitySummaryDto } from "@cup/shared-types";
-import { PrismaService } from "src/prisma/prisma.service";
-
+import type { CommunityChannelDto, CommunitySummaryDto } from '@cup/shared-types';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class CommunitiesService {
@@ -10,9 +9,9 @@ export class CommunitiesService {
   async getCommunityBySlug(slug: string): Promise<CommunitySummaryDto> {
     const normalizedSlug = slug.trim();
     if (!normalizedSlug) {
-      throw new BadRequestException("Community slug is required");
+      throw new BadRequestException('Community slug is required');
     }
-    
+
     const comm = await this.prisma.community.findUnique({
       where: { slug: normalizedSlug },
       select: {
@@ -37,7 +36,7 @@ export class CommunitiesService {
     });
 
     if (!comm || !comm.slug) {
-      throw new NotFoundException("Community not found");
+      throw new NotFoundException('Community not found');
     }
 
     return {
@@ -55,7 +54,7 @@ export class CommunitiesService {
   async getCommunityChannelsBySlug(slug: string, viewerUserId?: string): Promise<CommunityChannelDto[]> {
     const normalizedSlug = slug.trim();
     if (!normalizedSlug) {
-      throw new BadRequestException("Community slug is required");
+      throw new BadRequestException('Community slug is required');
     }
 
     const comm = await this.prisma.community.findUnique({
@@ -63,16 +62,16 @@ export class CommunitiesService {
       select: { id: true },
     });
     if (!comm) {
-      throw new NotFoundException("Community not found");
+      throw new NotFoundException('Community not found');
     }
 
     const channels = viewerUserId
       ? await this.prisma.channel.findMany({
           where: {
             communityId: comm.id,
-            OR: [{ visibility: "PUBLIC" }, { members: { some: { userId: viewerUserId } } }],
+            OR: [{ visibility: 'PUBLIC' }, { members: { some: { userId: viewerUserId } } }],
           },
-          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
           select: {
             id: true,
             name: true,
@@ -84,9 +83,9 @@ export class CommunitiesService {
       : await this.prisma.channel.findMany({
           where: {
             communityId: comm.id,
-            visibility: "PUBLIC",
+            visibility: 'PUBLIC',
           },
-          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
           select: {
             id: true,
             name: true,

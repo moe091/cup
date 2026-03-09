@@ -43,6 +43,10 @@ Design intent:
 - Socket events implemented:
   - `chat:join` -> joins room `channel:<channelId>`, emits `chat:join:ack`
   - `chat:leave` -> leaves room `channel:<channelId>`, emits `chat:leave:ack`
+- Community read endpoints implemented:
+  - `GET /api/communities/:slug`
+  - `GET /api/communities/:slug/channels`
+- Community summary now includes `description` in schema, seed data, and API response DTO.
 
 ### Frontend (Implemented)
 
@@ -55,6 +59,10 @@ Design intent:
   - connect/disconnect
   - join/leave by channel id
   - logs ack/error/connection events
+- Community base page implemented at `/communities/:slug`:
+  - fetches community summary from API
+  - renders name, owner, description, created date, channel count
+  - links to `/communities/:slug/chat`
 
 ### Data Layer (Implemented)
 
@@ -165,23 +173,22 @@ Query shape (conceptual):
 
 ### Backend APIs (Next)
 
-1. `GET /api/communities/:slug`
+1. `GET /api/communities/:slug` (Implemented)
    - Returns basic community data for base community page.
 
-   Proposed fields:
-   - `id`, `name`, `slug`
+   Current fields:
+   - `id`, `name`, `description`, `slug`
    - `ownerUserId`, `ownerDisplayName`
-   - `createdAt`
-   - optional convenience: `channelCount`
+   - `createdAt`, `channelCount`
 
-2. `GET /api/communities/:slug/channels`
+2. `GET /api/communities/:slug/channels` (Implemented)
    - Returns channels for sidebar render.
    - Private channels hidden unless requester is member.
 
    Proposed fields per channel:
    - `id`, `name`, `kind`, `visibility`, `createdAt`
 
-3. `GET /api/chat/channels/:channelId/messages`
+3. `GET /api/chat/channels/:channelId/messages` (Next)
    - Query: `limit`, `beforeCreatedAt`, `beforeId`
    - Returns most recent page or older cursor page.
 
@@ -199,6 +206,11 @@ Query shape (conceptual):
    - left sidebar: real channel names from API
    - main message panel: blank placeholder area
    - composer footer: textarea + send button (disabled/non-functional initially)
+
+Progress note:
+
+- `/communities/:slug` route/page is implemented.
+- `/communities/:slug/chat` skeleton is the immediate next frontend step.
 
 ### Phase 2: Real Data + State Wiring
 
@@ -277,10 +289,23 @@ Redis-related scale path (future):
 
 ## Milestone Backlog
 
-1. Implement community read backend endpoints.
-2. Implement community base page route + data fetch.
-3. Implement chat page placeholder shell + channel list.
+1. Implement community read backend endpoints. (Completed)
+2. Implement community base page route + data fetch. (Completed)
+3. Implement chat page placeholder shell + channel list. (Next)
 4. Implement history endpoint with cursor pagination.
 5. Wire channel switching join/leave + history load.
 6. Implement send + pending/finalized message UX.
 7. Add integration tests for read/history/access behavior.
+
+## Post-Chat TODO (Queued)
+
+After core chat baseline is complete (items 3-7 above), implement profile-page tab expansion:
+
+- Add tabs to profile container, starting with:
+  - `Profile` (existing content)
+  - `Communities`
+- `Communities` tab should list communities the user is in, with:
+  - community name
+  - link to `/communities/:slug`
+  - membership metadata (`joinedAt`, `primaryRole`)
+- Keep this scoped as a lightweight UX enhancement after chat core is stable.
