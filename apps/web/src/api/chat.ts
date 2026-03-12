@@ -1,5 +1,5 @@
 import { io, type Socket } from 'socket.io-client';
-import type { ChatTokenResponse } from '@cup/shared-types';
+import type { ChannelHistoryResponseDto, ChatTokenResponse } from '@cup/shared-types';
 import { buildCsrfHeaders } from './csrf';
 
 export type ChatConnection = {
@@ -47,4 +47,36 @@ export function joinChannel(socket: Socket, channelId: string): void {
 }
 export function leaveChannel(socket: Socket, channelId: string): void {
   socket.emit('chat:leave', { channelId });
+}
+
+type ChannelHistoryParams = {
+  limit?: number;
+  beforeCreatedAt?: string;
+  beforeId?: string;
+}
+export async function fetchChannelHistory(channelId: string, params: ChannelHistoryParams): Promise<ChannelHistoryResponseDto> {
+  const { limit = 25, beforeCreatedAt, beforeId } = params;
+
+  if ((beforeCreatedAt && !beforeId) || (!beforeCreatedAt && beforeId)) {
+    throw new Error("beforeCreatedAt and beforeId must be provided together(either both or neither).");
+  }
+
+  const query = new URLSearchParams({
+    limit: String(limit),
+  });
+
+  if (beforeCreatedAt && beforeId) {
+    query.set("beforeCreatedAt", beforeCreatedAt);
+    query.set("beforeId", beforeId);
+  }
+
+  const response = await fetch(
+    `/api/chat/channels/${encodeURIComponent(channelId)}/messages?${query.toString()}`,
+    { credentials: "include", cache: "no-store" },
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch channel message history: ${response.status}`);
+  }
+  return (await response.json()) as ChannelHistoryResponseDto;
 }

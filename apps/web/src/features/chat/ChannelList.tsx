@@ -52,8 +52,8 @@ export default function ChannelList({ communityName, channels, selectedChannelId
 
   return (
     <aside className="flex h-full flex-col border-r border-[color:var(--line)] bg-[color:var(--panel-strong)] p-3">
-      <div className="-mx-3 -mt-3 mb-3 border-b border-[color:var(--line)] bg-[color:var(--panel)]/80 px-3 py-3">
-        {communityName ? <h1 className="text-base font-semibold">{communityName}</h1> : null}
+      <div className="-mx-3 -mt-3 mb-3 px-3 py-3">
+        {communityName ? <h1 className="text-xl font-semibold">{communityName}</h1> : null}
         <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[color:var(--muted)]">Channels</p>
       </div>
 

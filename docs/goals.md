@@ -57,6 +57,21 @@ A social web platform for friends to hang out and play quick, casual multiplayer
 
 - Game-specific level/data types.
 
+
+### Future games
+
+#### gif'tionary
+
+- like pictionary but users can use giphy or klipy gifs to find images that represent a theme word
+- also includes other clues like if it's a verb/noun/adjective/etc. Maybe word length and specific letter clues if it's taking too long
+- 1 user is the presenter and others are guessers for each round. 
+  - presenters get points based on how quickly their theme is guessed, guessers get points based on how quickly they guess each theme
+
+
+#### wikipedia race
+
+- Everyone starts with the same page and has to race to a target page only by clicking links in the wikipedia pages
+- can be first one to finish wins, or least number of clicks wins(with a time limit, perhaps 20s after first person finishes)
 ---
 
 ## Development workflow

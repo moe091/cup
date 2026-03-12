@@ -2,6 +2,8 @@ import type { ChannelVisibility } from "@cup/shared-types";
 import { useMemo } from "react";
 import ChannelChatView from "./ChannelChatView";
 import ChannelList from "./ChannelList";
+import { useChatConnection } from "./hooks/useChatConnection";
+import { useChannelRoom } from "./hooks/useChannelRoom";
 
 export type MCCPChannel = {
   id: string;
@@ -27,6 +29,9 @@ export default function MultiChannelChatPanel({
     () => channels.find((channel) => channel.id === selectedChannelId) ?? channels[0] ?? null,
     [selectedChannelId, channels],
   );
+  
+  const { connection, isConnectionReady } = useChatConnection(); //hook to handle connecting/disconnecting from chat server
+  useChannelRoom({ selectedChannelId, connection, isConnectionReady }); //hook to handle joining/leaving/changing channels
 
   function renderNoChannels() {
     return (
@@ -53,7 +58,7 @@ export default function MultiChannelChatPanel({
       </div>
 
       <div className="min-h-0">
-        {hasChannels && selectedChannel ? <ChannelChatView channelName={selectedChannel.name} /> : renderNoChannels()}
+        {hasChannels && selectedChannel ? <ChannelChatView channel={selectedChannel} /> : renderNoChannels()}
       </div>
     </div>
   );

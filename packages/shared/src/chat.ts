@@ -28,3 +28,44 @@ export type CommunityChannelDto = {
   visibility: ChannelVisibility;
   createdAt: string;
 };
+
+export type ChatMessageDto = {
+  id: string;
+  channelId: string;
+  authorUserId: string;
+  authorDisplayName: string;
+  body: string;
+  createdAt: string;
+  editedAt: string | null;
+  deletedAt: string | null;
+};
+export type ChannelHistoryCursorDto = {
+  beforeCreatedAt: string;
+  beforeId: string;
+};
+export type ChannelHistoryResponseDto = {
+  messages: ChatMessageDto[];
+  nextCursor: ChannelHistoryCursorDto | null;
+};
+
+export type ChatSendPayload = {
+  channelId: string;
+  body: string;
+  clientMessageId?: string;
+};
+
+export type ChatRealtimeMessage = {
+  id: string;
+  channelId: string;
+  authorUserId: string;
+  authorDisplayName: string;
+  body: string;
+  createdAt: string; // ISO
+};
+
+export type ChatSendAck = {
+  ok: boolean;
+  clientMessageId?: string;
+  messageId?: string;
+  error?: string;
+};
