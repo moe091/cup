@@ -39,7 +39,7 @@ const MAX_MESSAGE_LENGTH = 4000; //TODO:: add to configs once created
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private readonly chatService: ChatService) {}
-  
+
   async handleConnection(socket: ChatSocket) {
     const token = (socket.handshake.auth as { token?: unknown } | undefined)?.token;
     if (typeof token !== 'string' || token.trim().length === 0) {
@@ -74,7 +74,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       socket.data.userId = userId;
       socket.data.authorDisplayName = authorDisplayName;
-
     } catch {
       socket.disconnect();
     }
@@ -104,7 +103,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const roomName = `channel:${channelId}`;
     await socket.join(roomName);
-    socket.data.room = roomName; 
+    socket.data.room = roomName;
     socket.emit('chat:join:ack', { ok: true, channelId });
   }
 
@@ -130,13 +129,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     socket.emit('chat:leave:ack', { ok: true, channelId });
   }
 
-  
   @SubscribeMessage('chat:send')
   async handleSend(@ConnectedSocket() socket: ChatSocket, @MessageBody() body: unknown) {
     const userId = socket.data.userId;
     const authorDisplayName = socket.data.authorDisplayName;
 
-    
     const payload = body as Partial<ChatSendPayload>;
     const clientMessageId = payload.clientMessageId;
     const trimmedChannelId = typeof payload.channelId === 'string' ? payload.channelId.trim() : '';
@@ -144,27 +141,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const roomName = `channel:${trimmedChannelId}`;
 
     if (!authorDisplayName || !userId) {
-      socket.emit("chat:send:ack", { ok: false, clientMessageId, error: "User has invalid displayName or userId" });
+      socket.emit('chat:send:ack', { ok: false, clientMessageId, error: 'User has invalid displayName or userId' });
       return;
     }
 
     if (!trimmedChannelId || roomName !== socket.data.room) {
-      socket.emit("chat:send:ack", { ok: false, clientMessageId, error: "Invalid channelId" });
+      socket.emit('chat:send:ack', { ok: false, clientMessageId, error: 'Invalid channelId' });
       return;
     }
 
     if (!trimmedBody) {
-      socket.emit("chat:send:ack", { ok: false, clientMessageId, error: "Message body is required" });
+      socket.emit('chat:send:ack', { ok: false, clientMessageId, error: 'Message body is required' });
       return;
     }
 
     if (trimmedBody.length > MAX_MESSAGE_LENGTH) {
-      socket.emit("chat:send:ack", { ok: false, clientMessageId, error: "Message is too long" });
+      socket.emit('chat:send:ack', { ok: false, clientMessageId, error: 'Message is too long' });
       return;
     }
 
     if (!socket.rooms.has(roomName)) {
-      socket.emit("chat:send:ack", { ok: false, clientMessageId, error: "Not connected to channel room" });
+      socket.emit('chat:send:ack', { ok: false, clientMessageId, error: 'Not connected to channel room' });
       return;
     }
 
@@ -174,7 +171,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         authorUserId: userId,
         body: trimmedBody,
       });
-      
+
       const realtimeMessage: ChatRealtimeMessage = {
         id: created.id,
         channelId: created.channelId,
@@ -184,16 +181,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         createdAt: created.createdAt.toISOString(),
       };
 
-      socket.nsp.to(roomName).emit("chat:message", realtimeMessage);
-      socket.emit("chat:send:ack", {
+      socket.nsp.to(roomName).emit('chat:message', realtimeMessage);
+      socket.emit('chat:send:ack', {
         ok: true,
         clientMessageId,
       });
     } catch {
-      socket.emit("chat:send:ack", {
+      socket.emit('chat:send:ack', {
         ok: false,
         clientMessageId,
-        error: "Failed to send message",
+        error: 'Failed to send message',
       });
     }
   }

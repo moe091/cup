@@ -30,8 +30,8 @@ export default function MultiChannelChatPanel({
     [selectedChannelId, channels],
   );
   
-  const { connection, isConnectionReady } = useChatConnection(); //hook to handle connecting/disconnecting from chat server
-  useChannelRoom({ selectedChannelId, connection, isConnectionReady }); //hook to handle joining/leaving/changing channels
+  const { connection } = useChatConnection(); //hook to handle connecting/disconnecting from chat server
+  useChannelRoom({ selectedChannelId, connection }); //hook to handle joining/leaving/changing channels
 
   function renderNoChannels() {
     return (
@@ -58,7 +58,7 @@ export default function MultiChannelChatPanel({
       </div>
 
       <div className="min-h-0">
-        {hasChannels && selectedChannel ? <ChannelChatView channel={selectedChannel} isConnectionReady={isConnectionReady} connection={connection} /> : renderNoChannels()}
+        {hasChannels && selectedChannel ? <ChannelChatView channel={selectedChannel} connection={connection} /> : renderNoChannels()}
       </div>
     </div>
   );

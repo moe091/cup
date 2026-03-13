@@ -4,20 +4,25 @@ import type { ChatConnection } from "../../../api/chat";
 type ChannelRoomArgs = {
   selectedChannelId: string | null;
   connection: ChatConnection | null;
-  isConnectionReady: boolean; //comes from useChatConnection. set to true once socket server connection is established
 }
 
 //manages connection to the current chat channel
-export function useChannelRoom({selectedChannelId, connection, isConnectionReady}: ChannelRoomArgs) {
+export function useChannelRoom({selectedChannelId, connection}: ChannelRoomArgs) {
   const connectedChannelId = useRef<string | null>(null);
+  const prevConnectionRef = useRef<ChatConnection | null>(null);
 
   useEffect(() => { //handle joining/leaving channels when channelId changes
+    if (prevConnectionRef.current !== connection) { //reset channelId any time connection changes
+      connectedChannelId.current = null;
+      prevConnectionRef.current = connection;
+    }
+
     if (!selectedChannelId && connectedChannelId.current) {//if we are connected to a channel, and channelId is removed, disconnect from current channel
       connection?.leaveChannel(connectedChannelId.current);
       connectedChannelId.current = null;
     }
 
-    if (!selectedChannelId || !isConnectionReady || !connection) //not ready to connect, return early
+    if (!selectedChannelId || !connection) //not ready to connect, return early
       return;
 
     if (connectedChannelId.current === selectedChannelId) //already in the right channel
@@ -30,10 +35,6 @@ export function useChannelRoom({selectedChannelId, connection, isConnectionReady
     connection.joinChannel(selectedChannelId);
     connectedChannelId.current = selectedChannelId; //wait until I setup some 'join succeeded' socket message, and set connectedChannelId there?
   
-  }, [selectedChannelId, isConnectionReady, connection]);
-
-  useEffect(() => { //clear connectedChannelId whenever connection object changes, in case it's replaced with a new object with same channelId(which would result in not joining channel)
-    connectedChannelId.current = null;
-  }, [connection]);
+  }, [selectedChannelId, connection]);
 
 }

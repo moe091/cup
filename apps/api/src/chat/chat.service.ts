@@ -178,22 +178,18 @@ export class ChatService {
     return user.displayName ?? user.username;
   }
 
-  async createMessage(args: {
-    channelId: string;
-    authorUserId: string;
-    body: string;
-  }) {
+  async createMessage(args: { channelId: string; authorUserId: string; body: string }) {
     const channelId = args.channelId.trim();
     const authorUserId = args.authorUserId.trim();
     const body = args.body.trim();
     if (!channelId) {
-      throw new BadRequestException("channelId is required");
+      throw new BadRequestException('channelId is required');
     }
     if (!authorUserId) {
-      throw new BadRequestException("authorUserId is required");
+      throw new BadRequestException('authorUserId is required');
     }
     if (!body) {
-      throw new BadRequestException("Message body is required");
+      throw new BadRequestException('Message body is required');
     }
     return this.prisma.message.create({
       data: {

@@ -4,12 +4,11 @@ import { useChatMessaging } from "./hooks/useChatMessaging";
 
 type ChannelChatViewProps = {
   channel: MCCPChannel | null;
-  isConnectionReady: boolean;
   connection: ChatConnection | null;
 };
 
-export default function ChannelChatView({ channel, isConnectionReady, connection }: ChannelChatViewProps) {
-  const { messages, isLoading, errorMessage, historyCursor } = useChatMessaging({channelId: channel?.id ?? null, isConnectionReady, connection});
+export default function ChannelChatView({ channel, connection }: ChannelChatViewProps) {
+  const { messages, isLoading, errorMessage, historyCursor } = useChatMessaging({channelId: channel?.id ?? null, connection});
 
 
   return (

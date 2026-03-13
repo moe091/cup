@@ -13,7 +13,6 @@ import { fetchChannelHistory, type ChatConnection } from "../../../api/chat";
  */    
 type ChatMessagingArgs = {
     channelId: string | null;
-    isConnectionReady: boolean;
     connection: ChatConnection | null;
 }
 
@@ -23,7 +22,7 @@ type UseChatMessagingResult = {
   errorMessage: string | null;
   historyCursor: ChannelHistoryCursorDto | null;
 }
-export function useChatMessaging({channelId, isConnectionReady, connection}: ChatMessagingArgs): UseChatMessagingResult {
+export function useChatMessaging({channelId, connection}: ChatMessagingArgs): UseChatMessagingResult {
   const [messages, setMessages] = useState<ChatMessageDto[]>([]);
   const [historyCursor, setHistoryCursor] = useState<ChannelHistoryCursorDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,7 +70,7 @@ export function useChatMessaging({channelId, isConnectionReady, connection}: Cha
   }, [channelId]);
 
   useEffect(() => { 
-    if (!connection || !connection.socket.connected || !isConnectionReady)
+    if (!connection)
       return;
 
     const messageHandler = (payload: ChatRealtimeMessage) => {
@@ -84,7 +83,7 @@ export function useChatMessaging({channelId, isConnectionReady, connection}: Cha
     return () => {
       connection.socket.off("chat:message", messageHandler);
     }
-  }, [connection, isConnectionReady]);
+  }, [connection, channelId]);
     
   return {
     messages,
