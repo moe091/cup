@@ -4,9 +4,10 @@ import type { ChatConnection } from "../../../api/chat";
 type ChannelRoomArgs = {
   selectedChannelId: string | null;
   connection: ChatConnection | null;
-  isConnectionReady: boolean;
+  isConnectionReady: boolean; //comes from useChatConnection. set to true once socket server connection is established
 }
 
+//manages connection to the current chat channel
 export function useChannelRoom({selectedChannelId, connection, isConnectionReady}: ChannelRoomArgs) {
   const connectedChannelId = useRef<string | null>(null);
 

@@ -1,57 +1,15 @@
-import { useEffect, useState } from "react";
 import type { MCCPChannel } from "./MultiChannelChatPanel";
-import { fetchChannelHistory } from "../../api/chat";
-import type { ChannelHistoryCursorDto, ChatMessageDto } from "@cup/shared-types";
+import { type ChatConnection } from "../../api/chat";
+import { useChatMessaging } from "./hooks/useChatMessaging";
 
 type ChannelChatViewProps = {
   channel: MCCPChannel | null;
+  isConnectionReady: boolean;
+  connection: ChatConnection | null;
 };
 
-export default function ChannelChatView({ channel }: ChannelChatViewProps) {
-  const [channelHistory, setChannelHistory] = useState<ChatMessageDto[]>([]);
-  const [historyCursor, setHistoryCursor] = useState<ChannelHistoryCursorDto | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!channel) {
-      setErrorMessage('No Channel Selected');
-      setIsLoading(false);
-    }   
-    
-    let active = true;
-    async function getHistory() {
-      if (!channel) return;
-      setIsLoading(true);
-      setErrorMessage(null);
-      setChannelHistory([]);
-      setHistoryCursor(null);
-
-      try {
-        const response = await fetchChannelHistory(channel.id, {});
-        if (!active) //if component unmounted before request came back, abort
-          return;
-
-        setChannelHistory(response.messages);
-        setHistoryCursor(response.nextCursor);
-
-      } catch (error) {
-        if (!active)
-          return;
-
-        setErrorMessage(error instanceof Error ? error.message : 'failed to retrieve channel history');
-      } finally {
-        if (active)
-          setIsLoading(false);
-      }
-    }
-
-    void getHistory();
-
-    return () => {
-      active = false;
-    }
-  }, [channel?.id]);
+export default function ChannelChatView({ channel, isConnectionReady, connection }: ChannelChatViewProps) {
+  const { messages, isLoading, errorMessage, historyCursor } = useChatMessaging({channelId: channel?.id ?? null, isConnectionReady, connection});
 
 
   return (
@@ -70,11 +28,11 @@ export default function ChannelChatView({ channel }: ChannelChatViewProps) {
           <p className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-red-300">
             {errorMessage}
           </p>
-        ) : channelHistory.length === 0 ? (
+        ) : messages.length === 0 ? (
           <p>No messages yet.</p>
         ) : (
           <div className="space-y-3">
-            {channelHistory.map((message) => {
+            {messages.map((message) => {
               const createdAt = new Date(message.createdAt);
               const now = new Date();
               const isToday =

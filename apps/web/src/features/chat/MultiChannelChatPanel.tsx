@@ -58,7 +58,7 @@ export default function MultiChannelChatPanel({
       </div>
 
       <div className="min-h-0">
-        {hasChannels && selectedChannel ? <ChannelChatView channel={selectedChannel} /> : renderNoChannels()}
+        {hasChannels && selectedChannel ? <ChannelChatView channel={selectedChannel} isConnectionReady={isConnectionReady} connection={connection} /> : renderNoChannels()}
       </div>
     </div>
   );
