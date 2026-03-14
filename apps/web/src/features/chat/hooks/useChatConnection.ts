@@ -47,13 +47,22 @@ export function useChatConnection(): UseChatConnectionResult {
     };
   }, []);
 
-  useEffect(() => {
+  useEffect(() => { //ensure connections are never leaked. If connection changes always disconnect old one
     if (!connection) return;
+
+    const onDisconnect = (reason: string) => {
+      console.error("Disconnected from chat socket unexpectedly", reason); 
+      setErrorMessage("Chat socket disconnected! Try reloading the page");
+      setConnection(null);
+    }
+    connection.addDisconnectListener(onDisconnect);
+
     return () => {
+      connection.removeDisconnectListener(onDisconnect);
       connection.socket.disconnect();
     };
   }, [connection]);
-  
+
   return {
     connection,
     isLoading,

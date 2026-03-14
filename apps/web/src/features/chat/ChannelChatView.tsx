@@ -1,6 +1,9 @@
 import type { MCCPChannel } from "./MultiChannelChatPanel";
 import { type ChatConnection } from "../../api/chat";
 import { useChatMessaging } from "./hooks/useChatMessaging";
+import { useEffect, useRef } from "react";
+import MessageRow from "./MessageRow";
+import ChatComposer from "./ChatComposer";
 
 type ChannelChatViewProps = {
   channel: MCCPChannel | null;
@@ -8,8 +11,30 @@ type ChannelChatViewProps = {
 };
 
 export default function ChannelChatView({ channel, connection }: ChannelChatViewProps) {
-  const { messages, isLoading, errorMessage, historyCursor } = useChatMessaging({channelId: channel?.id ?? null, connection});
+  const { messages, isLoading, errorMessage, historyCursor, sendMessage } = useChatMessaging({channelId: channel?.id ?? null, connection});
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
+  
+
+  // useEffect(() => {
+  //   let count = 1;
+  //   const interval = setInterval(() => {
+  //     sendMessage("count = " + count);
+  //     count++;
+  //   }, 3000);
+
+  //   return () => {
+  //     clearInterval(interval);
+  //   }
+  // }, [connection, channel]);
+
+  useEffect(() => {
+    if (!messagesContainerRef.current) {
+      return;
+    }
+
+    messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+  }, [messages]);
 
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--panel-lighter)]">
@@ -20,7 +45,7 @@ export default function ChannelChatView({ channel, connection }: ChannelChatView
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-5 text-sm text-[color:var(--muted)]">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-5 text-sm text-[color:var(--muted)]">
         {isLoading ? (
           <p>Loading messages...</p>
         ) : errorMessage ? (
@@ -31,59 +56,14 @@ export default function ChannelChatView({ channel, connection }: ChannelChatView
           <p>No messages yet.</p>
         ) : (
           <div className="space-y-3">
-            {messages.map((message) => {
-              const createdAt = new Date(message.createdAt);
-              const now = new Date();
-              const isToday =
-                createdAt.getFullYear() === now.getFullYear() &&
-                createdAt.getMonth() === now.getMonth() &&
-                createdAt.getDate() === now.getDate();
-              const timestamp = isToday
-                ? createdAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
-                : createdAt.toLocaleString([], {
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  });
-              return (
-                <article key={message.id} className="px-1 py-0.5">
-                  <div className="mb-0.5 flex items-baseline gap-2">
-                    <span className="text-base font-semibold text-slate-300">
-                      {message.authorDisplayName}
-                    </span>
-                    <span className="text-[11px] text-[color:var(--muted)]">{timestamp}</span>
-                    {message.editedAt ? (
-                      <span className="text-[11px] text-[color:var(--muted)]">(edited)</span>
-                    ) : null}
-                  </div>
-                  <p className="whitespace-pre-wrap text-sm leading-5 text-slate-350">
-                    {message.deletedAt ? "Message deleted" : message.body}
-                  </p>
-                </article>
-              );
-            })}
+            {messages.map((message) => (
+              <MessageRow key={message.id} message={message} />
+            ))}
           </div>
         )}
       </div>
 
-      <div className="border-t border-[color:var(--line)] p-3">
-        <div className="flex gap-2">
-          <textarea
-            disabled
-            placeholder={`Message #${channel?.name}`}
-            rows={2}
-            className="min-h-16 flex-1 resize-none rounded-lg border border-[color:var(--line)] bg-[color:var(--panel)] px-3 py-2 text-sm text-[color:var(--text)] outline-none"
-          />
-          <button
-            type="button"
-            disabled
-            className="h-fit rounded-full border border-[color:var(--line)] px-4 py-2 text-sm text-[color:var(--muted)]"
-          >
-            Send
-          </button>
-        </div>
-      </div>
+      <ChatComposer placeholder={`Message #${channel?.name}`} />
     </section>
   );
 }

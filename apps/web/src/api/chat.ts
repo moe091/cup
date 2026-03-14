@@ -127,5 +127,7 @@ export async function fetchChannelHistory(channelId: string, params: ChannelHist
   if (!response.ok) {
     throw new Error(`Failed to fetch channel message history: ${response.status}`);
   }
-  return (await response.json()) as ChannelHistoryResponseDto;
+  const res = (await response.json()) as ChannelHistoryResponseDto;
+  res.messages.reverse();
+  return res;
 }

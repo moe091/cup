@@ -1,5 +1,5 @@
-import type { ChannelHistoryCursorDto, ChatMessageDto, ChatRealtimeMessage } from "@cup/shared-types";
-import { useEffect, useState } from "react";
+import type { ChannelHistoryCursorDto, ChatMessageDto, ChatRealtimeMessage, ChatSendPayload } from "@cup/shared-types";
+import { useCallback, useEffect, useState } from "react";
 import { fetchChannelHistory, type ChatConnection } from "../../../api/chat";
 
 
@@ -21,14 +21,33 @@ type UseChatMessagingResult = {
   isLoading: boolean;
   errorMessage: string | null;
   historyCursor: ChannelHistoryCursorDto | null;
+  sendMessage: (rawBody: string) => Promise<void>;
 }
 export function useChatMessaging({channelId, connection}: ChatMessagingArgs): UseChatMessagingResult {
   const [messages, setMessages] = useState<ChatMessageDto[]>([]);
   const [historyCursor, setHistoryCursor] = useState<ChannelHistoryCursorDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const sendMessage = useCallback(
+    async (rawBody: string) => {
+      const body = rawBody.trim();
+      if (!body || !connection || !channelId) 
+        return;
+
+      const payload = {
+        channelId,
+        clientMessageId: 1, //TODO:: implement UUID id and message ack'ing
+        body,
+      }
+      console.log("DEBUG :: Sending payload:", payload);
+      connection?.socket.emit("chat:send", payload);
+  }, [connection, channelId]);
+
 
   useEffect(() => { //Retrieve message history whenever channelId changes
+    if (!connection)
+      return;
+
     setMessages([]); //always reset messages and cursor when channelId changes
     setHistoryCursor(null);
 
@@ -67,7 +86,7 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
       active = false;
     }
 
-  }, [channelId]);
+  }, [channelId, connection]);
 
   useEffect(() => { 
     if (!connection)
@@ -75,6 +94,14 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
 
     const messageHandler = (payload: ChatRealtimeMessage) => {
       console.log("DEBUG:: received message: ", payload);
+      if (payload.channelId == channelId) {
+        const newMessage: ChatMessageDto = {
+          ...payload,
+          editedAt: null,
+          deletedAt: null,
+        }
+        setMessages(prev => [...prev, newMessage]);
+      }
       //compare payload channelId with current channelId
       //handle message and everything else here
     }
@@ -90,5 +117,6 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
     isLoading,
     errorMessage,
     historyCursor,
+    sendMessage,
   }
 }
