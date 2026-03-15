@@ -40,7 +40,7 @@ export function useChatConnection(): UseChatConnectionResult {
       }
     };
 
-    void initConnection();
+    initConnection();
 
     return () => {
       active = false;

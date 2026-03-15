@@ -1,4 +1,4 @@
-import type { ChannelHistoryCursorDto, ChatMessageDto, ChatRealtimeMessage, ChatSendPayload } from "@cup/shared-types";
+import type { ChannelHistoryCursorDto, ChatMessageDto, ChatRealtimeMessage, ChatSendAck, ChatSendPayload } from "@cup/shared-types";
 import { useCallback, useEffect, useState } from "react";
 import { fetchChannelHistory, type ChatConnection } from "../../../api/chat";
 
@@ -11,36 +11,71 @@ import { fetchChannelHistory, type ChatConnection } from "../../../api/chat";
  * Will require isCOnnectionReady to know when socket is connected
  * 
  */    
+
+export type sendMessageFunction = (rawBody: string) => Promise<void>;
 type ChatMessagingArgs = {
     channelId: string | null;
     connection: ChatConnection | null;
 }
-
 type UseChatMessagingResult = {
-  messages: ChatMessageDto[];
-  isLoading: boolean;
-  errorMessage: string | null;
-  historyCursor: ChannelHistoryCursorDto | null;
-  sendMessage: (rawBody: string) => Promise<void>;
+  messages: ChatMessageDto[]; // message list for current channel
+  isLoading: boolean; // true when message history is loading(e.g. after first joining a new channel)
+  errorMessage: string | null; // error messages pertaining to message list state
+  historyCursor: ChannelHistoryCursorDto | null; // indicates if channel has older messages that can be loaded(and how to load them)
+  sendMessage: sendMessageFunction; // returned from hook, used by consumers to send messages to the current channel
 }
+
+const MESSAGE_TIMEOUT_MS = 3000;
+
 export function useChatMessaging({channelId, connection}: ChatMessagingArgs): UseChatMessagingResult {
   const [messages, setMessages] = useState<ChatMessageDto[]>([]);
   const [historyCursor, setHistoryCursor] = useState<ChannelHistoryCursorDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const sendMessage = useCallback(
-    async (rawBody: string) => {
-      const body = rawBody.trim();
-      if (!body || !connection || !channelId) 
-        return;
 
-      const payload = {
+  //sendMessage is returned from this hook, used by ChatComposer(and possibly others) to send messages
+  const sendMessage = useCallback( 
+    async (rawBody: string): Promise<void> => {
+      const body = rawBody.trim();
+
+      if (!body) 
+        throw new Error('Message body required.');
+      if (!connection)
+        throw new Error('Not connected to chat server.');
+      if (!channelId)
+        throw new Error('No channel currently joined.');
+
+      const payload: ChatSendPayload = {
         channelId,
-        clientMessageId: 1, //TODO:: implement UUID id and message ack'ing
+        clientMessageId: crypto.randomUUID(),
         body,
       }
-      console.log("DEBUG :: Sending payload:", payload);
-      connection?.socket.emit("chat:send", payload);
+
+      return new Promise((resolve, reject) => {
+        //if msg isn't acked in a couple seconds, reject and cleanup ack listener
+        const sendAckTimeout = setTimeout(() => { 
+          connection.socket.off('chat:send:ack', sendAckHandler);
+          reject(new Error('Message sending timed out'));
+        }, MESSAGE_TIMEOUT_MS);
+
+        //setup ack listener. If ack comes in, cleanup ack timeout and resolve
+        const sendAckHandler = (ack: ChatSendAck) => {
+          if (ack.clientMessageId === payload.clientMessageId) {
+            clearTimeout(sendAckTimeout);
+            connection.socket.off('chat:send:ack', sendAckHandler);
+
+            if (ack.ok)
+              resolve();
+            else
+              reject(new Error(ack.error ? ack.error : 'Message rejected by server'));
+          }
+        }
+
+        //setup ack listener before sending payload.
+        connection.socket.on('chat:send:ack', sendAckHandler);
+        connection.socket.emit("chat:send", payload);
+      });
+
   }, [connection, channelId]);
 
 
@@ -80,7 +115,7 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
       }
     }
 
-    void getMessageHistory();
+    getMessageHistory();
 
     return () => {
       active = false;
@@ -88,6 +123,7 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
 
   }, [channelId, connection]);
 
+  //setup message listener for incoming realtime messages. Updates messages state automatically
   useEffect(() => { 
     if (!connection)
       return;

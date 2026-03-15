@@ -63,7 +63,7 @@ export default function ChannelChatView({ channel, connection }: ChannelChatView
         )}
       </div>
 
-      <ChatComposer placeholder={`Message #${channel?.name}`} />
+      <ChatComposer placeholder={`Message #${channel?.name}`} sendMessage={sendMessage} />
     </section>
   );
 }
