@@ -8,9 +8,10 @@ import { UsersModule } from './users/users.module';
 import { ChatModule } from './chat/chat.module';
 import { CsrfMiddleware } from './security/csrf.middleware';
 import { RateLimitMiddleware } from './security/rate-limit.middleware';
+import { CommunitiesModule } from './communities/communities.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, GamesModule, UsersModule, ChatModule],
+  imports: [PrismaModule, AuthModule, GamesModule, UsersModule, ChatModule, CommunitiesModule],
   controllers: [AppController],
   providers: [AppService],
 })

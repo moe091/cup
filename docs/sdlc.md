@@ -9,12 +9,12 @@ description: SDLC, environments, database workflows, seeding strategy, testing, 
 - Run all main dev processes in monorepo: `pnpm run dev`
 - Run API only (watch): `pnpm run dev:api`
 - Run web only (watch): `pnpm run dev:web`
-- Run API migrations (local dev): `pnpm --filter @cup/api exec prisma migrate dev --name <migration_name>`
-- Generate Prisma client: `pnpm --filter @cup/api exec prisma generate`
-- Seed API database: `pnpm --filter @cup/api seed`
-- Seed API database (dev mode): `pnpm --filter @cup/api seed:dev`
-- Seed API database (test mode): `pnpm --filter @cup/api seed:test`
-- Seed API database (base mode): `pnpm --filter @cup/api seed:base`
+- Run API migrations (local dev): `pnpm exec prisma migrate dev --name <migration_name>`
+- Generate Prisma client: `pnpm exec prisma generate`
+- Seed API database: `pnpm @cup/api seed`
+- Seed API database (dev mode): `pnpm seed:dev`
+- Seed API database (test mode): `pnpm seed:test`
+- Seed API database (base mode): `pnpm seed:base`
 - Lint all packages: `pnpm lint`
 - Auto-fix lint: `pnpm lint:fix`
 - Typecheck all packages: `pnpm typecheck`
@@ -71,6 +71,17 @@ Creation behavior in local docker:
 - DB: `flowt_prod`.
 - Migration policy: `prisma migrate deploy`.
 - No dev/demo seed data.
+
+### Production HTTPS/TLS Plan (AWS)
+
+- Terminate TLS at AWS edge/load balancer using ACM certificates (no plaintext public traffic).
+- Use Route53 DNS + ACM cert validation for production domain and any required subdomains.
+- Route browser traffic over `https://` only and redirect `http://` to `https://`.
+- Keep session cookies as `httpOnly: true`, `sameSite: 'lax'`, `secure: true` in production.
+- Verify app is proxy-aware in production networking (so secure cookie/session behavior is correct behind ALB/reverse proxy).
+- Set strict `CORS_ALLOWED_ORIGINS` to deployed frontend origins only (no wildcard with credentials).
+- Update OAuth callback/base URLs to production HTTPS domains before launch.
+- Add post-deploy check: login, logout, CSRF token issuance, and authenticated API requests over HTTPS.
 
 ## Seeding Strategy
 

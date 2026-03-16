@@ -3,7 +3,7 @@ import type { FormEvent, MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./useAuth";
-import { buildCsrfHeaders } from "../api/csrf";
+import { buildCsrfHeaders, clearCsrfTokenCache } from "../api/csrf";
 
 type LoginModalProps = {
   isOpen: boolean;
@@ -78,6 +78,7 @@ export function LoginModal({ isOpen, onClose, initialMode }: LoginModalProps) {
         throw new Error(message);
       }
 
+      clearCsrfTokenCache();
       await refresh();
       onClose();
       navigate("/profile");
@@ -115,6 +116,7 @@ export function LoginModal({ isOpen, onClose, initialMode }: LoginModalProps) {
         throw new Error(message);
       }
 
+      clearCsrfTokenCache();
       await refresh();
       onClose();
       navigate("/profile");

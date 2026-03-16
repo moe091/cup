@@ -6,6 +6,8 @@ import TopBar from "./panels/TopBar";
 import ProfilePage from "./routes/profile/ProfilePage";
 //import './assets/games.css';
 
+const CommunityPage = lazy(() => import("./routes/communities/CommunityPage"));
+const CommunityChatPage = lazy(() => import("./routes/communities/CommunityChatPage"));
 const GamesLayout = lazy(() => import("./routes/games/GamesLayout"));
 const Browse = lazy(() => import("./routes/games/Browse"));
 const BouncerLayout = lazy(() => import("./routes/games/bouncer/BouncerLayout"));
@@ -131,6 +133,22 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route 
+          path="/communities/:slug"
+          element={
+            <Suspense fallback={null}>
+              <CommunityPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/communities/:slug/chat"
+          element={
+            <Suspense fallback={null}>
+              <CommunityChatPage />
+            </Suspense>
+          }
+        />
         <Route
           path="/chat-test"
           element={

@@ -40,7 +40,7 @@ export class AuthService {
         username: validatedInput.username,
         passwordHash,
         email: validatedInput.email ?? null,
-        displayName: validatedInput.displayName ?? null,
+        displayName: validatedInput.displayName ?? validatedInput.username,
       },
     });
 

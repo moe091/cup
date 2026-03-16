@@ -66,7 +66,7 @@ describe('AuthService', () => {
       id: 'user-id-123',
       username: 'fakeuser',
       email: null,
-      displayName: null,
+      displayName: 'fakeuser',
     });
 
     const result = await service.signupLocal({
@@ -80,14 +80,14 @@ describe('AuthService', () => {
         username: 'fakeuser',
         passwordHash: 'hashed-password',
         email: null,
-        displayName: null,
+        displayName: 'fakeuser',
       },
     });
     expect(result).toEqual({
       id: 'user-id-123',
       username: 'fakeuser',
       email: null,
-      displayName: null,
+      displayName: 'fakeuser',
     });
   });
 

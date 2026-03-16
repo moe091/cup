@@ -130,6 +130,7 @@ enum MembershipSource {
 model Community {
   id          String   @id @default(uuid())
   name        String
+  description String?
   slug        String?  @unique
   ownerUserId String?
   createdAt   DateTime @default(now())
