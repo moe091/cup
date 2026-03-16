@@ -6,7 +6,14 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['eslint.config.mjs', '**/*.test.ts', '**/*.test.js', '**/*.spec.ts', '**/*.spec.js'],
+    ignores: [
+      'eslint.config.mjs',
+      '**/*.test.ts',
+      '**/*.test.js',
+      '**/*.spec.ts',
+      '**/*.spec.js',
+      'src/generated/**',
+    ],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
