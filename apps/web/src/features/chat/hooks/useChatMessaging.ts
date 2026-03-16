@@ -129,7 +129,6 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
       return;
 
     const messageHandler = (payload: ChatRealtimeMessage) => {
-      console.log("DEBUG:: received message: ", payload);
       if (payload.channelId == channelId) {
         const newMessage: ChatMessageDto = {
           ...payload,

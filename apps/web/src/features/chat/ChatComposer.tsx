@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import { useState, type ChangeEvent } from "react";
 import type { sendMessageFunction } from "./hooks/useChatMessaging";
 
 type ChatComposerProps = {

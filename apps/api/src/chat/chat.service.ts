@@ -152,7 +152,7 @@ export class ChatService {
       return { limit };
     }
 
-    const beforeCreatedAt = new Date(beforeCreatedAtRaw!);
+    const beforeCreatedAt = new Date(beforeCreatedAtRaw);
     if (Number.isNaN(beforeCreatedAt.getTime())) {
       throw new BadRequestException('beforeCreatedAt must be a valid ISO timestamp');
     }
@@ -160,7 +160,7 @@ export class ChatService {
     return {
       limit,
       beforeCreatedAt,
-      beforeId: beforeIdRaw!,
+      beforeId: beforeIdRaw,
     };
   }
 

@@ -53,7 +53,11 @@ export function createChatSocket(token: string): Promise<Socket> {
       socket.off('connect_error', onError);
       clearTimeout(connectionTimeout);
 
-      error ? reject(error) : resolve(socket); //Reject if there was an error, resolve socket if not.
+      if (error) {
+        reject(error);
+      } else {
+        resolve(socket);
+      }
     }
 
     socket.once('connect', onConnect);  
@@ -67,7 +71,6 @@ export async function connectToChat(): Promise<ChatConnection> { //TODO:: shuold
   const disconnectListeners: ((reason: string) => void)[] = [];
 
   socket.on('disconnect', (reason: string) => {
-    console.warn("Chat socket disconnect");
     disconnectListeners.forEach(listener => listener(reason));
   });
 
