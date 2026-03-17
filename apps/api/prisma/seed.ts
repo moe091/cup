@@ -66,6 +66,18 @@ type MessageSeed = {
   deletedAt: string | null;
 };
 
+type CustomEmojiSeed = {
+  id: string;
+  name: string;
+  scopeType: 'GLOBAL' | 'COMMUNITY' | 'USER';
+  scopeId: string | null;
+  assetUrl: string;
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+};
+
 function loadBouncerLevel(name: string): BouncerSeedLevel {
   const data = fs.readFileSync(`prisma/seed-data/bouncer/${name}.json`, 'utf-8');
   const level = JSON.parse(data) as BouncerSeedLevel;
@@ -103,6 +115,11 @@ function loadMessageSeed(): MessageSeed[] {
   return JSON.parse(data) as MessageSeed[];
 }
 
+function loadCustomEmojiSeed(): CustomEmojiSeed[] {
+  const data = fs.readFileSync('prisma/seed-data/chat/customEmojiSeed.json', 'utf-8');
+  return JSON.parse(data) as CustomEmojiSeed[];
+}
+
 function getSeedMode(argv: string[]): SeedMode {
   const modeArg = argv.find((arg) => arg.startsWith('--mode='));
   const rawMode = modeArg?.split('=')[1]?.trim().toLowerCase();
@@ -133,10 +150,11 @@ async function main() {
   const communityMembers = shouldSeedChat ? loadCommunityMemberSeed() : [];
   const channelMembers = shouldSeedChat ? loadChannelMemberSeed() : [];
   const messages = shouldSeedChat ? loadMessageSeed() : [];
+  const customEmojis = shouldSeedChat ? loadCustomEmojiSeed() : [];
   const levels = [loadBouncerLevel('level1'), loadBouncerLevel('level2')];
 
   console.log(
-    `[seed] mode=${mode} users=${users.length} communities=${communities.length} channels=${channels.length} communityMembers=${communityMembers.length} channelMembers=${channelMembers.length} messages=${messages.length} levels=${levels.length}`,
+    `[seed] mode=${mode} users=${users.length} communities=${communities.length} channels=${channels.length} communityMembers=${communityMembers.length} channelMembers=${channelMembers.length} messages=${messages.length} customEmojis=${customEmojis.length} levels=${levels.length}`,
   );
 
   for (const user of users) {
@@ -297,6 +315,33 @@ async function main() {
         createdAt: new Date(message.createdAt),
         editedAt: message.editedAt ? new Date(message.editedAt) : null,
         deletedAt: message.deletedAt ? new Date(message.deletedAt) : null,
+      },
+    });
+  }
+
+  for (const customEmoji of customEmojis) {
+    await prisma.customEmoji.upsert({
+      where: { id: customEmoji.id },
+      update: {
+        name: customEmoji.name,
+        scopeType: customEmoji.scopeType,
+        scopeId: customEmoji.scopeId,
+        assetUrl: customEmoji.assetUrl,
+        createdByUserId: customEmoji.createdByUserId,
+        createdAt: new Date(customEmoji.createdAt),
+        updatedAt: new Date(customEmoji.updatedAt),
+        deletedAt: customEmoji.deletedAt ? new Date(customEmoji.deletedAt) : null,
+      },
+      create: {
+        id: customEmoji.id,
+        name: customEmoji.name,
+        scopeType: customEmoji.scopeType,
+        scopeId: customEmoji.scopeId,
+        assetUrl: customEmoji.assetUrl,
+        createdByUserId: customEmoji.createdByUserId,
+        createdAt: new Date(customEmoji.createdAt),
+        updatedAt: new Date(customEmoji.updatedAt),
+        deletedAt: customEmoji.deletedAt ? new Date(customEmoji.deletedAt) : null,
       },
     });
   }

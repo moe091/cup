@@ -1,5 +1,5 @@
 import type { ChannelHistoryCursorDto, ChatMessageDto, ChatRealtimeMessage, ChatSendAck, ChatSendPayload } from "@cup/shared-types";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchChannelHistory, type ChatConnection } from "../../../api/chat";
 
 
@@ -20,18 +20,71 @@ type ChatMessagingArgs = {
 type UseChatMessagingResult = {
   messages: ChatMessageDto[]; // message list for current channel
   isLoading: boolean; // true when message history is loading(e.g. after first joining a new channel)
+  isLoadingOlder: boolean; // true while older message pagination call is in flight
   errorMessage: string | null; // error messages pertaining to message list state
   historyCursor: ChannelHistoryCursorDto | null; // indicates if channel has older messages that can be loaded(and how to load them)
+  loadOlderMessages: () => Promise<void>; // loads one older page using current historyCursor
   sendMessage: sendMessageFunction; // returned from hook, used by consumers to send messages to the current channel
 }
 
 const MESSAGE_TIMEOUT_MS = 3000;
 
+function compareMessagesAscending(a: ChatMessageDto, b: ChatMessageDto): number {
+  if (a.createdAt < b.createdAt) 
+    return -1;
+
+  if (a.createdAt > b.createdAt) 
+    return 1;
+
+  if (a.id < b.id) 
+    return -1;
+
+  if (a.id > b.id) 
+    return 1;
+
+  return 0;
+}
+
+function mergeUniqueMessages(existing: ChatMessageDto[], incoming: ChatMessageDto[]): ChatMessageDto[] {
+  if (incoming.length === 0) {
+    return existing;
+  }
+
+  const mergedById = new Map<string, ChatMessageDto>();
+  for (const message of existing) {
+    mergedById.set(message.id, message);
+  }
+
+  let changed = false;
+  for (const message of incoming) {
+    const current = mergedById.get(message.id);
+    if (!current || current !== message) {
+      changed = true;
+    }
+    mergedById.set(message.id, message);
+  }
+
+  if (!changed && mergedById.size === existing.length) {
+    return existing;
+  }
+
+  const nextMessages = Array.from(mergedById.values());
+  nextMessages.sort(compareMessagesAscending);
+  return nextMessages;
+}
+
 export function useChatMessaging({channelId, connection}: ChatMessagingArgs): UseChatMessagingResult {
   const [messages, setMessages] = useState<ChatMessageDto[]>([]);
   const [historyCursor, setHistoryCursor] = useState<ChannelHistoryCursorDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const activeChannelIdRef = useRef<string | null>(channelId);
+  const isOlderRequestInFlightRef = useRef(false);
+
+  useEffect(() => {
+    activeChannelIdRef.current = channelId;
+  }, [channelId]);
 
   //sendMessage is returned from this hook, used by ChatComposer(and possibly others) to send messages
   const sendMessage = useCallback( 
@@ -85,6 +138,8 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
 
     setMessages([]); //always reset messages and cursor when channelId changes
     setHistoryCursor(null);
+    setIsLoadingOlder(false);
+    isOlderRequestInFlightRef.current = false;
 
     let active = true; //will be set to false when component unmounts. Used to check comp is still mounted after async call
     async function getMessageHistory() {
@@ -102,7 +157,7 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
         if (!active) //if component unmounted before request came back, abort
           return;
 
-        setMessages(response.messages);
+        setMessages(() => mergeUniqueMessages([], response.messages));
         setHistoryCursor(response.nextCursor);
       } catch (error) {
         if (!active)
@@ -123,19 +178,56 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
 
   }, [channelId, connection]);
 
+  const loadOlderMessages = useCallback(async (): Promise<void> => {
+    if (!connection || !channelId || !historyCursor || isOlderRequestInFlightRef.current) {
+      return;
+    }
+
+    const requestChannelId = channelId;
+    const cursor = historyCursor;
+    isOlderRequestInFlightRef.current = true;
+    setIsLoadingOlder(true);
+
+    try {
+      const response = await fetchChannelHistory(requestChannelId, {
+        beforeCreatedAt: cursor.beforeCreatedAt,
+        beforeId: cursor.beforeId,
+      });
+
+      if (activeChannelIdRef.current !== requestChannelId) {
+        return;
+      }
+
+      setMessages((prev) => mergeUniqueMessages(prev, response.messages));
+      setHistoryCursor(response.nextCursor);
+      setErrorMessage(null);
+    } catch (error) {
+      if (activeChannelIdRef.current !== requestChannelId) {
+        return;
+      }
+
+      setErrorMessage(error instanceof Error ? error.message : "Unable to load older messages");
+    } finally {
+      if (activeChannelIdRef.current === requestChannelId) {
+        setIsLoadingOlder(false);
+      }
+      isOlderRequestInFlightRef.current = false;
+    }
+  }, [channelId, connection, historyCursor]);
+
   //setup message listener for incoming realtime messages. Updates messages state automatically
   useEffect(() => { 
     if (!connection)
       return;
 
     const messageHandler = (payload: ChatRealtimeMessage) => {
-      if (payload.channelId == channelId) {
+      if (payload.channelId === channelId) {
         const newMessage: ChatMessageDto = {
           ...payload,
           editedAt: null,
           deletedAt: null,
         }
-        setMessages(prev => [...prev, newMessage]);
+        setMessages((prev) => mergeUniqueMessages(prev, [newMessage]));
       }
       //compare payload channelId with current channelId
       //handle message and everything else here
@@ -150,8 +242,10 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
   return {
     messages,
     isLoading,
+    isLoadingOlder,
     errorMessage,
     historyCursor,
+    loadOlderMessages,
     sendMessage,
   }
 }

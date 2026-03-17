@@ -1,0 +1,57 @@
+[
+  {
+    "id": "seed-emoji-global-okay-frieren",
+    "name": "okay-frieren",
+    "scopeType": "GLOBAL",
+    "scopeId": null,
+    "assetUrl": "/chat/emojis/okay-frieren.png",
+    "createdByUserId": "seed-user-jung",
+    "createdAt": "2026-01-16T08:00:00.000Z",
+    "updatedAt": "2026-01-16T08:00:00.000Z",
+    "deletedAt": null
+  },
+  {
+    "id": "seed-emoji-global-oldge",
+    "name": "oldge",
+    "scopeType": "GLOBAL",
+    "scopeId": null,
+    "assetUrl": "/chat/emojis/oldge.png",
+    "createdByUserId": "seed-user-jung",
+    "createdAt": "2026-01-16T08:05:00.000Z",
+    "updatedAt": "2026-01-16T08:05:00.000Z",
+    "deletedAt": null
+  },
+  {
+    "id": "seed-emoji-global-true",
+    "name": "true",
+    "scopeType": "GLOBAL",
+    "scopeId": null,
+    "assetUrl": "/chat/emojis/true.gif",
+    "createdByUserId": "seed-user-jung",
+    "createdAt": "2026-01-16T08:10:00.000Z",
+    "updatedAt": "2026-01-16T08:10:00.000Z",
+    "deletedAt": null
+  },
+  {
+    "id": "seed-emoji-global-weep",
+    "name": "weep",
+    "scopeType": "GLOBAL",
+    "scopeId": null,
+    "assetUrl": "/chat/emojis/weep.png",
+    "createdByUserId": "seed-user-jung",
+    "createdAt": "2026-01-16T08:15:00.000Z",
+    "updatedAt": "2026-01-16T08:15:00.000Z",
+    "deletedAt": null
+  },
+  {
+    "id": "seed-emoji-global-hypers",
+    "name": "hypers",
+    "scopeType": "GLOBAL",
+    "scopeId": null,
+    "assetUrl": "/chat/emojis/hypers.png",
+    "createdByUserId": "seed-user-jung",
+    "createdAt": "2026-01-16T08:20:00.000Z",
+    "updatedAt": "2026-01-16T08:20:00.000Z",
+    "deletedAt": null
+  }
+]

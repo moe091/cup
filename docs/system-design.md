@@ -242,6 +242,7 @@ Scope:
   - shared session store for horizontal scaling
   - Postgres remains durable message source of truth
   - optional async event pipeline (Kafka/NATS/SQS-style) for side effects (notifications/analytics/moderation), not primary message durability
+  - custom emoji/media assets should move from local `public/` hosting to S3-compatible object storage + CDN before production-scale uploads
 
 ### D-014 Chat service extraction timing
 

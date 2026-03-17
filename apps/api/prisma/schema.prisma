@@ -38,6 +38,7 @@ model User {
   channelsCreated      Channel[]         @relation("ChannelCreatedBy")
   channelMemberships   ChannelMember[]
   messagesAuthored     Message[]         @relation("MessageAuthor")
+  customEmojisCreated  CustomEmoji[]     @relation("CustomEmojiCreatedBy")
 
   @@map("account")
 }
@@ -127,6 +128,12 @@ enum MembershipSource {
   DERIVED
 }
 
+enum CustomEmojiScopeType {
+  GLOBAL
+  COMMUNITY
+  USER
+}
+
 model Community {
   id          String   @id @default(uuid())
   name        String
@@ -210,4 +217,23 @@ model Message {
   @@index([channelId, createdAt, id])
   @@index([authorUserId, createdAt])
   @@map("message")
+}
+
+model CustomEmoji {
+  id              String               @id
+  name            String
+  scopeType       CustomEmojiScopeType
+  scopeId         String?
+  assetUrl        String
+  createdByUserId String
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  deletedAt       DateTime?
+
+  createdBy User @relation("CustomEmojiCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([scopeType, scopeId])
+  @@index([createdByUserId])
+  @@index([deletedAt])
+  @@map("custom_emoji")
 }

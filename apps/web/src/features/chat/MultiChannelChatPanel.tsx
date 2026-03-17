@@ -14,6 +14,7 @@ export type MCCPChannel = {
 export type MCCPProps = {
   selectedChannelId: string | null;
   onSelectedChannelIdChange: (channelId: string) => void;
+  communityId: string | null;
   communityName?: string;
   channels: MCCPChannel[];
 };
@@ -21,6 +22,7 @@ export type MCCPProps = {
 export default function MultiChannelChatPanel({
   selectedChannelId,
   onSelectedChannelIdChange,
+  communityId,
   communityName,
   channels,
 }: MCCPProps) {
@@ -58,7 +60,7 @@ export default function MultiChannelChatPanel({
       </div>
 
       <div className="min-h-0">
-        {hasChannels && selectedChannel ? <ChannelChatView channel={selectedChannel} connection={connection} /> : renderNoChannels()}
+        {hasChannels && selectedChannel ? <ChannelChatView channel={selectedChannel} connection={connection} communityId={communityId} /> : renderNoChannels()}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import MultiChannelChatPanel, { type MCCPChannel } from "../../features/chat/MultiChannelChatPanel";
-import { fetchCommunityChannelsBySlug } from "../../api/communities";
+import { fetchCommunityBySlug, fetchCommunityChannelsBySlug } from "../../api/communities";
 
 type Params = { slug: string };
 
@@ -9,9 +9,10 @@ export default function CommunityChatPage() {
   const { slug } = useParams<Params>();
   const [searchParams, setSearchParams] = useSearchParams();
   const [channels, setChannels] = useState<MCCPChannel[]>([]);
+  const [communityId, setCommunityId] = useState<string | null>(null);
+  const [communityName, setCommunityName] = useState<string>("Unknown community");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const communityName = slug ?? "Unknown community";
 
   const requestedChannelId = searchParams.get("channel");
 
@@ -30,6 +31,8 @@ export default function CommunityChatPage() {
   useEffect(() => {
     if (!slug) {
       setChannels([]);
+      setCommunityId(null);
+      setCommunityName("Unknown community");
       setIsLoading(false);
       setErrorMessage("Missing community slug.");
       return;
@@ -40,12 +43,20 @@ export default function CommunityChatPage() {
     const loadChannels = async () => {
       setIsLoading(true);
       setErrorMessage(null);
+      setCommunityId(null);
+      setCommunityName(slug);
 
       try {
-        const loadedChannels = await fetchCommunityChannelsBySlug(slug);
+        const [communitySummary, loadedChannels] = await Promise.all([
+          fetchCommunityBySlug(slug),
+          fetchCommunityChannelsBySlug(slug),
+        ]);
         if (!active) {
           return;
         }
+
+        setCommunityId(communitySummary.id);
+        setCommunityName(communitySummary.name);
 
         const nextChannels: MCCPChannel[] = loadedChannels.map((channel) => ({
           id: channel.id,
@@ -60,6 +71,8 @@ export default function CommunityChatPage() {
         }
 
         setChannels([]);
+        setCommunityId(null);
+        setCommunityName(slug);
         setErrorMessage(error instanceof Error ? error.message : "Failed to load channels.");
       } finally {
         if (active) {
@@ -128,6 +141,7 @@ export default function CommunityChatPage() {
         <MultiChannelChatPanel
           selectedChannelId={selectedChannelId}
           onSelectedChannelIdChange={handleSelectedChannelIdChange}
+          communityId={communityId}
           communityName={communityName}
           channels={channels}
         />
