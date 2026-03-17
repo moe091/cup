@@ -1,5 +1,5 @@
 ---
-description: Multiplayer minigame platform with physics racing and social features.
+description: Social platform focusing on discord-like chat combined with integrated/seamless social minigames and activities.
 ---
 
 ## Product vision

@@ -1,5 +1,6 @@
 import { memo } from "react";
 import type { ChatMessageDto } from "@cup/shared-types";
+import { parseChatTextSegments } from "./text/chatTextProcessing";
 
 type MessageRowProps = {
   message: ChatMessageDto;
@@ -21,6 +22,8 @@ function MessageRowBase({ message }: MessageRowProps) {
         minute: "2-digit",
       });
 
+  const textSegments = parseChatTextSegments(message.body);
+
   return (
     <article className="px-1 py-0.5">
       <div className="mb-0.5 flex items-baseline gap-2">
@@ -28,7 +31,21 @@ function MessageRowBase({ message }: MessageRowProps) {
         <span className="text-[11px] text-[color:var(--muted)]">{timestamp}</span>
         {message.editedAt ? <span className="text-[11px] text-[color:var(--muted)]">(edited)</span> : null}
       </div>
-      <p className="whitespace-pre-wrap text-sm leading-5 text-slate-350">{message.deletedAt ? "Message deleted" : message.body}</p>
+      <p className="whitespace-pre-wrap text-[15px] leading-5 text-slate-350">
+        {message.deletedAt
+          ? "Message deleted"
+          : textSegments.map((segment, index) => {
+              if (segment.kind === "unicodeEmoji") {
+                return (
+                  <span key={`emoji-${index}`} className="inline text-[1.35em] leading-none align-[-0.1em]">
+                    {segment.value}
+                  </span>
+                );
+              }
+
+              return <span key={`text-${index}`}>{segment.value}</span>;
+            })}
+      </p>
     </article>
   );
 }
