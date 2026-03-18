@@ -1,8 +1,10 @@
 import { ChatGateway } from './chat.gateway';
 import jwt from 'jsonwebtoken';
+import { ForbiddenException } from '@nestjs/common';
 
 type ChatServiceMock = {
   assertCanViewChannel: jest.Mock;
+  assertCanUseCustomEmojis: jest.Mock;
   createMessage: jest.Mock;
   resolveAuthorDisplayName: jest.Mock;
 };
@@ -60,6 +62,7 @@ describe('ChatGateway', () => {
 
     chatServiceMock = {
       assertCanViewChannel: jest.fn(),
+      assertCanUseCustomEmojis: jest.fn(),
       createMessage: jest.fn(),
       resolveAuthorDisplayName: jest.fn(),
     };
@@ -265,6 +268,7 @@ describe('ChatGateway', () => {
         clientMessageId: 'client-1',
       });
 
+      expect(chatServiceMock.assertCanUseCustomEmojis).toHaveBeenCalledWith('seed-channel-1', 'seed-user-jung', 'Hello world');
       expect(chatServiceMock.createMessage).toHaveBeenCalledWith({
         channelId: 'seed-channel-1',
         authorUserId: 'seed-user-jung',
@@ -303,6 +307,30 @@ describe('ChatGateway', () => {
         ok: false,
         clientMessageId: 'client-1',
         error: 'Failed to send message',
+      });
+    });
+
+    it('emits specific ack error when custom emoji usage is rejected', async () => {
+      const { socket } = createMockSocket();
+      socket.data.userId = 'seed-user-jung';
+      socket.data.authorDisplayName = 'Jung';
+      socket.data.room = 'channel:seed-channel-1';
+      socket.rooms.add('channel:seed-channel-1');
+      chatServiceMock.assertCanUseCustomEmojis.mockRejectedValue(
+        new ForbiddenException('Message contains custom emoji you are not allowed to use'),
+      );
+
+      await gateway.handleSend(socket as never, {
+        channelId: 'seed-channel-1',
+        body: 'Hello <:forbidden:emoji-1>',
+        clientMessageId: 'client-1',
+      });
+
+      expect(chatServiceMock.createMessage).not.toHaveBeenCalled();
+      expect(socket.emit).toHaveBeenCalledWith('chat:send:ack', {
+        ok: false,
+        clientMessageId: 'client-1',
+        error: 'Message contains custom emoji you are not allowed to use',
       });
     });
 

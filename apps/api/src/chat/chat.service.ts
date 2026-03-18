@@ -14,10 +14,83 @@ import type { Prisma } from 'src/generated/prisma/client';
 const CHAT_TOKEN_TTL_SECONDS = 10 * 60;
 const DEFAULT_MSG_LIMIT = 25;
 const MAX_MSG_LIMIT = 200;
+const CUSTOM_EMOJI_TOKEN_REGEX = /<:([a-zA-Z0-9_-]{1,64}):([a-zA-Z0-9_-]{1,128})>/g;
 
 @Injectable()
 export class ChatService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async assertCanUseCustomEmojis(channelId: string, senderUserId: string, body: string): Promise<void> {
+    const customEmojiIds = this.extractCustomEmojiIds(body);
+    if (customEmojiIds.length === 0) {
+      return;
+    }
+
+    const customEmojis = await this.prisma.customEmoji.findMany({
+      where: {
+        id: { in: customEmojiIds },
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        scopeType: true,
+        scopeId: true,
+      },
+    });
+
+    const customEmojiById = new Map(customEmojis.map((emoji) => [emoji.id, emoji]));
+
+    let channelCommunityId: string | null | undefined;
+
+    for (const customEmojiId of customEmojiIds) {
+      const customEmoji = customEmojiById.get(customEmojiId);
+      if (!customEmoji) {
+        throw new BadRequestException('Message contains invalid or deleted custom emoji');
+      }
+
+      if (customEmoji.scopeType === 'GLOBAL') {
+        continue;
+      }
+
+      if (customEmoji.scopeType === 'USER') {
+        if (customEmoji.scopeId === senderUserId) {
+          continue;
+        }
+
+        throw new ForbiddenException('Message contains custom emoji you are not allowed to use');
+      }
+
+      if (channelCommunityId === undefined) {
+        const channel = await this.prisma.channel.findUnique({
+          where: { id: channelId },
+          select: { communityId: true },
+        });
+
+        if (!channel) {
+          throw new NotFoundException('Channel not found');
+        }
+
+        channelCommunityId = channel.communityId;
+      }
+
+      if (customEmoji.scopeId !== channelCommunityId) {
+        throw new ForbiddenException('Message contains custom emoji you are not allowed to use');
+      }
+    }
+  }
+
+  private extractCustomEmojiIds(body: string): string[] {
+    const ids = new Set<string>();
+    CUSTOM_EMOJI_TOKEN_REGEX.lastIndex = 0;
+    let match = CUSTOM_EMOJI_TOKEN_REGEX.exec(body);
+
+    while (match) {
+      ids.add(match[2]);
+      match = CUSTOM_EMOJI_TOKEN_REGEX.exec(body);
+    }
+
+    return Array.from(ids);
+  }
 
   issueConnectionToken(userId: string): ChatTokenResponse {
     const secret = process.env.CHAT_TOKEN_SECRET;

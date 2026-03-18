@@ -2,6 +2,8 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import type { CustomEmojiDto, EmojiCatalogResponseDto } from '@cup/shared-types';
 import { PrismaService } from 'src/prisma/prisma.service';
 
+const MAX_RESOLVE_IDS = 200;
+
 @Injectable()
 export class EmojisService {
   constructor(private readonly prisma: PrismaService) {}
@@ -33,6 +35,51 @@ export class EmojisService {
         OR: scopeFilters,
       },
       orderBy: [{ scopeType: 'asc' }, { name: 'asc' }, { id: 'asc' }],
+    });
+
+    return {
+      emojis: emojis.map<CustomEmojiDto>((emoji) => ({
+        id: emoji.id,
+        name: emoji.name,
+        scopeType: emoji.scopeType,
+        scopeId: emoji.scopeId,
+        assetUrl: emoji.assetUrl,
+        createdByUserId: emoji.createdByUserId,
+        createdAt: emoji.createdAt.toISOString(),
+        updatedAt: emoji.updatedAt.toISOString(),
+        deletedAt: emoji.deletedAt ? emoji.deletedAt.toISOString() : null,
+      })),
+    };
+  }
+
+  async resolveByIds(idsRaw: string | undefined): Promise<EmojiCatalogResponseDto> {
+    if (idsRaw === undefined) {
+      return { emojis: [] };
+    }
+
+    const ids = Array.from(
+      new Set(
+        idsRaw
+          .split(',')
+          .map((id) => id.trim())
+          .filter((id) => id.length > 0),
+      ),
+    );
+
+    if (ids.length === 0) {
+      return { emojis: [] };
+    }
+
+    if (ids.length > MAX_RESOLVE_IDS) {
+      throw new BadRequestException(`ids cannot contain more than ${MAX_RESOLVE_IDS} entries`);
+    }
+
+    const emojis = await this.prisma.customEmoji.findMany({
+      where: {
+        id: { in: ids },
+        deletedAt: null,
+      },
+      orderBy: [{ id: 'asc' }],
     });
 
     return {

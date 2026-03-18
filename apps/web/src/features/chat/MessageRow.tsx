@@ -1,12 +1,13 @@
 import { memo } from "react";
-import type { ChatMessageDto } from "@cup/shared-types";
+import type { ChatMessageDto, CustomEmojiDto } from "@cup/shared-types";
 import { parseChatTextSegments } from "./text/chatTextProcessing";
 
 type MessageRowProps = {
   message: ChatMessageDto;
+  resolvedCustomEmojiById: Map<string, CustomEmojiDto | null>;
 };
 
-function MessageRowBase({ message }: MessageRowProps) {
+function MessageRowBase({ message, resolvedCustomEmojiById }: MessageRowProps) {
   const createdAt = new Date(message.createdAt);
   const now = new Date();
   const isToday =
@@ -32,7 +33,7 @@ function MessageRowBase({ message }: MessageRowProps) {
         {message.editedAt ? <span className="text-[11px] text-[color:var(--muted)]">(edited)</span> : null}
       </div>
       <p className="whitespace-pre-wrap text-[15px] leading-5 text-slate-350">
-        {message.deletedAt
+            {message.deletedAt
           ? "Message deleted"
           : textSegments.map((segment, index) => {
               if (segment.kind === "unicodeEmoji") {
@@ -41,6 +42,29 @@ function MessageRowBase({ message }: MessageRowProps) {
                     {segment.value}
                   </span>
                 );
+              }
+
+              if (segment.kind === "customEmojiToken") {
+                const resolved = resolvedCustomEmojiById.get(segment.id);
+
+                if (resolved === null) {
+                  return <span key={`missing-custom-${index}`}>[deleted emoji]</span>;
+                }
+
+                if (resolved) {
+                  return (
+                    <img
+                      key={`custom-${index}`}
+                      src={resolved.assetUrl}
+                      alt={`:${resolved.name}:`}
+                      title={`:${resolved.name}:`}
+                      className="mx-[1px] inline h-[1.35em] w-[1.35em] align-[-0.2em] object-contain"
+                      draggable={false}
+                    />
+                  );
+                }
+
+                return <span key={`custom-token-${index}`}>{segment.value}</span>;
               }
 
               return <span key={`text-${index}`}>{segment.value}</span>;

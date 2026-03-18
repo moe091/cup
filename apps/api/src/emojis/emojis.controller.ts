@@ -11,4 +11,9 @@ export class EmojisController {
   getCatalog(@Req() req: AuthedRequest, @Query('communityId') communityId: string | undefined): Promise<EmojiCatalogResponseDto> {
     return this.emojisService.getCatalog(req.user?.id, communityId);
   }
+
+  @Get('resolve')
+  resolveByIds(@Query('ids') ids: string | undefined): Promise<EmojiCatalogResponseDto> {
+    return this.emojisService.resolveByIds(ids);
+  }
 }

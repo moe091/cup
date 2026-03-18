@@ -6,6 +6,7 @@ import {
   SubscribeMessage,
   WebSocketGateway,
 } from '@nestjs/websockets';
+import { HttpException } from '@nestjs/common';
 import type { ChatTokenClaims, JoinChannelPayload, ChatSocket } from './chat.types';
 import jwt from 'jsonwebtoken';
 import { ChatService } from './chat.service';
@@ -166,6 +167,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     try {
+      await this.chatService.assertCanUseCustomEmojis(trimmedChannelId, userId, trimmedBody);
+
       const created = await this.chatService.createMessage({
         channelId: trimmedChannelId,
         authorUserId: userId,
@@ -186,11 +189,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         ok: true,
         clientMessageId,
       });
-    } catch {
+    } catch (error) {
+      const errorMessage = error instanceof HttpException ? error.message : 'Failed to send message';
       socket.emit('chat:send:ack', {
         ok: false,
         clientMessageId,
-        error: 'Failed to send message',
+        error: errorMessage,
       });
     }
   }

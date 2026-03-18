@@ -5,6 +5,7 @@ import type { ChatMessageDto } from "@cup/shared-types";
 import { Fragment, useCallback, useLayoutEffect, useRef } from "react";
 import MessageRow from "./MessageRow";
 import ChatComposer from "./ChatComposer";
+import { useResolvedCustomEmojiMap } from "./hooks/useResolvedCustomEmojiMap";
 
 type ChannelChatViewProps = {
   channel: MCCPChannel | null;
@@ -71,6 +72,7 @@ function formatDateSeparatorLabel(messageCreatedAt: string): string {
 
 export default function ChannelChatView({ channel, connection, communityId }: ChannelChatViewProps) {
   const { messages, isLoading, isLoadingOlder, errorMessage, historyCursor, loadOlderMessages, sendMessage } = useChatMessaging({channelId: channel?.id ?? null, connection});
+  const resolvedCustomEmojiById = useResolvedCustomEmojiMap(messages);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const wasNearBottomRef = useRef(true);
   const previousMessageCountRef = useRef(0);
@@ -193,7 +195,7 @@ export default function ChannelChatView({ channel, connection, communityId }: Ch
                       <span className="h-px flex-1 bg-[color:var(--line)]" aria-hidden />
                     </div>
                   ) : null}
-                  <MessageRow message={message} />
+                  <MessageRow message={message} resolvedCustomEmojiById={resolvedCustomEmojiById} />
                 </Fragment>
               );
             })}

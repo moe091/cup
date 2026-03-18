@@ -1,4 +1,4 @@
-import type { EmojiCatalogResponseDto } from '@cup/shared-types';
+import type { CustomEmojiDto, EmojiCatalogResponseDto } from '@cup/shared-types';
 
 type EmojiCatalogParams = {
   communityId?: string;
@@ -28,4 +28,32 @@ export async function fetchEmojiCatalog(params: EmojiCatalogParams = {}): Promis
   }
 
   return (await response.json()) as EmojiCatalogResponseDto;
+}
+
+export async function fetchResolvedEmojisByIds(ids: string[]): Promise<CustomEmojiDto[]> {
+  const normalizedIds = Array.from(
+    new Set(
+      ids.map((id) => id.trim()).filter((id) => id.length > 0),
+    ),
+  );
+
+  if (normalizedIds.length === 0) {
+    return [];
+  }
+
+  const query = new URLSearchParams({
+    ids: normalizedIds.join(','),
+  });
+
+  const response = await fetch(`/api/emojis/resolve?${query.toString()}`, {
+    credentials: 'include',
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Emoji resolve fetch failed: ${response.status}`);
+  }
+
+  const payload = (await response.json()) as EmojiCatalogResponseDto;
+  return payload.emojis;
 }

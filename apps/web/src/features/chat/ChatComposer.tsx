@@ -1,24 +1,54 @@
-import { useCallback, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
 import type { sendMessageFunction } from "./hooks/useChatMessaging";
 import { useEmojiCatalog } from "./hooks/useEmojiCatalog";
 import EmojiPicker, { type EmojiSelection } from "./EmojiPicker";
 import { parseChatTextSegments } from "./text/chatTextProcessing";
 
+const CUSTOM_EMOJI_TOKEN_ATTR = "data-custom-emoji-token";
+
+function isCustomEmojiChip(node: Node): node is HTMLElement {
+  return node instanceof HTMLElement && node.hasAttribute(CUSTOM_EMOJI_TOKEN_ATTR);
+}
+
+function serializeNode(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return node.textContent ?? "";
+  }
+
+  if (isCustomEmojiChip(node)) {
+    return node.getAttribute(CUSTOM_EMOJI_TOKEN_ATTR) ?? "";
+  }
+
+  if (node.nodeName === "BR") {
+    return "\n";
+  }
+
+  let serialized = "";
+  node.childNodes.forEach((child) => {
+    serialized += serializeNode(child);
+  });
+  return serialized;
+}
+
+function serializeComposerBody(root: HTMLElement): string {
+  return serializeNode(root);
+}
+
 function getSelectionOffsetWithin(root: HTMLElement): number {
   const selection = window.getSelection();
   if (!selection || selection.rangeCount === 0) {
-    return root.textContent?.length ?? 0;
+    return serializeComposerBody(root).length;
   }
 
   const range = selection.getRangeAt(0);
   if (!root.contains(range.startContainer)) {
-    return root.textContent?.length ?? 0;
+    return serializeComposerBody(root).length;
   }
 
   const preCaretRange = document.createRange();
   preCaretRange.selectNodeContents(root);
   preCaretRange.setEnd(range.startContainer, range.startOffset);
-  return preCaretRange.toString().length;
+  return serializeNode(preCaretRange.cloneContents()).length;
 }
 
 function restoreSelectionOffsetWithin(root: HTMLElement, targetOffset: number): void {
@@ -27,34 +57,74 @@ function restoreSelectionOffsetWithin(root: HTMLElement, targetOffset: number): 
     return;
   }
 
-  const safeOffset = Math.max(0, Math.min(targetOffset, root.textContent?.length ?? 0));
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let traversed = 0;
+  const totalLength = serializeComposerBody(root).length;
+  const safeOffset = Math.max(0, Math.min(targetOffset, totalLength));
+  const range = document.createRange();
+  let remaining = safeOffset;
 
-  while (walker.nextNode()) {
-    const node = walker.currentNode as Text;
-    const nextTraversed = traversed + node.data.length;
-    if (safeOffset <= nextTraversed) {
-      const localOffset = safeOffset - traversed;
-      const range = document.createRange();
-      range.setStart(node, localOffset);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
-      return;
+  const walk = (node: Node): boolean => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent ?? "";
+      if (remaining <= text.length) {
+        range.setStart(node, remaining);
+        range.collapse(true);
+        return true;
+      }
+
+      remaining -= text.length;
+      return false;
     }
-    traversed = nextTraversed;
+
+    if (isCustomEmojiChip(node)) {
+      const token = node.getAttribute(CUSTOM_EMOJI_TOKEN_ATTR) ?? "";
+      const tokenLength = token.length;
+      if (remaining <= tokenLength) {
+        if (remaining === 0) {
+          range.setStartBefore(node);
+        } else {
+          range.setStartAfter(node);
+        }
+        range.collapse(true);
+        return true;
+      }
+
+      remaining -= tokenLength;
+      return false;
+    }
+
+    if (node.nodeName === "BR") {
+      if (remaining <= 1) {
+        range.setStartAfter(node);
+        range.collapse(true);
+        return true;
+      }
+
+      remaining -= 1;
+      return false;
+    }
+
+    for (const child of Array.from(node.childNodes)) {
+      if (walk(child)) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  const found = walk(root);
+
+  if (!found) {
+    range.selectNodeContents(root);
+    range.collapse(false);
   }
 
-  const fallbackRange = document.createRange();
-  fallbackRange.selectNodeContents(root);
-  fallbackRange.collapse(false);
   selection.removeAllRanges();
-  selection.addRange(fallbackRange);
+  selection.addRange(range);
 }
 
-function renderComposerTextSegments(root: HTMLElement): string {
-  const rawText = root.textContent ?? "";
+function renderComposerTextSegments(root: HTMLElement, customEmojiById: Map<string, { assetUrl: string; name: string }>): string {
+  const rawText = serializeComposerBody(root);
   const caretOffset = getSelectionOffsetWithin(root);
   const segments = parseChatTextSegments(rawText);
   const fragment = document.createDocumentFragment();
@@ -66,6 +136,27 @@ function renderComposerTextSegments(root: HTMLElement): string {
       emojiSpan.textContent = segment.value;
       fragment.appendChild(emojiSpan);
       continue;
+    }
+
+    if (segment.kind === "customEmojiToken") {
+      const resolved = customEmojiById.get(segment.id);
+      if (resolved) {
+        const chip = document.createElement("span");
+        chip.setAttribute(CUSTOM_EMOJI_TOKEN_ATTR, segment.value);
+        chip.setAttribute("contenteditable", "false");
+        chip.className = "mx-[1px] inline-flex h-[1.35em] w-[1.35em] align-[-0.2em]";
+
+        const image = document.createElement("img");
+        image.src = resolved.assetUrl;
+        image.alt = `:${resolved.name}:`;
+        image.title = `:${resolved.name}:`;
+        image.className = "h-full w-full object-contain";
+        image.draggable = false;
+
+        chip.appendChild(image);
+        fragment.appendChild(chip);
+        continue;
+      }
     }
 
     fragment.appendChild(document.createTextNode(segment.value));
@@ -89,15 +180,19 @@ export default function ChatComposer({ placeholder, sendMessage, communityId }: 
   const editorRef = useRef<HTMLDivElement | null>(null);
   const pickerRootRef = useRef<HTMLDivElement | null>(null);
   const { emojis, isLoading: isEmojiCatalogLoading, errorMessage: emojiCatalogErrorMessage } = useEmojiCatalog({ communityId });
+  const customEmojiById = useMemo(
+    () => new Map(emojis.map((emoji) => [emoji.id, { assetUrl: emoji.assetUrl, name: emoji.name }])),
+    [emojis],
+  );
 
   const handleInputChange = (event: FormEvent<HTMLDivElement>) => {
     const inputEvent = event.nativeEvent as InputEvent;
     if (inputEvent.isComposing) {
-      setMessageText(event.currentTarget.textContent ?? "");
+      setMessageText(serializeComposerBody(event.currentTarget));
       return;
     }
 
-    const plainText = renderComposerTextSegments(event.currentTarget);
+    const plainText = renderComposerTextSegments(event.currentTarget, customEmojiById);
     setMessageText(plainText);
   };
 
@@ -106,7 +201,7 @@ export default function ChatComposer({ placeholder, sendMessage, communityId }: 
       return;
     }
 
-    const plainText = renderComposerTextSegments(editorRef.current);
+    const plainText = renderComposerTextSegments(editorRef.current, customEmojiById);
     setMessageText(plainText);
   };
 
@@ -117,7 +212,7 @@ export default function ChatComposer({ placeholder, sendMessage, communityId }: 
   };
   
   const handleSendMessage = async () => {
-    const text = (editorRef.current?.textContent ?? messageText).trim();
+    const text = (editorRef.current ? serializeComposerBody(editorRef.current) : messageText).trim();
 
     if (text) {
       setIsSending(true);
@@ -132,7 +227,7 @@ export default function ChatComposer({ placeholder, sendMessage, communityId }: 
         setIsSending(false);
       }
     }
-  }
+  };
 
   const handleEditorKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.nativeEvent.isComposing) {
@@ -154,7 +249,7 @@ export default function ChatComposer({ placeholder, sendMessage, communityId }: 
     const selection = window.getSelection();
     if (!selection) {
       editor.append(document.createTextNode(text));
-      const plainText = renderComposerTextSegments(editor);
+      const plainText = renderComposerTextSegments(editor, customEmojiById);
       setMessageText(plainText);
       return;
     }
@@ -183,10 +278,10 @@ export default function ChatComposer({ placeholder, sendMessage, communityId }: 
     selection.removeAllRanges();
     selection.addRange(caretRange);
 
-    const plainText = renderComposerTextSegments(editor);
+    const plainText = renderComposerTextSegments(editor, customEmojiById);
     setMessageText(plainText);
     editor.focus();
-  }, []);
+  }, [customEmojiById]);
 
   const handleEmojiSelect = useCallback(
     (selection: EmojiSelection, keepOpen: boolean) => {

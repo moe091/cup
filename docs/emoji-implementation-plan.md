@@ -140,7 +140,7 @@ Initial read-focused endpoints:
 
 Potential follow-up endpoint (for resolver misses):
 
-- `GET /api/emojis/resolve?ids=<id1,id2,...>`
+- `GET /api/emojis/resolve?ids=<id1,id2,...>` (implemented)
 
 Upload/manage endpoints are intentionally out of this first build slice.
 
@@ -154,20 +154,29 @@ Implemented so far:
 - Seed data for current local emoji assets in `apps/web/public/chat/emojis`.
 - API endpoint: `GET /api/emojis/catalog` with optional `communityId`.
 - Frontend API helper: `fetchEmojiCatalog` in `apps/web/src/api/emojis.ts`.
+- Frontend API helper: `fetchResolvedEmojisByIds` in `apps/web/src/api/emojis.ts`.
 - Frontend emoji catalog hook: `useEmojiCatalog` with cache-by-community-key and TTL.
 - Community context wiring to composer:
   - `CommunityChatPage` resolves `communityId`
   - `MultiChannelChatPanel` forwards `communityId`
   - `ChannelChatView` forwards `communityId`
   - `ChatComposer` loads catalog via `useEmojiCatalog`
+- Emoji picker UI in composer (standard + custom sections, close-on-select, Shift-click keep-open).
+- Composer insertion handlers for Unicode/custom emoji tokens.
+- Composer inline rendering for:
+  - larger Unicode emojis
+  - custom emoji chips (`contenteditable=false`) with token serialization
+- Message-row rendering for:
+  - larger Unicode emojis
+  - custom emoji inline images via token resolution
+  - unresolved/deleted fallback `[deleted emoji]`
+- Frontend token-resolution cache/hook:
+  - `useResolvedCustomEmojiMap` resolves unknown ids in batch
+  - caches resolved ids and unresolved/deleted ids to avoid repeated lookups
 
 Not implemented yet:
 
-- Actual emoji picker UI.
-- Composer insertion handlers for Unicode/custom emoji.
-- Composer DOM serialization for custom emoji chips.
-- Send-path custom token validation.
-- Message rendering of custom emoji tokens.
+- Backend/server cache layer for send-time emoji validation metadata.
 
 
 ## Implementation Checklist
@@ -181,12 +190,12 @@ Not implemented yet:
 
 ### Phase 2 - Composer Emoji Support (First UI Milestone)
 
-- [ ] Add emoji picker UI shell in `ChatComposer`.
-- [ ] Implement standard Unicode emoji insertion at caret.
-- [ ] Implement custom emoji chip insertion at caret.
-- [ ] Implement robust DOM serialization to canonical plain text.
-- [ ] Preserve existing Enter/Shift+Enter/IME behavior.
-- [ ] Preserve plain-text paste behavior.
+- [x] Add emoji picker UI shell in `ChatComposer`.
+- [x] Implement standard Unicode emoji insertion at caret.
+- [x] Implement custom emoji chip insertion at caret.
+- [x] Implement robust DOM serialization to canonical plain text.
+- [x] Preserve existing Enter/Shift+Enter/IME behavior.
+- [x] Preserve plain-text paste behavior.
 
 Phase 2 pre-work completed:
 
@@ -195,17 +204,23 @@ Phase 2 pre-work completed:
 
 ### Phase 3 - Send Path Validation
 
-- [ ] Parse custom tokens server-side on `chat:send`.
+- [x] Parse custom tokens server-side on `chat:send`.
 - [ ] Resolve metadata in batch with caching.
-- [ ] Enforce scope policy and reject invalid message payloads.
-- [ ] Add targeted gateway/service tests for validation behavior.
+- [x] Enforce scope policy and reject invalid message payloads.
+- [x] Add targeted gateway/service tests for validation behavior.
 
 ### Phase 4 - Message Rendering
 
-- [ ] Parse message body into render parts in frontend.
-- [ ] Render custom emoji tokens as inline images.
-- [ ] Render unresolved/deleted tokens as `[deleted emoji]`.
+- [x] Parse message body into render parts in frontend.
+- [x] Render custom emoji tokens as inline images.
+- [x] Render unresolved/deleted tokens as `[deleted emoji]`.
 - [ ] Keep Unicode native rendering unchanged.
+
+### Phase 4.5 - Resolve Path and Caching
+
+- [x] Add resolver endpoint for unknown custom emoji ids (`GET /api/emojis/resolve`).
+- [x] Resolve unknown ids in batch on frontend render path.
+- [x] Cache resolved ids and unresolved/deleted ids client-side.
 
 ### Phase 5 - Hardening and Follow-ups
 

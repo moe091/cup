@@ -101,3 +101,16 @@ export function parseChatTextSegments(messageBody: string): ChatTextSegment[] {
 
   return segments;
 }
+
+export function extractCustomEmojiIds(messageBody: string): string[] {
+  const segments = parseChatTextSegments(messageBody);
+  const ids = new Set<string>();
+
+  for (const segment of segments) {
+    if (segment.kind === 'customEmojiToken') {
+      ids.add(segment.id);
+    }
+  }
+
+  return Array.from(ids);
+}
