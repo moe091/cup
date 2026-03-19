@@ -1,5 +1,5 @@
 import type { CustomEmojiDto } from "@cup/shared-types";
-import { useCallback, useEffect, useState, type RefObject } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
 import EmojiPickerSection from "./EmojiPickerSection";
 import { DEFAULT_UNICODE_EMOJIS } from "./unicodeEmojis";
 
@@ -10,6 +10,8 @@ export type EmojiSelection =
 type EmojiPickerProps = {
   isOpen: boolean;
   rootRef: RefObject<HTMLElement | null>;
+  anchorX?: number;
+  anchorY?: number;
   customEmojis: CustomEmojiDto[];
   isLoadingCustom: boolean;
   customError: string | null;
@@ -29,6 +31,8 @@ const DEFAULT_COLLAPSED_STATE: CollapsedState = {
 export default function EmojiPicker({
   isOpen,
   rootRef,
+  anchorX,
+  anchorY,
   customEmojis,
   isLoadingCustom,
   customError,
@@ -36,6 +40,61 @@ export default function EmojiPicker({
   onSelect,
 }: EmojiPickerProps) {
   const [collapsedBySection, setCollapsedBySection] = useState<CollapsedState>(DEFAULT_COLLAPSED_STATE);
+  const isAnchored = anchorX !== undefined && anchorY !== undefined;
+  const pickerRef = useRef<HTMLDivElement | null>(null);
+  const [anchoredTop, setAnchoredTop] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    if (!isOpen || !isAnchored || anchorY === undefined || !pickerRef.current) {
+      return;
+    }
+
+    const viewportPadding = 8;
+    const pickerHeight = pickerRef.current.getBoundingClientRect().height;
+    const maxTop = window.innerHeight - pickerHeight - viewportPadding;
+    const nextTop = Math.max(viewportPadding, Math.min(anchorY, maxTop));
+    setAnchoredTop(nextTop);
+  }, [isOpen, isAnchored, anchorY, collapsedBySection]);
+
+  useEffect(() => {
+    if (!isOpen || !isAnchored) {
+      setAnchoredTop(null);
+      return;
+    }
+
+    const onResize = () => {
+      if (!pickerRef.current || anchorY === undefined) {
+        return;
+      }
+
+      const viewportPadding = 8;
+      const pickerHeight = pickerRef.current.getBoundingClientRect().height;
+      const maxTop = window.innerHeight - pickerHeight - viewportPadding;
+      const nextTop = Math.max(viewportPadding, Math.min(anchorY, maxTop));
+      setAnchoredTop(nextTop);
+    };
+
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+    };
+  }, [isOpen, isAnchored, anchorY]);
+
+  const pickerStyle = useMemo<CSSProperties | undefined>(() => {
+    if (!isAnchored || anchorX === undefined || anchorY === undefined) {
+      return undefined;
+    }
+
+    const pickerWidth = 320;
+    const gapPx = 8;
+    const left = Math.max(8, anchorX - pickerWidth - gapPx);
+
+    return {
+      position: "fixed",
+      left,
+      top: anchoredTop ?? anchorY,
+    };
+  }, [isAnchored, anchorX, anchorY, anchoredTop]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -84,7 +143,13 @@ export default function EmojiPicker({
   }
 
   return (
-    <div className="absolute bottom-full right-0 z-20 mb-2 w-[320px] rounded-xl border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-3 shadow-[0_12px_30px_rgba(0,0,0,0.35)]">
+    <div
+      ref={pickerRef}
+      style={pickerStyle}
+      className={`${
+        isAnchored ? "fixed z-30" : "absolute bottom-full right-0 z-20 mb-2"
+      } w-[320px] rounded-xl border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-3 shadow-[0_12px_30px_rgba(0,0,0,0.35)]`}
+    >
       <EmojiPickerSection
         sectionId="standard"
         title="Standard"

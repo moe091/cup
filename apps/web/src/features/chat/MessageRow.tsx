@@ -1,14 +1,28 @@
-import { memo } from "react";
+import { memo, useCallback, useRef, useState } from "react";
 import type { ChatMessageDto, CustomEmojiDto } from "@cup/shared-types";
 import { parseChatTextSegments } from "./text/chatTextProcessing";
+import MessageActionMenu, { type MessageActionPickerAnchor } from "./message-actions/MessageActionMenu";
+import EmojiPicker, { type EmojiSelection } from "./emoji/EmojiPicker";
 
 type MessageRowProps = {
   message: ChatMessageDto;
   resolvedCustomEmojiById: Map<string, CustomEmojiDto | null>;
+  customEmojis: CustomEmojiDto[];
+  isLoadingCustomEmojis: boolean;
+  customEmojiError: string | null;
 };
 
-function MessageRowBase({ message, resolvedCustomEmojiById }: MessageRowProps) {
+function MessageRowBase({
+  message,
+  resolvedCustomEmojiById,
+  customEmojis,
+  isLoadingCustomEmojis,
+  customEmojiError,
+}: MessageRowProps) {
   const createdAt = new Date(message.createdAt);
+  const rowRootRef = useRef<HTMLElement | null>(null);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [pickerAnchor, setPickerAnchor] = useState<MessageActionPickerAnchor | null>(null);
   const now = new Date();
   const isToday =
     createdAt.getFullYear() === now.getFullYear() &&
@@ -25,8 +39,31 @@ function MessageRowBase({ message, resolvedCustomEmojiById }: MessageRowProps) {
 
   const textSegments = parseChatTextSegments(message.body);
 
+  const handleOpenPicker = useCallback((anchor: MessageActionPickerAnchor) => {
+    setPickerAnchor(anchor);
+    setIsPickerOpen(true);
+  }, []);
+
+  const handlePickerSelect = useCallback((_selection: EmojiSelection, keepOpen: boolean) => {
+    if (!keepOpen) {
+      setIsPickerOpen(false);
+    }
+  }, []);
+
   return (
-    <article className="px-1 py-0.5">
+    <article ref={rowRootRef} className="group relative rounded-md border border-transparent px-2 py-1 transition-colors hover:border-[color:var(--line)] hover:bg-white/[0.03] focus-within:border-[color:var(--line)] focus-within:bg-white/[0.03]">
+      <MessageActionMenu onOpenEmojiPicker={handleOpenPicker} />
+      <EmojiPicker
+        isOpen={isPickerOpen}
+        rootRef={rowRootRef}
+        anchorX={pickerAnchor?.x}
+        anchorY={pickerAnchor?.y}
+        customEmojis={customEmojis}
+        isLoadingCustom={isLoadingCustomEmojis}
+        customError={customEmojiError}
+        onClose={() => setIsPickerOpen(false)}
+        onSelect={handlePickerSelect}
+      />
       <div className="mb-0.5 flex items-baseline gap-2">
         <span className="text-base font-semibold text-slate-300">{message.authorDisplayName}</span>
         <span className="text-[11px] text-[color:var(--muted)]">{timestamp}</span>
