@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
 import type { sendMessageFunction } from "./hooks/useChatMessaging";
 import { useEmojiCatalog } from "./hooks/useEmojiCatalog";
-import EmojiPicker, { type EmojiSelection } from "./EmojiPicker";
+import EmojiPicker, { type EmojiSelection } from "./emoji/EmojiPicker";
 import { parseChatTextSegments } from "./text/chatTextProcessing";
 
 const CUSTOM_EMOJI_TOKEN_ATTR = "data-custom-emoji-token";

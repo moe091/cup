@@ -241,6 +241,10 @@ Scope:
   - Socket.IO Redis adapter for cross-node fanout
   - shared session store for horizontal scaling
   - Postgres remains durable message source of truth
+  - Redis-backed hot-path caches as scale increases (start with chat emoji paths):
+    - send-time custom emoji validation metadata (`id -> scopeType/scopeId/deletedAt`)
+    - emoji resolve lookup cache for token rendering (`GET /api/emojis/resolve`)
+    - optional short-lived channel/community policy snapshots for repeated access checks
   - optional async event pipeline (Kafka/NATS/SQS-style) for side effects (notifications/analytics/moderation), not primary message durability
   - custom emoji/media assets should move from local `public/` hosting to S3-compatible object storage + CDN before production-scale uploads
 
@@ -377,6 +381,10 @@ Scope:
 
 - Production deployment topology for API, web, bouncer server.
 - Redis adoption sequencing (session store, Socket.IO adapter, distributed rate limits).
+- Redis cache sequencing for chat/emoji paths:
+  - phase 1: emoji metadata cache for send-time authorization + resolver endpoint
+  - phase 2: repeated chat access/policy snapshot caches
+  - phase 3: broader read-heavy API caches once real traffic identifies hotspots
 - Observability stack (metrics/logging/tracing/SLOs) and incident workflows.
 
 ## Change management guideline

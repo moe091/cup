@@ -121,6 +121,17 @@ Avoid per-emoji DB lookups in hot paths:
 - Unknown ids are resolved in batch.
 - Emoji updates/deletions can invalidate cache via versioning or socket event later.
 
+Current decision:
+
+- Keep backend send-validation path uncached for now (simpler operationally while running a single API instance).
+- Add Redis-backed server caching when scale/latency signals justify it.
+
+Planned Redis cache targets (server-side):
+
+- Send-path custom emoji metadata (`id -> scopeType/scopeId/deletedAt`) used by `chat:send` validation.
+- Emoji id resolver responses for unknown token rendering (`GET /api/emojis/resolve`).
+- Optional short-lived community/channel access policy snapshots used in repeated chat permission checks.
+
 ## Storage Notes
 
 - Current local/dev seed assets can live under `apps/web/public/chat/emojis`.
