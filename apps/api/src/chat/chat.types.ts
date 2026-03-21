@@ -1,6 +1,13 @@
 import type { Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
-import type { ChatRealtimeMessage, ChatSendAck, ChatSendPayload } from '@cup/shared-types';
+import type {
+  ChatReactionSetAck,
+  ChatReactionSetPayload,
+  ChatReactionUpdate,
+  ChatRealtimeMessage,
+  ChatSendAck,
+  ChatSendPayload,
+} from '@cup/shared-types';
 export type { ChatTokenResponse, JoinLeaveAck } from '@cup/shared-types';
 
 export type ChatTokenClaims = jwt.JwtPayload & {
@@ -23,12 +30,15 @@ export type ServerToClientEvents = {
   'chat:join:ack': (payload: { ok: boolean; channelId?: string; error?: string }) => void;
   'chat:leave:ack': (payload: { ok: boolean; channelId?: string; error?: string }) => void;
   'chat:send:ack': (payload: ChatSendAck) => void;
+  'chat:reaction:set:ack': (payload: ChatReactionSetAck) => void;
   'chat:message': (payload: ChatRealtimeMessage) => void;
+  'chat:reaction:update': (payload: ChatReactionUpdate) => void;
 };
 export type ClientToServerEvents = {
   'chat:join': (payload: { channelId: string }) => void;
   'chat:leave': (payload: { channelId: string }) => void;
   'chat:send': (payload: ChatSendPayload) => void;
+  'chat:reaction:set': (payload: ChatReactionSetPayload) => void;
 };
 export type ChatSocket = Socket<ClientToServerEvents, ServerToClientEvents, Record<string, never>, ChatSocketData>;
 

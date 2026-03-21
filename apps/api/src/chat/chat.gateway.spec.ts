@@ -1,10 +1,11 @@
 import { ChatGateway } from './chat.gateway';
 import jwt from 'jsonwebtoken';
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 
 type ChatServiceMock = {
   assertCanViewChannel: jest.Mock;
   assertCanUseCustomEmojis: jest.Mock;
+  setMessageReaction: jest.Mock;
   createMessage: jest.Mock;
   resolveAuthorDisplayName: jest.Mock;
 };
@@ -63,6 +64,7 @@ describe('ChatGateway', () => {
     chatServiceMock = {
       assertCanViewChannel: jest.fn(),
       assertCanUseCustomEmojis: jest.fn(),
+      setMessageReaction: jest.fn(),
       createMessage: jest.fn(),
       resolveAuthorDisplayName: jest.fn(),
     };
@@ -258,6 +260,7 @@ describe('ChatGateway', () => {
         id: 'msg-1',
         channelId: 'seed-channel-1',
         authorUserId: 'seed-user-jung',
+        replyMessageId: null,
         body: 'Hello world',
         createdAt: new Date('2026-03-12T10:00:00.000Z'),
       });
@@ -272,6 +275,7 @@ describe('ChatGateway', () => {
       expect(chatServiceMock.createMessage).toHaveBeenCalledWith({
         channelId: 'seed-channel-1',
         authorUserId: 'seed-user-jung',
+        replyMessageId: null,
         body: 'Hello world',
       });
       expect(socket.nsp.to).toHaveBeenCalledWith('channel:seed-channel-1');
@@ -280,8 +284,10 @@ describe('ChatGateway', () => {
         channelId: 'seed-channel-1',
         authorUserId: 'seed-user-jung',
         authorDisplayName: 'Jung',
+        replyMessageId: null,
         body: 'Hello world',
         createdAt: '2026-03-12T10:00:00.000Z',
+        reactions: [],
       });
       expect(socket.emit).toHaveBeenCalledWith('chat:send:ack', {
         ok: true,
@@ -344,6 +350,7 @@ describe('ChatGateway', () => {
         id: 'msg-1',
         channelId: 'seed-channel-1',
         authorUserId: 'seed-user-jung',
+        replyMessageId: null,
         body: 'Hello world',
         createdAt: new Date('2026-03-12T10:00:00.000Z'),
       });
@@ -357,6 +364,7 @@ describe('ChatGateway', () => {
       expect(chatServiceMock.createMessage).toHaveBeenCalledWith({
         channelId: 'seed-channel-1',
         authorUserId: 'seed-user-jung',
+        replyMessageId: null,
         body: 'Hello world',
       });
     });
@@ -411,6 +419,7 @@ describe('ChatGateway', () => {
         id: 'msg-1',
         channelId: 'seed-channel-1',
         authorUserId: 'seed-user-jung',
+        replyMessageId: null,
         body: 'Hello world',
         createdAt: new Date('2026-03-12T10:00:00.000Z'),
       });
@@ -423,6 +432,71 @@ describe('ChatGateway', () => {
       expect(socket.emit).toHaveBeenCalledWith('chat:send:ack', {
         ok: true,
         clientMessageId: undefined,
+      });
+    });
+
+    it('passes replyMessageId through to createMessage and broadcast payload', async () => {
+      const { socket, roomEmit } = createMockSocket();
+      socket.data.userId = 'seed-user-jung';
+      socket.data.authorDisplayName = 'Jung';
+      socket.data.room = 'channel:seed-channel-1';
+      socket.rooms.add('channel:seed-channel-1');
+      chatServiceMock.createMessage.mockResolvedValue({
+        id: 'msg-1',
+        channelId: 'seed-channel-1',
+        authorUserId: 'seed-user-jung',
+        replyMessageId: 'msg-parent-1',
+        body: 'Reply body',
+        createdAt: new Date('2026-03-12T10:00:00.000Z'),
+      });
+
+      await gateway.handleSend(socket as never, {
+        channelId: 'seed-channel-1',
+        replyMessageId: 'msg-parent-1',
+        body: 'Reply body',
+        clientMessageId: 'client-1',
+      });
+
+      expect(chatServiceMock.createMessage).toHaveBeenCalledWith({
+        channelId: 'seed-channel-1',
+        authorUserId: 'seed-user-jung',
+        replyMessageId: 'msg-parent-1',
+        body: 'Reply body',
+      });
+
+      expect(roomEmit).toHaveBeenCalledWith('chat:message', {
+        id: 'msg-1',
+        channelId: 'seed-channel-1',
+        authorUserId: 'seed-user-jung',
+        authorDisplayName: 'Jung',
+        replyMessageId: 'msg-parent-1',
+        body: 'Reply body',
+        createdAt: '2026-03-12T10:00:00.000Z',
+        reactions: [],
+      });
+    });
+
+    it('emits specific ack error when reply target is invalid', async () => {
+      const { socket } = createMockSocket();
+      socket.data.userId = 'seed-user-jung';
+      socket.data.authorDisplayName = 'Jung';
+      socket.data.room = 'channel:seed-channel-1';
+      socket.rooms.add('channel:seed-channel-1');
+      chatServiceMock.createMessage.mockRejectedValue(
+        new BadRequestException('replyMessageId must reference a message in the same channel'),
+      );
+
+      await gateway.handleSend(socket as never, {
+        channelId: 'seed-channel-1',
+        replyMessageId: 'msg-parent-2',
+        body: 'Reply body',
+        clientMessageId: 'client-1',
+      });
+
+      expect(socket.emit).toHaveBeenCalledWith('chat:send:ack', {
+        ok: false,
+        clientMessageId: 'client-1',
+        error: 'replyMessageId must reference a message in the same channel',
       });
     });
   });
@@ -480,6 +554,86 @@ describe('ChatGateway', () => {
       expect(socket.emit).toHaveBeenCalledWith('chat:leave:ack', {
         ok: true,
         channelId: 'seed-channel-1',
+      });
+    });
+  });
+
+  describe('handleSetReaction', () => {
+    it('rejects reaction when payload is invalid', async () => {
+      const { socket } = createMockSocket();
+      socket.data.userId = 'seed-user-jung';
+      socket.data.authorDisplayName = 'Jung';
+      socket.data.room = 'channel:seed-channel-1';
+      socket.rooms.add('channel:seed-channel-1');
+
+      await gateway.handleSetReaction(socket as never, {
+        channelId: 'seed-channel-1',
+        messageId: '',
+        emojiKind: 'UNICODE',
+        emojiValue: '👍',
+        active: true,
+        clientMutationId: 'mutation-1',
+      });
+
+      expect(socket.emit).toHaveBeenCalledWith('chat:reaction:set:ack', {
+        ok: false,
+        clientMutationId: 'mutation-1',
+        error: 'messageId is required',
+      });
+      expect(chatServiceMock.setMessageReaction).not.toHaveBeenCalled();
+    });
+
+    it('updates reaction and broadcasts reaction:update', async () => {
+      const { socket, roomEmit } = createMockSocket();
+      socket.data.userId = 'seed-user-jung';
+      socket.data.authorDisplayName = 'Jung';
+      socket.data.room = 'channel:seed-channel-1';
+      socket.rooms.add('channel:seed-channel-1');
+
+      chatServiceMock.setMessageReaction.mockResolvedValue([
+        {
+          emojiKind: 'UNICODE',
+          emojiValue: '👍',
+          count: 2,
+          reactorDisplayNames: ['Jung', 'Freud'],
+        },
+      ]);
+
+      await gateway.handleSetReaction(socket as never, {
+        channelId: 'seed-channel-1',
+        messageId: 'msg-1',
+        emojiKind: 'UNICODE',
+        emojiValue: '👍',
+        active: true,
+        clientMutationId: 'mutation-1',
+      });
+
+      expect(chatServiceMock.setMessageReaction).toHaveBeenCalledWith({
+        channelId: 'seed-channel-1',
+        messageId: 'msg-1',
+        userId: 'seed-user-jung',
+        reactorDisplayName: 'Jung',
+        emojiKind: 'UNICODE',
+        emojiValue: '👍',
+        active: true,
+      });
+
+      expect(roomEmit).toHaveBeenCalledWith('chat:reaction:update', {
+        channelId: 'seed-channel-1',
+        messageId: 'msg-1',
+        reactions: [
+          {
+            emojiKind: 'UNICODE',
+            emojiValue: '👍',
+            count: 2,
+            reactorDisplayNames: ['Jung', 'Freud'],
+          },
+        ],
+      });
+
+      expect(socket.emit).toHaveBeenCalledWith('chat:reaction:set:ack', {
+        ok: true,
+        clientMutationId: 'mutation-1',
       });
     });
   });

@@ -67,3 +67,8 @@ export type Message = Prisma.MessageModel
  * 
  */
 export type CustomEmoji = Prisma.CustomEmojiModel
+/**
+ * Model MessageReaction
+ * 
+ */
+export type MessageReaction = Prisma.MessageReactionModel

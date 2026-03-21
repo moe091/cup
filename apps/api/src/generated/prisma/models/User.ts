@@ -215,6 +215,7 @@ export type UserWhereInput = {
   channelMemberships?: Prisma.ChannelMemberListRelationFilter
   messagesAuthored?: Prisma.MessageListRelationFilter
   customEmojisCreated?: Prisma.CustomEmojiListRelationFilter
+  messageReactions?: Prisma.MessageReactionListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -235,6 +236,7 @@ export type UserOrderByWithRelationInput = {
   channelMemberships?: Prisma.ChannelMemberOrderByRelationAggregateInput
   messagesAuthored?: Prisma.MessageOrderByRelationAggregateInput
   customEmojisCreated?: Prisma.CustomEmojiOrderByRelationAggregateInput
+  messageReactions?: Prisma.MessageReactionOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -258,6 +260,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   channelMemberships?: Prisma.ChannelMemberListRelationFilter
   messagesAuthored?: Prisma.MessageListRelationFilter
   customEmojisCreated?: Prisma.CustomEmojiListRelationFilter
+  messageReactions?: Prisma.MessageReactionListRelationFilter
 }, "id" | "username" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -306,6 +309,7 @@ export type UserCreateInput = {
   channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput
   messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput
   customEmojisCreated?: Prisma.CustomEmojiCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -326,6 +330,7 @@ export type UserUncheckedCreateInput = {
   channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput
   messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -346,6 +351,7 @@ export type UserUpdateInput = {
   channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput
   messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -366,6 +372,7 @@ export type UserUncheckedUpdateInput = {
   channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput
   messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -594,6 +601,20 @@ export type UserUpdateOneRequiredWithoutCustomEmojisCreatedNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCustomEmojisCreatedInput, Prisma.UserUpdateWithoutCustomEmojisCreatedInput>, Prisma.UserUncheckedUpdateWithoutCustomEmojisCreatedInput>
 }
 
+export type UserCreateNestedOneWithoutMessageReactionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutMessageReactionsInput, Prisma.UserUncheckedCreateWithoutMessageReactionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutMessageReactionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutMessageReactionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutMessageReactionsInput, Prisma.UserUncheckedCreateWithoutMessageReactionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutMessageReactionsInput
+  upsert?: Prisma.UserUpsertWithoutMessageReactionsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutMessageReactionsInput, Prisma.UserUpdateWithoutMessageReactionsInput>, Prisma.UserUncheckedUpdateWithoutMessageReactionsInput>
+}
+
 export type UserCreateWithoutOauthAccountsInput = {
   id?: string
   username: string
@@ -611,6 +632,7 @@ export type UserCreateWithoutOauthAccountsInput = {
   channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput
   messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput
   customEmojisCreated?: Prisma.CustomEmojiCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutOauthAccountsInput = {
@@ -630,6 +652,7 @@ export type UserUncheckedCreateWithoutOauthAccountsInput = {
   channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput
   messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutOauthAccountsInput = {
@@ -665,6 +688,7 @@ export type UserUpdateWithoutOauthAccountsInput = {
   channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput
   messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutOauthAccountsInput = {
@@ -684,6 +708,7 @@ export type UserUncheckedUpdateWithoutOauthAccountsInput = {
   channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput
   messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutLobbiesCreatedInput = {
@@ -703,6 +728,7 @@ export type UserCreateWithoutLobbiesCreatedInput = {
   channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput
   messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput
   customEmojisCreated?: Prisma.CustomEmojiCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutLobbiesCreatedInput = {
@@ -722,6 +748,7 @@ export type UserUncheckedCreateWithoutLobbiesCreatedInput = {
   channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput
   messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutLobbiesCreatedInput = {
@@ -757,6 +784,7 @@ export type UserUpdateWithoutLobbiesCreatedInput = {
   channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput
   messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLobbiesCreatedInput = {
@@ -776,6 +804,7 @@ export type UserUncheckedUpdateWithoutLobbiesCreatedInput = {
   channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput
   messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutBouncerLevelsInput = {
@@ -795,6 +824,7 @@ export type UserCreateWithoutBouncerLevelsInput = {
   channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput
   messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput
   customEmojisCreated?: Prisma.CustomEmojiCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutBouncerLevelsInput = {
@@ -814,6 +844,7 @@ export type UserUncheckedCreateWithoutBouncerLevelsInput = {
   channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput
   messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutBouncerLevelsInput = {
@@ -849,6 +880,7 @@ export type UserUpdateWithoutBouncerLevelsInput = {
   channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput
   messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutBouncerLevelsInput = {
@@ -868,6 +900,7 @@ export type UserUncheckedUpdateWithoutBouncerLevelsInput = {
   channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput
   messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCommunitiesOwnedInput = {
@@ -887,6 +920,7 @@ export type UserCreateWithoutCommunitiesOwnedInput = {
   channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput
   messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput
   customEmojisCreated?: Prisma.CustomEmojiCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCommunitiesOwnedInput = {
@@ -906,6 +940,7 @@ export type UserUncheckedCreateWithoutCommunitiesOwnedInput = {
   channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput
   messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCommunitiesOwnedInput = {
@@ -941,6 +976,7 @@ export type UserUpdateWithoutCommunitiesOwnedInput = {
   channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput
   messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCommunitiesOwnedInput = {
@@ -960,6 +996,7 @@ export type UserUncheckedUpdateWithoutCommunitiesOwnedInput = {
   channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput
   messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCommunityMembershipsInput = {
@@ -979,6 +1016,7 @@ export type UserCreateWithoutCommunityMembershipsInput = {
   channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput
   messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput
   customEmojisCreated?: Prisma.CustomEmojiCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCommunityMembershipsInput = {
@@ -998,6 +1036,7 @@ export type UserUncheckedCreateWithoutCommunityMembershipsInput = {
   channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput
   messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCommunityMembershipsInput = {
@@ -1033,6 +1072,7 @@ export type UserUpdateWithoutCommunityMembershipsInput = {
   channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput
   messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCommunityMembershipsInput = {
@@ -1052,6 +1092,7 @@ export type UserUncheckedUpdateWithoutCommunityMembershipsInput = {
   channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput
   messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutChannelsCreatedInput = {
@@ -1071,6 +1112,7 @@ export type UserCreateWithoutChannelsCreatedInput = {
   channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput
   messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput
   customEmojisCreated?: Prisma.CustomEmojiCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutChannelsCreatedInput = {
@@ -1090,6 +1132,7 @@ export type UserUncheckedCreateWithoutChannelsCreatedInput = {
   channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput
   messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutChannelsCreatedInput = {
@@ -1125,6 +1168,7 @@ export type UserUpdateWithoutChannelsCreatedInput = {
   channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput
   messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutChannelsCreatedInput = {
@@ -1144,6 +1188,7 @@ export type UserUncheckedUpdateWithoutChannelsCreatedInput = {
   channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput
   messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutChannelMembershipsInput = {
@@ -1163,6 +1208,7 @@ export type UserCreateWithoutChannelMembershipsInput = {
   channelsCreated?: Prisma.ChannelCreateNestedManyWithoutCreatedByInput
   messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput
   customEmojisCreated?: Prisma.CustomEmojiCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutChannelMembershipsInput = {
@@ -1182,6 +1228,7 @@ export type UserUncheckedCreateWithoutChannelMembershipsInput = {
   channelsCreated?: Prisma.ChannelUncheckedCreateNestedManyWithoutCreatedByInput
   messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutChannelMembershipsInput = {
@@ -1217,6 +1264,7 @@ export type UserUpdateWithoutChannelMembershipsInput = {
   channelsCreated?: Prisma.ChannelUpdateManyWithoutCreatedByNestedInput
   messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutChannelMembershipsInput = {
@@ -1236,6 +1284,7 @@ export type UserUncheckedUpdateWithoutChannelMembershipsInput = {
   channelsCreated?: Prisma.ChannelUncheckedUpdateManyWithoutCreatedByNestedInput
   messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutMessagesAuthoredInput = {
@@ -1255,6 +1304,7 @@ export type UserCreateWithoutMessagesAuthoredInput = {
   channelsCreated?: Prisma.ChannelCreateNestedManyWithoutCreatedByInput
   channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput
   customEmojisCreated?: Prisma.CustomEmojiCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutMessagesAuthoredInput = {
@@ -1274,6 +1324,7 @@ export type UserUncheckedCreateWithoutMessagesAuthoredInput = {
   channelsCreated?: Prisma.ChannelUncheckedCreateNestedManyWithoutCreatedByInput
   channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedCreateNestedManyWithoutCreatedByInput
+  messageReactions?: Prisma.MessageReactionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutMessagesAuthoredInput = {
@@ -1309,6 +1360,7 @@ export type UserUpdateWithoutMessagesAuthoredInput = {
   channelsCreated?: Prisma.ChannelUpdateManyWithoutCreatedByNestedInput
   channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutMessagesAuthoredInput = {
@@ -1328,6 +1380,7 @@ export type UserUncheckedUpdateWithoutMessagesAuthoredInput = {
   channelsCreated?: Prisma.ChannelUncheckedUpdateManyWithoutCreatedByNestedInput
   channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput
   customEmojisCreated?: Prisma.CustomEmojiUncheckedUpdateManyWithoutCreatedByNestedInput
+  messageReactions?: Prisma.MessageReactionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCustomEmojisCreatedInput = {
@@ -1347,6 +1400,7 @@ export type UserCreateWithoutCustomEmojisCreatedInput = {
   channelsCreated?: Prisma.ChannelCreateNestedManyWithoutCreatedByInput
   channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput
   messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput
+  messageReactions?: Prisma.MessageReactionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCustomEmojisCreatedInput = {
@@ -1366,6 +1420,7 @@ export type UserUncheckedCreateWithoutCustomEmojisCreatedInput = {
   channelsCreated?: Prisma.ChannelUncheckedCreateNestedManyWithoutCreatedByInput
   channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput
   messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput
+  messageReactions?: Prisma.MessageReactionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCustomEmojisCreatedInput = {
@@ -1401,6 +1456,7 @@ export type UserUpdateWithoutCustomEmojisCreatedInput = {
   channelsCreated?: Prisma.ChannelUpdateManyWithoutCreatedByNestedInput
   channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput
   messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput
+  messageReactions?: Prisma.MessageReactionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCustomEmojisCreatedInput = {
@@ -1420,6 +1476,103 @@ export type UserUncheckedUpdateWithoutCustomEmojisCreatedInput = {
   channelsCreated?: Prisma.ChannelUncheckedUpdateManyWithoutCreatedByNestedInput
   channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput
   messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput
+  messageReactions?: Prisma.MessageReactionUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutMessageReactionsInput = {
+  id?: string
+  username: string
+  usernameAutoGenerated?: boolean
+  email?: string | null
+  displayName?: string | null
+  passwordHash?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  oauthAccounts?: Prisma.OAuthAccountCreateNestedManyWithoutUserInput
+  lobbiesCreated?: Prisma.LobbyCreateNestedManyWithoutCreatedByInput
+  bouncerLevels?: Prisma.BouncerLevelCreateNestedManyWithoutOwnerUserInput
+  communitiesOwned?: Prisma.CommunityCreateNestedManyWithoutOwnerInput
+  communityMemberships?: Prisma.CommunityMemberCreateNestedManyWithoutUserInput
+  channelsCreated?: Prisma.ChannelCreateNestedManyWithoutCreatedByInput
+  channelMemberships?: Prisma.ChannelMemberCreateNestedManyWithoutUserInput
+  messagesAuthored?: Prisma.MessageCreateNestedManyWithoutAuthorInput
+  customEmojisCreated?: Prisma.CustomEmojiCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserUncheckedCreateWithoutMessageReactionsInput = {
+  id?: string
+  username: string
+  usernameAutoGenerated?: boolean
+  email?: string | null
+  displayName?: string | null
+  passwordHash?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  oauthAccounts?: Prisma.OAuthAccountUncheckedCreateNestedManyWithoutUserInput
+  lobbiesCreated?: Prisma.LobbyUncheckedCreateNestedManyWithoutCreatedByInput
+  bouncerLevels?: Prisma.BouncerLevelUncheckedCreateNestedManyWithoutOwnerUserInput
+  communitiesOwned?: Prisma.CommunityUncheckedCreateNestedManyWithoutOwnerInput
+  communityMemberships?: Prisma.CommunityMemberUncheckedCreateNestedManyWithoutUserInput
+  channelsCreated?: Prisma.ChannelUncheckedCreateNestedManyWithoutCreatedByInput
+  channelMemberships?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutUserInput
+  messagesAuthored?: Prisma.MessageUncheckedCreateNestedManyWithoutAuthorInput
+  customEmojisCreated?: Prisma.CustomEmojiUncheckedCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserCreateOrConnectWithoutMessageReactionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutMessageReactionsInput, Prisma.UserUncheckedCreateWithoutMessageReactionsInput>
+}
+
+export type UserUpsertWithoutMessageReactionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutMessageReactionsInput, Prisma.UserUncheckedUpdateWithoutMessageReactionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutMessageReactionsInput, Prisma.UserUncheckedCreateWithoutMessageReactionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutMessageReactionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutMessageReactionsInput, Prisma.UserUncheckedUpdateWithoutMessageReactionsInput>
+}
+
+export type UserUpdateWithoutMessageReactionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  usernameAutoGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  oauthAccounts?: Prisma.OAuthAccountUpdateManyWithoutUserNestedInput
+  lobbiesCreated?: Prisma.LobbyUpdateManyWithoutCreatedByNestedInput
+  bouncerLevels?: Prisma.BouncerLevelUpdateManyWithoutOwnerUserNestedInput
+  communitiesOwned?: Prisma.CommunityUpdateManyWithoutOwnerNestedInput
+  communityMemberships?: Prisma.CommunityMemberUpdateManyWithoutUserNestedInput
+  channelsCreated?: Prisma.ChannelUpdateManyWithoutCreatedByNestedInput
+  channelMemberships?: Prisma.ChannelMemberUpdateManyWithoutUserNestedInput
+  messagesAuthored?: Prisma.MessageUpdateManyWithoutAuthorNestedInput
+  customEmojisCreated?: Prisma.CustomEmojiUpdateManyWithoutCreatedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutMessageReactionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  usernameAutoGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  oauthAccounts?: Prisma.OAuthAccountUncheckedUpdateManyWithoutUserNestedInput
+  lobbiesCreated?: Prisma.LobbyUncheckedUpdateManyWithoutCreatedByNestedInput
+  bouncerLevels?: Prisma.BouncerLevelUncheckedUpdateManyWithoutOwnerUserNestedInput
+  communitiesOwned?: Prisma.CommunityUncheckedUpdateManyWithoutOwnerNestedInput
+  communityMemberships?: Prisma.CommunityMemberUncheckedUpdateManyWithoutUserNestedInput
+  channelsCreated?: Prisma.ChannelUncheckedUpdateManyWithoutCreatedByNestedInput
+  channelMemberships?: Prisma.ChannelMemberUncheckedUpdateManyWithoutUserNestedInput
+  messagesAuthored?: Prisma.MessageUncheckedUpdateManyWithoutAuthorNestedInput
+  customEmojisCreated?: Prisma.CustomEmojiUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
 
@@ -1437,6 +1590,7 @@ export type UserCountOutputType = {
   channelMemberships: number
   messagesAuthored: number
   customEmojisCreated: number
+  messageReactions: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1449,6 +1603,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   channelMemberships?: boolean | UserCountOutputTypeCountChannelMembershipsArgs
   messagesAuthored?: boolean | UserCountOutputTypeCountMessagesAuthoredArgs
   customEmojisCreated?: boolean | UserCountOutputTypeCountCustomEmojisCreatedArgs
+  messageReactions?: boolean | UserCountOutputTypeCountMessageReactionsArgs
 }
 
 /**
@@ -1524,6 +1679,13 @@ export type UserCountOutputTypeCountCustomEmojisCreatedArgs<ExtArgs extends runt
   where?: Prisma.CustomEmojiWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountMessageReactionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MessageReactionWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1543,6 +1705,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   channelMemberships?: boolean | Prisma.User$channelMembershipsArgs<ExtArgs>
   messagesAuthored?: boolean | Prisma.User$messagesAuthoredArgs<ExtArgs>
   customEmojisCreated?: boolean | Prisma.User$customEmojisCreatedArgs<ExtArgs>
+  messageReactions?: boolean | Prisma.User$messageReactionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1590,6 +1753,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   channelMemberships?: boolean | Prisma.User$channelMembershipsArgs<ExtArgs>
   messagesAuthored?: boolean | Prisma.User$messagesAuthoredArgs<ExtArgs>
   customEmojisCreated?: boolean | Prisma.User$customEmojisCreatedArgs<ExtArgs>
+  messageReactions?: boolean | Prisma.User$messageReactionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1607,6 +1771,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     channelMemberships: Prisma.$ChannelMemberPayload<ExtArgs>[]
     messagesAuthored: Prisma.$MessagePayload<ExtArgs>[]
     customEmojisCreated: Prisma.$CustomEmojiPayload<ExtArgs>[]
+    messageReactions: Prisma.$MessageReactionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2020,6 +2185,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   channelMemberships<T extends Prisma.User$channelMembershipsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$channelMembershipsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChannelMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   messagesAuthored<T extends Prisma.User$messagesAuthoredArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$messagesAuthoredArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   customEmojisCreated<T extends Prisma.User$customEmojisCreatedArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$customEmojisCreatedArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CustomEmojiPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  messageReactions<T extends Prisma.User$messageReactionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$messageReactionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MessageReactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2658,6 +2824,30 @@ export type User$customEmojisCreatedArgs<ExtArgs extends runtime.Types.Extension
   take?: number
   skip?: number
   distinct?: Prisma.CustomEmojiScalarFieldEnum | Prisma.CustomEmojiScalarFieldEnum[]
+}
+
+/**
+ * User.messageReactions
+ */
+export type User$messageReactionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MessageReaction
+   */
+  select?: Prisma.MessageReactionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MessageReaction
+   */
+  omit?: Prisma.MessageReactionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MessageReactionInclude<ExtArgs> | null
+  where?: Prisma.MessageReactionWhereInput
+  orderBy?: Prisma.MessageReactionOrderByWithRelationInput | Prisma.MessageReactionOrderByWithRelationInput[]
+  cursor?: Prisma.MessageReactionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MessageReactionScalarFieldEnum | Prisma.MessageReactionScalarFieldEnum[]
 }
 
 /**

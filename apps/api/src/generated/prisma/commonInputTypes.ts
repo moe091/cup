@@ -379,6 +379,23 @@ export type EnumCustomEmojiScopeTypeWithAggregatesFilter<$PrismaModel = never> =
   _max?: Prisma.NestedEnumCustomEmojiScopeTypeFilter<$PrismaModel>
 }
 
+export type EnumReactionEmojiKindFilter<$PrismaModel = never> = {
+  equals?: $Enums.ReactionEmojiKind | Prisma.EnumReactionEmojiKindFieldRefInput<$PrismaModel>
+  in?: $Enums.ReactionEmojiKind[] | Prisma.ListEnumReactionEmojiKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ReactionEmojiKind[] | Prisma.ListEnumReactionEmojiKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumReactionEmojiKindFilter<$PrismaModel> | $Enums.ReactionEmojiKind
+}
+
+export type EnumReactionEmojiKindWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ReactionEmojiKind | Prisma.EnumReactionEmojiKindFieldRefInput<$PrismaModel>
+  in?: $Enums.ReactionEmojiKind[] | Prisma.ListEnumReactionEmojiKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ReactionEmojiKind[] | Prisma.ListEnumReactionEmojiKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumReactionEmojiKindWithAggregatesFilter<$PrismaModel> | $Enums.ReactionEmojiKind
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumReactionEmojiKindFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumReactionEmojiKindFilter<$PrismaModel>
+}
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
@@ -701,6 +718,23 @@ export type NestedEnumCustomEmojiScopeTypeWithAggregatesFilter<$PrismaModel = ne
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumCustomEmojiScopeTypeFilter<$PrismaModel>
   _max?: Prisma.NestedEnumCustomEmojiScopeTypeFilter<$PrismaModel>
+}
+
+export type NestedEnumReactionEmojiKindFilter<$PrismaModel = never> = {
+  equals?: $Enums.ReactionEmojiKind | Prisma.EnumReactionEmojiKindFieldRefInput<$PrismaModel>
+  in?: $Enums.ReactionEmojiKind[] | Prisma.ListEnumReactionEmojiKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ReactionEmojiKind[] | Prisma.ListEnumReactionEmojiKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumReactionEmojiKindFilter<$PrismaModel> | $Enums.ReactionEmojiKind
+}
+
+export type NestedEnumReactionEmojiKindWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ReactionEmojiKind | Prisma.EnumReactionEmojiKindFieldRefInput<$PrismaModel>
+  in?: $Enums.ReactionEmojiKind[] | Prisma.ListEnumReactionEmojiKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ReactionEmojiKind[] | Prisma.ListEnumReactionEmojiKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumReactionEmojiKindWithAggregatesFilter<$PrismaModel> | $Enums.ReactionEmojiKind
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumReactionEmojiKindFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumReactionEmojiKindFilter<$PrismaModel>
 }
 
 

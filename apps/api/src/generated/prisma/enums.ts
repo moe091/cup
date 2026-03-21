@@ -61,3 +61,11 @@ export const CustomEmojiScopeType = {
 } as const
 
 export type CustomEmojiScopeType = (typeof CustomEmojiScopeType)[keyof typeof CustomEmojiScopeType]
+
+
+export const ReactionEmojiKind = {
+  UNICODE: 'UNICODE',
+  CUSTOM: 'CUSTOM'
+} as const
+
+export type ReactionEmojiKind = (typeof ReactionEmojiKind)[keyof typeof ReactionEmojiKind]

@@ -39,6 +39,7 @@ model User {
   channelMemberships   ChannelMember[]
   messagesAuthored     Message[]         @relation("MessageAuthor")
   customEmojisCreated  CustomEmoji[]     @relation("CustomEmojiCreatedBy")
+  messageReactions     MessageReaction[] @relation("MessageReactionUser")
 
   @@map("account")
 }
@@ -134,6 +135,11 @@ enum CustomEmojiScopeType {
   USER
 }
 
+enum ReactionEmojiKind {
+  UNICODE
+  CUSTOM
+}
+
 model Community {
   id          String   @id @default(uuid())
   name        String
@@ -206,16 +212,21 @@ model Message {
   id           String    @id @default(uuid())
   channelId    String
   authorUserId String
+  replyMessageId String?
   body         String
   createdAt    DateTime  @default(now())
   editedAt     DateTime?
   deletedAt    DateTime?
 
-  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  author  User    @relation("MessageAuthor", fields: [authorUserId], references: [id], onDelete: Restrict)
+  channel  Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  author   User     @relation("MessageAuthor", fields: [authorUserId], references: [id], onDelete: Restrict)
+  replyTo  Message? @relation("MessageReply", fields: [replyMessageId], references: [id], onDelete: SetNull)
+  replies  Message[] @relation("MessageReply")
+  reactions MessageReaction[]
 
   @@index([channelId, createdAt, id])
   @@index([authorUserId, createdAt])
+  @@index([replyMessageId])
   @@map("message")
 }
 
@@ -236,4 +247,22 @@ model CustomEmoji {
   @@index([createdByUserId])
   @@index([deletedAt])
   @@map("custom_emoji")
+}
+
+model MessageReaction {
+  id                 String            @id @default(uuid())
+  messageId          String
+  userId             String
+  reactorDisplayName String
+  emojiKind          ReactionEmojiKind
+  emojiValue         String
+  createdAt          DateTime          @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation("MessageReactionUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emojiKind, emojiValue])
+  @@index([messageId, emojiKind, emojiValue, createdAt])
+  @@index([userId])
+  @@map("message_reaction")
 }

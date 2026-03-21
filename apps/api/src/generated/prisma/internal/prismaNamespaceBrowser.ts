@@ -60,7 +60,8 @@ export const ModelName = {
   Channel: 'Channel',
   ChannelMember: 'ChannelMember',
   Message: 'Message',
-  CustomEmoji: 'CustomEmoji'
+  CustomEmoji: 'CustomEmoji',
+  MessageReaction: 'MessageReaction'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -185,6 +186,7 @@ export const MessageScalarFieldEnum = {
   id: 'id',
   channelId: 'channelId',
   authorUserId: 'authorUserId',
+  replyMessageId: 'replyMessageId',
   body: 'body',
   createdAt: 'createdAt',
   editedAt: 'editedAt',
@@ -207,6 +209,19 @@ export const CustomEmojiScalarFieldEnum = {
 } as const
 
 export type CustomEmojiScalarFieldEnum = (typeof CustomEmojiScalarFieldEnum)[keyof typeof CustomEmojiScalarFieldEnum]
+
+
+export const MessageReactionScalarFieldEnum = {
+  id: 'id',
+  messageId: 'messageId',
+  userId: 'userId',
+  reactorDisplayName: 'reactorDisplayName',
+  emojiKind: 'emojiKind',
+  emojiValue: 'emojiValue',
+  createdAt: 'createdAt'
+} as const
+
+export type MessageReactionScalarFieldEnum = (typeof MessageReactionScalarFieldEnum)[keyof typeof MessageReactionScalarFieldEnum]
 
 
 export const SortOrder = {

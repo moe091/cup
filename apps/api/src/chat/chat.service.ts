@@ -1,4 +1,10 @@
-import { ChannelHistoryResponseDto, ChatTokenResponse } from '@cup/shared-types';
+import {
+  ChannelHistoryResponseDto,
+  ChatTokenResponse,
+  MessageReactionAggregateDto,
+  MessageReactionSummaryDto,
+  ReactionEmojiKind,
+} from '@cup/shared-types';
 import {
   BadRequestException,
   ForbiddenException,
@@ -60,23 +66,112 @@ export class ChatService {
         throw new ForbiddenException('Message contains custom emoji you are not allowed to use');
       }
 
-      if (channelCommunityId === undefined) {
-        const channel = await this.prisma.channel.findUnique({
-          where: { id: channelId },
-          select: { communityId: true },
-        });
-
-        if (!channel) {
-          throw new NotFoundException('Channel not found');
-        }
-
-        channelCommunityId = channel.communityId;
-      }
+      channelCommunityId = await this.getChannelCommunityId(channelId, channelCommunityId);
 
       if (customEmoji.scopeId !== channelCommunityId) {
         throw new ForbiddenException('Message contains custom emoji you are not allowed to use');
       }
     }
+  }
+
+  async setMessageReaction(args: {
+    channelId: string;
+    messageId: string;
+    userId: string;
+    reactorDisplayName: string;
+    emojiKind: ReactionEmojiKind;
+    emojiValue: string;
+    active: boolean;
+  }): Promise<MessageReactionAggregateDto[]> {
+    const channelId = args.channelId.trim();
+    const messageId = args.messageId.trim();
+    const userId = args.userId.trim();
+    const reactorDisplayName = args.reactorDisplayName.trim();
+    const emojiValue = args.emojiValue.trim();
+
+    if (!channelId) {
+      throw new BadRequestException('channelId is required');
+    }
+
+    if (!messageId) {
+      throw new BadRequestException('messageId is required');
+    }
+
+    if (!userId) {
+      throw new BadRequestException('userId is required');
+    }
+
+    if (!reactorDisplayName) {
+      throw new BadRequestException('reactorDisplayName is required');
+    }
+
+    if (!emojiValue) {
+      throw new BadRequestException('emojiValue is required');
+    }
+
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { id: true, channelId: true },
+    });
+
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+
+    if (message.channelId !== channelId) {
+      throw new BadRequestException('messageId does not belong to channelId');
+    }
+
+    await this.assertCanViewChannel(channelId, userId);
+
+    if (args.emojiKind === 'CUSTOM') {
+      await this.assertCanUseCustomEmojiId(channelId, userId, emojiValue);
+    }
+
+    if (args.active) {
+      await this.prisma.messageReaction.upsert({
+        where: {
+          messageId_userId_emojiKind_emojiValue: {
+            messageId,
+            userId,
+            emojiKind: args.emojiKind,
+            emojiValue,
+          },
+        },
+        update: {
+          reactorDisplayName,
+        },
+        create: {
+          messageId,
+          userId,
+          reactorDisplayName,
+          emojiKind: args.emojiKind,
+          emojiValue,
+        },
+      });
+    } else {
+      await this.prisma.messageReaction.deleteMany({
+        where: {
+          messageId,
+          userId,
+          emojiKind: args.emojiKind,
+          emojiValue,
+        },
+      });
+    }
+
+    const reactions = await this.prisma.messageReaction.findMany({
+      where: { messageId },
+      select: {
+        emojiKind: true,
+        emojiValue: true,
+        userId: true,
+        reactorDisplayName: true,
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
+
+    return this.summarizeReactionAggregates(reactions);
   }
 
   private extractCustomEmojiIds(body: string): string[] {
@@ -90,6 +185,59 @@ export class ChatService {
     }
 
     return Array.from(ids);
+  }
+
+  private async assertCanUseCustomEmojiId(channelId: string, senderUserId: string, customEmojiId: string): Promise<void> {
+    const customEmoji = await this.prisma.customEmoji.findUnique({
+      where: { id: customEmojiId },
+      select: {
+        id: true,
+        scopeType: true,
+        scopeId: true,
+        deletedAt: true,
+      },
+    });
+
+    if (!customEmoji || customEmoji.deletedAt) {
+      throw new BadRequestException('Message contains invalid or deleted custom emoji');
+    }
+
+    if (customEmoji.scopeType === 'GLOBAL') {
+      return;
+    }
+
+    if (customEmoji.scopeType === 'USER') {
+      if (customEmoji.scopeId === senderUserId) {
+        return;
+      }
+
+      throw new ForbiddenException('Message contains custom emoji you are not allowed to use');
+    }
+
+    const channelCommunityId = await this.getChannelCommunityId(channelId, undefined);
+    if (customEmoji.scopeId !== channelCommunityId) {
+      throw new ForbiddenException('Message contains custom emoji you are not allowed to use');
+    }
+  }
+
+  private async getChannelCommunityId(
+    channelId: string,
+    currentValue: string | null | undefined,
+  ): Promise<string | null> {
+    if (currentValue !== undefined) {
+      return currentValue;
+    }
+
+    const channel = await this.prisma.channel.findUnique({
+      where: { id: channelId },
+      select: { communityId: true },
+    });
+
+    if (!channel) {
+      throw new NotFoundException('Channel not found');
+    }
+
+    return channel.communityId;
   }
 
   issueConnectionToken(userId: string): ChatTokenResponse {
@@ -146,10 +294,20 @@ export class ChatService {
             username: true,
           },
         },
+        replyMessageId: true,
         body: true,
         createdAt: true,
         editedAt: true,
         deletedAt: true,
+        reactions: {
+          select: {
+            emojiKind: true,
+            emojiValue: true,
+            userId: true,
+            reactorDisplayName: true,
+          },
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        },
       },
     });
 
@@ -170,10 +328,12 @@ export class ChatService {
         channelId: row.channelId,
         authorUserId: row.authorUserId,
         authorDisplayName: row.author.displayName ?? row.author.username,
+        replyMessageId: row.replyMessageId,
         body: row.body,
         createdAt: row.createdAt.toISOString(),
         editedAt: row.editedAt ? row.editedAt.toISOString() : null,
         deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
+        reactions: this.summarizeReactions(row.reactions, userId),
       })),
       nextCursor,
     };
@@ -251,10 +411,100 @@ export class ChatService {
     return user.displayName ?? user.username;
   }
 
-  async createMessage(args: { channelId: string; authorUserId: string; body: string }) {
+  //returns display info needed by frontend to render reactions for a single message
+  private summarizeReactions(
+    reactions: Array<{
+      emojiKind: 'UNICODE' | 'CUSTOM';
+      emojiValue: string;
+      userId: string;
+      reactorDisplayName: string;
+    }>,
+    viewerUserId: string | undefined,
+  ): MessageReactionSummaryDto[] {
+    const byEmoji = new Map<
+      string,
+      {
+        emojiKind: 'UNICODE' | 'CUSTOM';
+        emojiValue: string;
+        count: number;
+        reactedByMe: boolean;
+        reactorDisplayNames: string[];
+      }
+    >();
+
+    for (const reaction of reactions) {
+      const key = `${reaction.emojiKind}:${reaction.emojiValue}`;
+      const existing = byEmoji.get(key);
+
+      if (existing) {
+        existing.count += 1;
+        if (viewerUserId && reaction.userId === viewerUserId) {
+          existing.reactedByMe = true;
+        }
+        if (existing.reactorDisplayNames.length < 3) {
+          existing.reactorDisplayNames.push(reaction.reactorDisplayName);
+        }
+        continue;
+      }
+
+      byEmoji.set(key, {
+        emojiKind: reaction.emojiKind,
+        emojiValue: reaction.emojiValue,
+        count: 1,
+        reactedByMe: viewerUserId ? reaction.userId === viewerUserId : false,
+        reactorDisplayNames: [reaction.reactorDisplayName],
+      });
+    }
+
+    return Array.from(byEmoji.values());
+  }
+
+  private summarizeReactionAggregates(
+    reactions: Array<{
+      emojiKind: 'UNICODE' | 'CUSTOM';
+      emojiValue: string;
+      userId: string;
+      reactorDisplayName: string;
+    }>,
+  ): MessageReactionAggregateDto[] {
+    const byEmoji = new Map<
+      string,
+      {
+        emojiKind: 'UNICODE' | 'CUSTOM';
+        emojiValue: string;
+        count: number;
+        reactorDisplayNames: string[];
+      }
+    >();
+
+    for (const reaction of reactions) {
+      const key = `${reaction.emojiKind}:${reaction.emojiValue}`;
+      const existing = byEmoji.get(key);
+
+      if (existing) {
+        existing.count += 1;
+        if (existing.reactorDisplayNames.length < 3) {
+          existing.reactorDisplayNames.push(reaction.reactorDisplayName);
+        }
+        continue;
+      }
+
+      byEmoji.set(key, {
+        emojiKind: reaction.emojiKind,
+        emojiValue: reaction.emojiValue,
+        count: 1,
+        reactorDisplayNames: [reaction.reactorDisplayName],
+      });
+    }
+
+    return Array.from(byEmoji.values());
+  }
+
+  async createMessage(args: { channelId: string; authorUserId: string; body: string; replyMessageId?: string | null }) {
     const channelId = args.channelId.trim();
     const authorUserId = args.authorUserId.trim();
     const body = args.body.trim();
+    const replyMessageId = args.replyMessageId?.trim() || null;
     if (!channelId) {
       throw new BadRequestException('channelId is required');
     }
@@ -264,16 +514,37 @@ export class ChatService {
     if (!body) {
       throw new BadRequestException('Message body is required');
     }
+
+    if (replyMessageId) {
+      const replyTarget = await this.prisma.message.findUnique({
+        where: { id: replyMessageId },
+        select: {
+          id: true,
+          channelId: true,
+        },
+      });
+
+      if (!replyTarget) {
+        throw new BadRequestException('replyMessageId must reference an existing message');
+      }
+
+      if (replyTarget.channelId !== channelId) {
+        throw new BadRequestException('replyMessageId must reference a message in the same channel');
+      }
+    }
+
     return this.prisma.message.create({
       data: {
         channelId,
         authorUserId,
+        replyMessageId,
         body,
       },
       select: {
         id: true,
         channelId: true,
         authorUserId: true,
+        replyMessageId: true,
         body: true,
         createdAt: true,
       },
