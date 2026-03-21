@@ -163,7 +163,7 @@ export default function EmojiPicker({
               type="button"
               onMouseDown={(event) => event.preventDefault()}
               onClick={(event) => onSelect({ type: "unicode", unicode: emoji.unicode }, event.shiftKey)}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-lg hover:bg-[color:var(--panel-lighter)]"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-2xl leading-none hover:bg-[color:var(--highlight)]"
               title={emoji.label}
               aria-label={emoji.label}
             >
@@ -195,7 +195,7 @@ export default function EmojiPicker({
                     type="button"
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={(event) => onSelect({ type: "custom", id: emoji.id, name: emoji.name }, event.shiftKey)}
-                    className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-[color:var(--panel-lighter)]"
+                    className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-[color:var(--highlight)]"
                     title={`:${emoji.name}:`}
                     aria-label={`:${emoji.name}:`}
                   >

@@ -1,4 +1,14 @@
-import type { ChannelHistoryCursorDto, ChatMessageDto, ChatRealtimeMessage, ChatSendAck, ChatSendPayload } from "@cup/shared-types";
+import type {
+  ChannelHistoryCursorDto,
+  ChatMessageDto,
+  ChatReactionSetAck,
+  ChatReactionSetPayload,
+  ChatReactionUpdate,
+  ChatRealtimeMessage,
+  ChatSendAck,
+  ChatSendPayload,
+  ReactionEmojiKind,
+} from "@cup/shared-types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchChannelHistory, type ChatConnection } from "../../../api/chat";
 
@@ -12,7 +22,7 @@ import { fetchChannelHistory, type ChatConnection } from "../../../api/chat";
  * 
  */    
 
-export type sendMessageFunction = (rawBody: string) => Promise<void>;
+export type sendMessageFunction = (args: { body: string; replyMessageId?: string | null }) => Promise<void>;
 type ChatMessagingArgs = {
     channelId: string | null;
     connection: ChatConnection | null;
@@ -25,6 +35,7 @@ type UseChatMessagingResult = {
   historyCursor: ChannelHistoryCursorDto | null; // indicates if channel has older messages that can be loaded(and how to load them)
   loadOlderMessages: () => Promise<void>; // loads one older page using current historyCursor
   sendMessage: sendMessageFunction; // returned from hook, used by consumers to send messages to the current channel
+  setReaction: (args: { messageId: string; emojiKind: ReactionEmojiKind; emojiValue: string; active: boolean }) => Promise<void>;
 }
 
 const MESSAGE_TIMEOUT_MS = 3000;
@@ -88,8 +99,9 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
 
   //sendMessage is returned from this hook, used by ChatComposer(and possibly others) to send messages
   const sendMessage = useCallback( 
-    async (rawBody: string): Promise<void> => {
-      const body = rawBody.trim();
+    async (args: { body: string; replyMessageId?: string | null }): Promise<void> => {
+      const body = args.body.trim();
+      const replyMessageId = args.replyMessageId?.trim() || null;
 
       if (!body) 
         throw new Error('Message body required.');
@@ -102,6 +114,7 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
         channelId,
         clientMessageId: crypto.randomUUID(),
         body,
+        replyMessageId,
       }
 
       return new Promise((resolve, reject) => {
@@ -130,6 +143,101 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
       });
 
   }, [connection, channelId]);
+
+  const setReaction = useCallback(
+    async (args: { messageId: string; emojiKind: ReactionEmojiKind; emojiValue: string; active: boolean }): Promise<void> => {
+      const messageId = args.messageId.trim();
+      const emojiValue = args.emojiValue.trim();
+
+      if (!messageId) {
+        throw new Error("messageId required.");
+      }
+
+      if (!emojiValue) {
+        throw new Error("emojiValue required.");
+      }
+
+      if (!connection) {
+        throw new Error("Not connected to chat server.");
+      }
+
+      if (!channelId) {
+        throw new Error("No channel currently joined.");
+      }
+
+      const payload: ChatReactionSetPayload = {
+        channelId,
+        messageId,
+        emojiKind: args.emojiKind,
+        emojiValue,
+        active: args.active,
+        clientMutationId: crypto.randomUUID(),
+      };
+
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          connection.socket.off("chat:reaction:set:ack", ackHandler);
+          reject(new Error("Reaction update timed out"));
+        }, MESSAGE_TIMEOUT_MS);
+
+        const ackHandler = (ack: ChatReactionSetAck) => {
+          if (ack.clientMutationId === payload.clientMutationId) {
+            clearTimeout(timeout);
+            connection.socket.off("chat:reaction:set:ack", ackHandler);
+
+            if (ack.ok) {
+              setMessages((prev) =>
+                prev.map((message) => {
+                  if (message.id !== payload.messageId) {
+                    return message;
+                  }
+
+                  const existingIndex = message.reactions.findIndex(
+                    (reaction) => reaction.emojiKind === payload.emojiKind && reaction.emojiValue === payload.emojiValue,
+                  );
+
+                  if (existingIndex === -1) {
+                    if (!payload.active) {
+                      return message;
+                    }
+
+                    return {
+                      ...message,
+                      reactions: [...message.reactions, {
+                        emojiKind: payload.emojiKind,
+                        emojiValue: payload.emojiValue,
+                        count: 1,
+                        reactedByMe: true,
+                        reactorDisplayNames: [],
+                      }],
+                    };
+                  }
+
+                  const nextReactions = [...message.reactions];
+                  nextReactions[existingIndex] = {
+                    ...nextReactions[existingIndex],
+                    reactedByMe: payload.active,
+                  };
+
+                  return {
+                    ...message,
+                    reactions: nextReactions,
+                  };
+                }),
+              );
+              resolve();
+            } else {
+              reject(new Error(ack.error ? ack.error : "Reaction rejected by server"));
+            }
+          }
+        };
+
+        connection.socket.on("chat:reaction:set:ack", ackHandler);
+        connection.socket.emit("chat:reaction:set", payload);
+      });
+    },
+    [channelId, connection],
+  );
 
 
   useEffect(() => { //Retrieve message history whenever channelId changes
@@ -224,8 +332,10 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
       if (payload.channelId === channelId) {
         const newMessage: ChatMessageDto = {
           ...payload,
+          replyMessageId: payload.replyMessageId,
           editedAt: null,
           deletedAt: null,
+          reactions: payload.reactions,
         }
         setMessages((prev) => mergeUniqueMessages(prev, [newMessage]));
       }
@@ -238,6 +348,44 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
       connection.socket.off("chat:message", messageHandler);
     }
   }, [connection, channelId]);
+
+  useEffect(() => {
+    if (!connection) {
+      return;
+    }
+
+    const reactionUpdateHandler = (payload: ChatReactionUpdate) => {
+      if (payload.channelId !== channelId) {
+        return;
+      }
+
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === payload.messageId
+            ? {
+                ...message,
+                reactions: payload.reactions.map((reaction) => {
+                  const existing = message.reactions.find(
+                    (current) => current.emojiKind === reaction.emojiKind && current.emojiValue === reaction.emojiValue,
+                  );
+
+                  return {
+                    ...reaction,
+                    reactedByMe: existing?.reactedByMe ?? false,
+                  };
+                }),
+              }
+            : message,
+        ),
+      );
+    };
+
+    connection.socket.on("chat:reaction:update", reactionUpdateHandler);
+
+    return () => {
+      connection.socket.off("chat:reaction:update", reactionUpdateHandler);
+    };
+  }, [channelId, connection]);
     
   return {
     messages,
@@ -247,5 +395,6 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
     historyCursor,
     loadOlderMessages,
     sendMessage,
+    setReaction,
   }
 }

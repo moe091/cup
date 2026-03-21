@@ -34,10 +34,25 @@ export type ChatMessageDto = {
   channelId: string;
   authorUserId: string;
   authorDisplayName: string;
+  replyMessageId: string | null;
   body: string;
   createdAt: string;
   editedAt: string | null;
   deletedAt: string | null;
+  reactions: MessageReactionSummaryDto[];
+};
+
+export type ReactionEmojiKind = "UNICODE" | "CUSTOM";
+
+export type MessageReactionAggregateDto = {
+  emojiKind: ReactionEmojiKind;
+  emojiValue: string;
+  count: number;
+  reactorDisplayNames: string[];
+};
+
+export type MessageReactionSummaryDto = MessageReactionAggregateDto & {
+  reactedByMe: boolean;
 };
 export type ChannelHistoryCursorDto = {
   beforeCreatedAt: string;
@@ -51,6 +66,7 @@ export type ChannelHistoryResponseDto = {
 export type ChatSendPayload = {
   channelId: string;
   body: string;
+  replyMessageId?: string | null;
   clientMessageId?: string;
 };
 
@@ -59,8 +75,10 @@ export type ChatRealtimeMessage = {
   channelId: string;
   authorUserId: string;
   authorDisplayName: string;
+  replyMessageId: string | null;
   body: string;
   createdAt: string; // ISO
+  reactions: MessageReactionSummaryDto[];
 };
 
 export type ChatSendAck = {
@@ -68,4 +86,25 @@ export type ChatSendAck = {
   clientMessageId?: string;
   messageId?: string;
   error?: string;
+};
+
+export type ChatReactionSetPayload = {
+  channelId: string;
+  messageId: string;
+  emojiKind: ReactionEmojiKind;
+  emojiValue: string;
+  active: boolean;
+  clientMutationId?: string;
+};
+
+export type ChatReactionSetAck = {
+  ok: boolean;
+  clientMutationId?: string;
+  error?: string;
+};
+
+export type ChatReactionUpdate = {
+  channelId: string;
+  messageId: string;
+  reactions: MessageReactionAggregateDto[];
 };

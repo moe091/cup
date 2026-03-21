@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
+import type { ChatMessageDto } from "@cup/shared-types";
 import type { sendMessageFunction } from "./hooks/useChatMessaging";
 import { useEmojiCatalog } from "./hooks/useEmojiCatalog";
 import EmojiPicker, { type EmojiSelection } from "./emoji/EmojiPicker";
@@ -171,9 +172,17 @@ type ChatComposerProps = {
   placeholder: string;
   sendMessage: sendMessageFunction;
   communityId: string | null;
+  replyingToMessage: ChatMessageDto | null;
+  onCancelReply: () => void;
 };
 
-export default function ChatComposer({ placeholder, sendMessage, communityId }: ChatComposerProps) {
+export default function ChatComposer({
+  placeholder,
+  sendMessage,
+  communityId,
+  replyingToMessage,
+  onCancelReply,
+}: ChatComposerProps) {
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -217,9 +226,13 @@ export default function ChatComposer({ placeholder, sendMessage, communityId }: 
     if (text) {
       setIsSending(true);
       try {
-        await sendMessage(text);
+        await sendMessage({
+          body: text,
+          replyMessageId: replyingToMessage?.id ?? null,
+        });
         setMessageText('');
         setIsPickerOpen(false);
+        onCancelReply();
         if (editorRef.current) {
           editorRef.current.textContent = "";
         }
@@ -231,6 +244,12 @@ export default function ChatComposer({ placeholder, sendMessage, communityId }: 
 
   const handleEditorKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.nativeEvent.isComposing) {
+      return;
+    }
+
+    if (event.key === "Escape" && replyingToMessage) {
+      event.preventDefault();
+      onCancelReply();
       return;
     }
 
@@ -299,8 +318,26 @@ export default function ChatComposer({ placeholder, sendMessage, communityId }: 
   );
 
   return ( 
-    <div className="border-t border-[color:var(--line)] p-3">
-      <div className="relative min-h-16 rounded-lg border border-[color:var(--line)] bg-[color:var(--panel)] px-3 py-2 text-base text-[color:var(--text)] outline-none">
+    <div className="p-3">
+      {replyingToMessage ? (
+        <div className="mb-1 flex items-center justify-between rounded-md bg-[color:var(--highlight)] px-3 py-1.5 text-[12px] text-[color:var(--muted)]">
+          <span className="truncate pr-3">
+            Replying to <span className="text-[color:var(--text)]">{replyingToMessage.authorDisplayName}</span>
+          </span>
+          <button
+            type="button"
+            onClick={onCancelReply}
+            className="text-lg leading-none text-[color:var(--muted)] hover:text-[color:var(--text)]"
+            aria-label="Cancel reply"
+            title="Cancel reply"
+          >
+            x
+          </button>
+        </div>
+      ) : null}
+
+      <div className="relative min-h-18 rounded-lg border border-[color:var(--line)] bg-[color:var(--panel)] px-3 py-2 text-[15px] text-[color:var(--text)] outline-none">
+
         {messageText.length === 0 ? (
           <span className="pointer-events-none absolute left-3 top-2 text-[color:var(--muted)]">
             {placeholder}
@@ -327,14 +364,14 @@ export default function ChatComposer({ placeholder, sendMessage, communityId }: 
             title="Open emoji picker"
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => setIsPickerOpen((prev) => !prev)}
-            className="rounded-full border border-[color:var(--line)] bg-[color:var(--panel-lighter)] px-2.5 py-1.5 text-sm text-[color:var(--muted)] hover:border-[color:var(--text)] hover:text-[color:var(--text)]"
+            className="rounded-full border border-[color:var(--line)] bg-[color:var(--panel-lighter)] px-2 py-1 text-xs text-[color:var(--muted)] hover:border-[color:var(--text)] hover:text-[color:var(--text)]"
           >
             🙂
           </button>
           <button
             type="button"
             onClick={handleSendMessage}
-            className="rounded-full border border-[color:var(--line)] bg-[color:var(--panel-lighter)] px-3.5 py-1.5 text-sm text-[color:var(--muted)] hover:border-[color:var(--text)] hover:text-[color:var(--text)]"
+            className="rounded-full border border-[color:var(--line)] bg-[color:var(--panel-lighter)] px-3 py-1 text-xs text-[color:var(--muted)] hover:border-[color:var(--text)] hover:text-[color:var(--text)]"
           >
             { isSending ? '...' : 'Send' }
           </button>

@@ -94,14 +94,14 @@ export default function TopBar() {
   }, [isUserMenuOpen]);
 
   return (
-    <div className="fixed top-0 z-10 w-full border-b border-[color:var(--line)] bg-[color:var(--panel)]/80 backdrop-blur">
+    <div className="fixed top-0 z-10 w-full border-b border-[color:var(--line)] bg-black backdrop-blur">
       <div className="mx-auto max-w-6xl px-6 py-3 flex items-center justify-between">
         {/* Left: brand */}
         <Link
           to="/"
-          className="flex items-center gap-2 border-b border-[color:var(--line)] px-2 text-2xl text-[color:var(--text)] tracking-wide"
+          className="flex items-center gap-2 border-[color:var(--line)] px-2 text-2xl text-[color:var(--text)] tracking-wide"
         >
-          <span className="h-2 w-2 rounded-full bg-[color:var(--accent)] shadow-[0_0_10px_rgba(85,214,169,0.6)]" />
+          <span className="h-2 w-2 rounded-full bg-[#6adf7d] shadow-[0_0_10px_rgba(106,223,125,0.75)]" />
           TheNiteCrew
         </Link>
 

@@ -25,6 +25,7 @@ export default function MessageActionMenu({
           <button
             key={emoji}
             type="button"
+            onMouseDown={(event) => event.preventDefault()}
             onClick={() => onQuickReact?.(emoji)}
             className="flex h-8 w-8 items-center justify-center rounded-md p-0 text-lg leading-none hover:bg-[color:var(--panel-lighter)]"
             aria-label={`React with ${emoji}`}
@@ -36,6 +37,7 @@ export default function MessageActionMenu({
 
         <button
           type="button"
+          onMouseDown={(event) => event.preventDefault()}
           onClick={(event) => {
             const rect = event.currentTarget.getBoundingClientRect();
             onOpenEmojiPicker?.({
@@ -52,6 +54,7 @@ export default function MessageActionMenu({
 
         <button
           type="button"
+          onMouseDown={(event) => event.preventDefault()}
           onClick={() => onReply?.()}
           className="flex h-8 w-8 items-center justify-center rounded-md p-0 text-lg leading-none text-[color:var(--muted)] hover:bg-[color:var(--panel-lighter)] hover:text-[color:var(--text)]"
           aria-label="Reply to message"

@@ -258,3 +258,119 @@ Phase 2 pre-work completed:
 - Preserve current chat architecture unless a clear technical need emerges.
 - Prefer pure helper functions for parser/serializer logic for easier unit testing.
 - Keep all emoji-related user-facing behavior deterministic and debuggable.
+
+## Adjacent UI Follow-up: Grouped Messages
+
+Planned message-list polish that pairs with reactions/reply UX:
+
+- Add grouped-message rendering in chat list to reduce repeated metadata noise.
+- Rule: when consecutive messages are from the same `authorUserId` and within ~5 minutes, collapse repeated header metadata.
+- In grouped rows, hide repeated author/timestamp (and future avatar) while keeping message body/actions visible.
+- Keep first message in each group as the anchor row showing full metadata.
+- This should be implemented as a presentation-layer grouping decision in list rendering (no DB/schema changes required).
+
+## Test Scenarios
+
+Use this checklist to validate emoji/reaction behavior end-to-end.
+
+### Emoji Catalog + Resolution
+
+- Catalog request with `communityId` returns `GLOBAL + COMMUNITY + USER` (owned user emojis only).
+- Catalog request without `communityId` returns `GLOBAL + USER` only.
+- Invalid/empty `communityId` query handling is correct.
+- Resolver request with mixed known/unknown ids returns only known non-deleted emoji metadata.
+- Resolver request with duplicate ids is deduped correctly.
+- Resolver request with all unknown ids returns empty set without crashing.
+- Client catalog cache is reused for same community context.
+- Client resolver cache avoids repeated network fetches for previously resolved ids.
+- Client resolver negative cache avoids repeated fetches for unresolved/deleted ids.
+
+### Composer (Unicode + Custom)
+
+- Unicode emoji insertion from picker inserts at cursor position.
+- Custom emoji insertion from picker inserts token/chip at cursor position.
+- If editor is not selected, insertion defaults to message end.
+- Consecutive inserts stay adjacent (caret remains after inserted emoji).
+- Shift+click keeps picker open; normal click closes picker.
+- Composer renders larger Unicode glyphs in-place while preserving plain-text canonical value.
+- Composer renders custom emoji chips for resolvable custom tokens.
+- Composer serializes custom chips back to canonical token text (`<:name:id>`) before send.
+- Enter sends; Shift+Enter inserts newline.
+- IME composition does not break caret/emoji rendering.
+- Pasting rich content results in plain-text insertion only.
+- Long message with many emoji still serializes and sends correctly.
+
+### Message Rendering
+
+- History load renders Unicode and custom emoji correctly.
+- Realtime incoming message renders Unicode and custom emoji correctly.
+- Unknown custom token initially shows token text, then resolves to image if resolver data arrives.
+- Deleted/unresolvable custom emoji renders `[deleted emoji]` fallback.
+- Mixed text + multiple custom/unicode emoji in one message preserves order.
+- Date separators remain correct around messages with emoji content.
+
+### Send-Time Emoji Validation (Backend)
+
+- Message with no custom emoji tokens sends normally.
+- Message with valid `GLOBAL` custom emoji token sends successfully.
+- Message with valid `USER` custom emoji owned by sender sends successfully.
+- Message with `USER` custom emoji not owned by sender is rejected.
+- Message with valid `COMMUNITY` custom emoji matching channel community sends successfully.
+- Message with `COMMUNITY` custom emoji from another community is rejected.
+- Message with deleted/unknown custom emoji token is rejected.
+- Rejection returns clear `chat:send:ack.error` message.
+
+### Reactions: Set/Toggle + Realtime
+
+- Add reaction (unicode) creates/activates reaction for current user.
+- Add reaction (custom) creates/activates reaction for current user when authorized.
+- Toggle off reaction removes user reaction for that emoji.
+- Re-adding after remove works consistently.
+- Same user cannot duplicate same reaction on same message (unique constraint behavior).
+- Same user can apply multiple different reactions to same message.
+- Multiple users can apply same reaction and counts aggregate correctly.
+- Reaction chips update in realtime for all active users in room via `chat:reaction:update`.
+- `reactedByMe` updates correctly on own toggles and after realtime updates.
+- Reaction payload with invalid `messageId` / `emojiKind` / `emojiValue` is rejected cleanly.
+- Reaction set while not joined to target room is rejected.
+- Reaction set for message not in specified channel is rejected.
+
+### Reactions: Display + UX
+
+- Reaction chips render custom emoji images and unicode glyphs at target size.
+- Reaction chips render correct count.
+- Reacted-by-me state has distinct styling from non-reacted state.
+- Chip hover/focus style changes are visible and accessible.
+- Tooltip/title shows first 3 reactor display names from summary data.
+- Missing custom emoji in reaction chip renders fallback symbol/text safely.
+
+### Anchored Picker + Message Action Menu
+
+- Message row action menu appears on hover and `focus-within`.
+- Anchored picker opens near action-menu emoji button.
+- Anchored picker shifts upward (not clipped) when near viewport bottom.
+- Anchored picker remains visible after section collapse/expand height changes.
+- Outside click closes picker; Escape closes picker.
+- Action menu and anchored picker do not cause unstable focus/caret behavior.
+
+### Security + Access
+
+- Users without channel access cannot fetch channel history containing message content.
+- Users without channel access cannot send messages to channel.
+- Users without channel access cannot set reactions for channel messages.
+- Custom emoji authorization checks are enforced server-side (not trusted from client).
+- Resolver/catalog endpoints do not expose deleted emoji as active renderable data.
+
+### Data Integrity + Migration
+
+- Prisma migration applies cleanly on non-empty dev DB.
+- Existing messages (pre-reaction schema) still load with `reactions: []` default behavior.
+- Realtime message payload shape stays compatible with frontend (`reactions` present).
+- Seed data still applies without breaking chat history endpoints.
+
+### Performance / Regression Smoke Checks
+
+- Channel history fetch with reactions remains performant for normal page size.
+- Rapid reaction toggles do not crash client or gateway.
+- Emoji resolver request volume drops as caches warm.
+- No obvious UI jank on large message lists with many emoji/reaction chips.

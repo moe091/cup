@@ -39,8 +39,8 @@ export default function MultiChannelChatPanel({
     return (
       <section className="flex h-full min-h-0 items-center justify-center bg-[color:var(--panel-strong)] px-6 text-center">
         <div>
-          <h2 className="text-lg font-semibold">No Channels Available</h2>
-          <p className="mt-2 text-sm text-[color:var(--muted)]">
+          <h2 className="text-base font-semibold">No Channels Available</h2>
+          <p className="mt-2 text-xs text-[color:var(--muted)]">
             This community does not have any channels you can view yet.
           </p>
         </div>
@@ -49,7 +49,7 @@ export default function MultiChannelChatPanel({
   }
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-1 bg-[color:var(--panel)]/95 text-[color:var(--text)] lg:grid-cols-[300px_1fr]">
+    <div className="grid h-full min-h-0 grid-cols-1 bg-[color:var(--panel)]/95 text-[15px] text-[color:var(--text)] lg:grid-cols-[300px_1fr]">
       <div className="min-h-0">
         <ChannelList
           communityName={communityName}

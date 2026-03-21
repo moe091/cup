@@ -2,7 +2,7 @@ import type { MCCPChannel } from "./MultiChannelChatPanel";
 import { type ChatConnection } from "../../api/chat";
 import { useChatMessaging } from "./hooks/useChatMessaging";
 import type { ChatMessageDto } from "@cup/shared-types";
-import { Fragment, useCallback, useLayoutEffect, useRef } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import MessageRow from "./MessageRow";
 import ChatComposer from "./ChatComposer";
 import { useResolvedCustomEmojiMap } from "./hooks/useResolvedCustomEmojiMap";
@@ -72,7 +72,7 @@ function formatDateSeparatorLabel(messageCreatedAt: string): string {
 }
 
 export default function ChannelChatView({ channel, connection, communityId }: ChannelChatViewProps) {
-  const { messages, isLoading, isLoadingOlder, errorMessage, historyCursor, loadOlderMessages, sendMessage } = useChatMessaging({channelId: channel?.id ?? null, connection});
+  const { messages, isLoading, isLoadingOlder, errorMessage, historyCursor, loadOlderMessages, sendMessage, setReaction } = useChatMessaging({channelId: channel?.id ?? null, connection});
   const resolvedCustomEmojiById = useResolvedCustomEmojiMap(messages);
   const {
     emojis: customEmojis,
@@ -84,7 +84,47 @@ export default function ChannelChatView({ channel, connection, communityId }: Ch
   const previousMessageCountRef = useRef(0);
   const previousFirstMessageIdRef = useRef<string | null>(null);
   const previousLastMessageIdRef = useRef<string | null>(null);
+  const previousReplyVisibleRef = useRef(false);
   const pendingPrependAdjustmentRef = useRef<{ previousScrollHeight: number; previousScrollTop: number } | null>(null);
+  const [replyingToMessageId, setReplyingToMessageId] = useState<string | null>(null);
+  const [jumpHighlightMessageId, setJumpHighlightMessageId] = useState<string | null>(null);
+  const messageElementByIdRef = useRef(new Map<string, HTMLElement>());
+
+  const replyingToMessage = useMemo(
+    () => messages.find((message) => message.id === replyingToMessageId) ?? null,
+    [messages, replyingToMessageId],
+  );
+
+  const messageById = useMemo(() => new Map(messages.map((message) => [message.id, message])), [messages]);
+
+  useEffect(() => {
+    setReplyingToMessageId(null);
+    setJumpHighlightMessageId(null);
+    messageElementByIdRef.current.clear();
+  }, [channel?.id]);
+
+  const registerMessageElement = useCallback((messageId: string, element: HTMLElement | null) => {
+    if (element) {
+      messageElementByIdRef.current.set(messageId, element);
+      return;
+    }
+
+    messageElementByIdRef.current.delete(messageId);
+  }, []);
+
+  const handleJumpToMessage = useCallback((targetMessageId: string) => {
+    const element = messageElementByIdRef.current.get(targetMessageId);
+    if (!element) {
+      return;
+    }
+
+    element.scrollIntoView({ behavior: "smooth", block: "center" });
+    setJumpHighlightMessageId(targetMessageId);
+
+    window.setTimeout(() => {
+      setJumpHighlightMessageId((current) => (current === targetMessageId ? null : current));
+    }, 3200);
+  }, []);
 
   useLayoutEffect(() => {
     pendingPrependAdjustmentRef.current = null;
@@ -161,32 +201,38 @@ export default function ChannelChatView({ channel, connection, communityId }: Ch
       }
     }
 
+    const isReplyVisible = replyingToMessageId !== null;
+    if (isReplyVisible !== previousReplyVisibleRef.current && wasNearBottomRef.current) {
+      container.scrollTop = container.scrollHeight;
+    }
+    previousReplyVisibleRef.current = isReplyVisible;
+
     previousMessageCountRef.current = currentCount;
     previousFirstMessageIdRef.current = currentFirstMessageId;
     previousLastMessageIdRef.current = currentLastMessageId;
     wasNearBottomRef.current = isNearBottom(container, BOTTOM_AUTO_SCROLL_THRESHOLD_PX);
-  }, [messages, isLoadingOlder]);
+  }, [messages, isLoadingOlder, replyingToMessageId]);
 
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--panel-lighter)]">
-      <div className="border-b border-[color:var(--line)] px-4 py-3 text-sm">
+      <div className="border-b border-[color:var(--line)] px-4 py-2.5 text-[13px]">
         <span className="font-semibold">#{channel?.name}</span>
         <span className="ml-2 text-[color:var(--muted)]">
           {isLoadingOlder ? "Loading older messages..." : historyCursor ? "Older messages available" : "Message history loaded"}
         </span>
       </div>
 
-      <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-4 py-5 text-sm text-[color:var(--muted)]">
+      <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-4 py-4 text-[13px] text-[color:var(--muted)]">
         {isLoading ? (
           <p>Loading messages...</p>
         ) : errorMessage ? (
-          <p className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-red-300">
+          <p className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-[13px] text-red-300">
             {errorMessage}
           </p>
         ) : messages.length === 0 ? (
           <p>No messages yet.</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {isLoadingOlder ? <p className="text-xs text-[color:var(--muted)]">Loading older messages...</p> : null}
             {messages.map((message, index) => {
               const previousMessage = index > 0 ? messages[index - 1] : null;
@@ -195,7 +241,7 @@ export default function ChannelChatView({ channel, connection, communityId }: Ch
               return (
                 <Fragment key={message.id}>
                   {showDateSeparator ? (
-                    <div className="flex items-center gap-3 py-1 text-[11px] text-[color:var(--muted)]">
+                    <div className="flex items-center gap-3 py-1 text-[10px] text-[color:var(--muted)]">
                       <span className="h-px flex-1 bg-[color:var(--line)]" aria-hidden />
                       <span>{formatDateSeparatorLabel(message.createdAt)}</span>
                       <span className="h-px flex-1 bg-[color:var(--line)]" aria-hidden />
@@ -207,6 +253,12 @@ export default function ChannelChatView({ channel, connection, communityId }: Ch
                     customEmojis={customEmojis}
                     isLoadingCustomEmojis={isLoadingCustomEmojis}
                     customEmojiError={customEmojiError}
+                    setReaction={setReaction}
+                    onReply={setReplyingToMessageId}
+                    replyTargetMessage={message.replyMessageId ? messageById.get(message.replyMessageId) ?? null : null}
+                    onJumpToMessage={handleJumpToMessage}
+                    isJumpHighlighted={jumpHighlightMessageId === message.id}
+                    registerMessageElement={registerMessageElement}
                   />
                 </Fragment>
               );
@@ -215,7 +267,13 @@ export default function ChannelChatView({ channel, connection, communityId }: Ch
         )}
       </div>
 
-      <ChatComposer placeholder={`Message #${channel?.name}`} sendMessage={sendMessage} communityId={communityId} />
+      <ChatComposer
+        placeholder={`Message #${channel?.name}`}
+        sendMessage={sendMessage}
+        communityId={communityId}
+        replyingToMessage={replyingToMessage}
+        onCancelReply={() => setReplyingToMessageId(null)}
+      />
     </section>
   );
 }
