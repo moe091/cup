@@ -9,9 +9,10 @@ import { ChatModule } from './chat/chat.module';
 import { CsrfMiddleware } from './security/csrf.middleware';
 import { RateLimitMiddleware } from './security/rate-limit.middleware';
 import { CommunitiesModule } from './communities/communities.module';
+import { EmojisModule } from './emojis/emojis.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, GamesModule, UsersModule, ChatModule, CommunitiesModule],
+  imports: [PrismaModule, AuthModule, GamesModule, UsersModule, ChatModule, CommunitiesModule, EmojisModule],
   controllers: [AppController],
   providers: [AppService],
 })

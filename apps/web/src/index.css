@@ -4,16 +4,102 @@
 
 :root {
   color-scheme: dark;
-  --bg: #0c0f12;
-  --panel: #121316;
-  --panel-strong: #121316;
-  --panel-lighter: #161d24;
-  --text: #e6edf3;
-  --muted: #9aa4af;
-  --line: #1e2832;
-  --accent: #55d6a9;
-  --accent-2: #3b82f6;
-  --discord: #5865f2;
+
+  /* Active/default theme (kept as current values): Ember Slate */
+  --bg: #141518;
+  --panel: #0f0f12;
+  --panel-strong: #08090b;
+  --panel-lighter: #191a1f;
+  --text: #f5f5f7;
+  --muted: #cdd0d9;
+  --line: #262b33;
+  --line-dark: #13151a;
+  --accent: #9ad45d;
+  --accent-2: #b56a43;
+  --discord: #8f84f7;
+  --bg-glow-a: #2a2f3a;
+  --bg-glow-b: #20242c;
+}
+
+:root[data-theme="hearth-night"] {
+  --bg: #181210;
+  --panel: #211916;
+  --panel-strong: #140f0d;
+  --panel-lighter: #2a211d;
+  --text: #f3ece7;
+  --muted: #cbb8ac;
+  --line: #3a2f2a;
+  --line-dark: #231c19;
+  --accent: #d88b4a;
+  --accent-2: #b86c34;
+  --discord: #8d7ff0;
+  --bg-glow-a: #3a261f;
+  --bg-glow-b: #2a2019;
+}
+
+:root[data-theme="cabin-moss"] {
+  --bg: #12150f;
+  --panel: #1b2117;
+  --panel-strong: #11150f;
+  --panel-lighter: #252d1f;
+  --text: #e9eddc;
+  --muted: #b7bea3;
+  --line: #34402d;
+  --line-dark: #1e261a;
+  --accent: #a7bf6e;
+  --accent-2: #7f9952;
+  --discord: #8d7ff0;
+  --bg-glow-a: #2a321f;
+  --bg-glow-b: #20281b;
+}
+
+:root[data-theme="candle-plum"] {
+  --bg: #171218;
+  --panel: #221a24;
+  --panel-strong: #140f15;
+  --panel-lighter: #2d2330;
+  --text: #f2e9f1;
+  --muted: #c5b3c3;
+  --line: #3d3141;
+  --line-dark: #251f2b;
+  --accent: #d4945d;
+  --accent-2: #b67343;
+  --discord: #9b8bff;
+  --bg-glow-a: #32243a;
+  --bg-glow-b: #241b2d;
+}
+
+:root[data-theme="ember-slate"] {
+  --bg: #141518;
+  --panel: #0f0f12;
+  --panel-strong: #08090b;
+  --panel-lighter: #191a1f;
+  --text: #f5f5f7;
+  --muted: #cdd0d9;
+  --line: #262b33;
+  --line-dark: #13151a;
+  --accent: #9ad45d;
+  --accent-2: #b56a43;
+  --discord: #8f84f7;
+  --bg-glow-a: #2a2f3a;
+  --bg-glow-b: #20242c;
+}
+
+:root[data-theme="dark"] {
+  --bg: #141518;
+  --panel: #101113;
+  --panel-strong: #08090b;
+  --panel-lighter: #17181c;
+  --highlight: #26292d;
+  --text: #f5f5f7;
+  --muted: #dddfe7;
+  --line: #262b33;
+  --line-dark: #13151a;
+  --accent: #889a7e;
+  --accent-2: #b56a43;
+  --discord: #8f84f7;
+  --bg-glow-a: #2a2f3a;
+  --bg-glow-b: #20242c;
 }
 
 * {
@@ -31,9 +117,25 @@ body {
     "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
   background:
-    radial-gradient(1200px 700px at 10% 10%, #121820 0%, transparent 60%),
+    radial-gradient(1200px 700px at 10% 10%, var(--bg-glow-a) 0%, transparent 60%),
+    radial-gradient(900px 540px at 85% 15%, var(--bg-glow-b) 0%, transparent 58%),
     var(--bg);
   color: var(--text);
+}
+
+@keyframes reply-jump-fade {
+  0% {
+    background-color: var(--highlight, var(--panel-lighter));
+    border-color: var(--accent);
+  }
+  100% {
+    background-color: transparent;
+    border-color: transparent;
+  }
+}
+
+.reply-jump-highlight {
+  animation: reply-jump-fade 3s ease-out forwards;
 }
 
 #root {

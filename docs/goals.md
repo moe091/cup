@@ -1,5 +1,5 @@
 ---
-description: Multiplayer minigame platform with physics racing and social features.
+description: Social platform focusing on discord-like chat combined with integrated/seamless social minigames and activities.
 ---
 
 ## Product vision
@@ -230,6 +230,12 @@ A social web platform for friends to hang out and play quick, casual multiplayer
   - Redis adapter for Socket.IO fanout across multiple nodes
   - Redis-backed shared session store for horizontally scaled auth/session
   - Redis-backed distributed rate limiting and short-lived presence/activity caches
+  - Redis-backed chat metadata caches, with emoji paths as early candidates:
+    - send-time custom emoji authorization metadata lookup cache (`id -> scopeType/scopeId/deletedAt`)
+    - emoji resolver cache for `GET /api/emojis/resolve`
+  - Additional likely Redis cache candidates as traffic grows:
+    - repeated channel/community access policy snapshots for chat auth checks
+    - high-frequency community/channel summary reads used by chat UI bootstrapping
   - async event pipeline (Kafka/NATS/SQS-style) for non-critical side effects such as notifications, analytics, and moderation workflows
   - optional dedicated chat service/process once load, team boundaries, or ops requirements justify the split
 - Deployment/config TODO:

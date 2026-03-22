@@ -6,10 +6,11 @@ import {
   SubscribeMessage,
   WebSocketGateway,
 } from '@nestjs/websockets';
+import { HttpException } from '@nestjs/common';
 import type { ChatTokenClaims, JoinChannelPayload, ChatSocket } from './chat.types';
 import jwt from 'jsonwebtoken';
 import { ChatService } from './chat.service';
-import { ChatRealtimeMessage, ChatSendPayload } from '@cup/shared-types';
+import { ChatReactionSetPayload, ChatRealtimeMessage, ChatSendPayload } from '@cup/shared-types';
 
 const MAX_MESSAGE_LENGTH = 4000; //TODO:: add to configs once created
 
@@ -138,6 +139,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const clientMessageId = payload.clientMessageId;
     const trimmedChannelId = typeof payload.channelId === 'string' ? payload.channelId.trim() : '';
     const trimmedBody = typeof payload.body === 'string' ? payload.body.trim() : '';
+    const trimmedReplyMessageId = typeof payload.replyMessageId === 'string' ? payload.replyMessageId.trim() : '';
+    const replyMessageId = trimmedReplyMessageId || null;
     const roomName = `channel:${trimmedChannelId}`;
 
     if (!authorDisplayName || !userId) {
@@ -166,9 +169,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     try {
+      await this.chatService.assertCanUseCustomEmojis(trimmedChannelId, userId, trimmedBody);
+
       const created = await this.chatService.createMessage({
         channelId: trimmedChannelId,
         authorUserId: userId,
+        replyMessageId,
         body: trimmedBody,
       });
 
@@ -177,8 +183,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         channelId: created.channelId,
         authorUserId: created.authorUserId,
         authorDisplayName,
+        replyMessageId: created.replyMessageId,
         body: created.body,
         createdAt: created.createdAt.toISOString(),
+        reactions: [],
       };
 
       socket.nsp.to(roomName).emit('chat:message', realtimeMessage);
@@ -186,11 +194,95 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         ok: true,
         clientMessageId,
       });
-    } catch {
+    } catch (error) {
+      const errorMessage = error instanceof HttpException ? error.message : 'Failed to send message';
       socket.emit('chat:send:ack', {
         ok: false,
         clientMessageId,
-        error: 'Failed to send message',
+        error: errorMessage,
+      });
+    }
+  }
+
+  @SubscribeMessage('chat:reaction:set')
+  async handleSetReaction(@ConnectedSocket() socket: ChatSocket, @MessageBody() body: unknown) {
+    const userId = socket.data.userId;
+    const authorDisplayName = socket.data.authorDisplayName;
+    const payload = body as Partial<ChatReactionSetPayload>;
+    const clientMutationId = payload.clientMutationId;
+    const trimmedChannelId = typeof payload.channelId === 'string' ? payload.channelId.trim() : '';
+    const trimmedMessageId = typeof payload.messageId === 'string' ? payload.messageId.trim() : '';
+    const trimmedEmojiValue = typeof payload.emojiValue === 'string' ? payload.emojiValue.trim() : '';
+    const emojiKind = payload.emojiKind;
+    const active = payload.active;
+    const roomName = `channel:${trimmedChannelId}`;
+
+    if (!authorDisplayName || !userId) {
+      socket.emit('chat:reaction:set:ack', {
+        ok: false,
+        clientMutationId,
+        error: 'User has invalid displayName or userId',
+      });
+      return;
+    }
+
+    if (!trimmedChannelId || roomName !== socket.data.room) {
+      socket.emit('chat:reaction:set:ack', { ok: false, clientMutationId, error: 'Invalid channelId' });
+      return;
+    }
+
+    if (!trimmedMessageId) {
+      socket.emit('chat:reaction:set:ack', { ok: false, clientMutationId, error: 'messageId is required' });
+      return;
+    }
+
+    if (emojiKind !== 'UNICODE' && emojiKind !== 'CUSTOM') {
+      socket.emit('chat:reaction:set:ack', { ok: false, clientMutationId, error: 'Invalid emojiKind' });
+      return;
+    }
+
+    if (!trimmedEmojiValue) {
+      socket.emit('chat:reaction:set:ack', { ok: false, clientMutationId, error: 'emojiValue is required' });
+      return;
+    }
+
+    if (typeof active !== 'boolean') {
+      socket.emit('chat:reaction:set:ack', { ok: false, clientMutationId, error: 'active must be boolean' });
+      return;
+    }
+
+    if (!socket.rooms.has(roomName)) {
+      socket.emit('chat:reaction:set:ack', { ok: false, clientMutationId, error: 'Not connected to channel room' });
+      return;
+    }
+
+    try {
+      const reactions = await this.chatService.setMessageReaction({
+        channelId: trimmedChannelId,
+        messageId: trimmedMessageId,
+        userId,
+        reactorDisplayName: authorDisplayName,
+        emojiKind,
+        emojiValue: trimmedEmojiValue,
+        active,
+      });
+
+      socket.nsp.to(roomName).emit('chat:reaction:update', {
+        channelId: trimmedChannelId,
+        messageId: trimmedMessageId,
+        reactions,
+      });
+
+      socket.emit('chat:reaction:set:ack', {
+        ok: true,
+        clientMutationId,
+      });
+    } catch (error) {
+      const errorMessage = error instanceof HttpException ? error.message : 'Failed to update reaction';
+      socket.emit('chat:reaction:set:ack', {
+        ok: false,
+        clientMutationId,
+        error: errorMessage,
       });
     }
   }
