@@ -16,6 +16,7 @@ type MessageRowProps = {
   onJumpToMessage: (messageId: string) => void;
   isJumpHighlighted: boolean;
   registerMessageElement: (messageId: string, element: HTMLElement | null) => void;
+  showHeader: boolean;
 };
 
 function MessageRowBase({
@@ -30,6 +31,7 @@ function MessageRowBase({
   onJumpToMessage,
   isJumpHighlighted,
   registerMessageElement,
+  showHeader,
 }: MessageRowProps) {
   const createdAt = new Date(message.createdAt);
   const rowRootRef = useRef<HTMLElement | null>(null);
@@ -54,7 +56,7 @@ function MessageRowBase({
   const handleOpenPicker = useCallback((anchor: MessageActionPickerAnchor) => {
     setPickerAnchor(anchor);
     setIsPickerOpen(true);
-  }, []);
+  }, [setPickerAnchor, setIsPickerOpen]);
 
   const handlePickerSelect = useCallback((_selection: EmojiSelection, keepOpen: boolean) => {
     void (async () => {
@@ -81,7 +83,7 @@ function MessageRowBase({
         setIsPickerOpen(false);
       }
     })();
-  }, [message.id, message.reactions, setReaction]);
+  }, [message.id, message.reactions, setReaction, setIsPickerOpen]);
 
   const handleQuickReact = useCallback(
     (emoji: string) => {
@@ -124,7 +126,9 @@ function MessageRowBase({
         rowRootRef.current = element;
         registerMessageElement(message.id, element);
       }}
-      className={`group relative rounded-md border border-transparent px-2 py-1 transition-colors hover:border-[color:var(--line)] hover:bg-white/[0.05] focus-within:border-[color:var(--line)] focus-within:bg-white/[0.03] ${
+      className={`group relative rounded-md border border-transparent px-2 pb-1 transition-colors hover:border-[color:var(--line)] hover:bg-white/[0.05] focus-within:border-[color:var(--line)] focus-within:bg-white/[0.03] ${
+        showHeader ? "pt-4" : "pt-0"
+      } ${
         isJumpHighlighted ? "reply-jump-highlight" : ""
       }`}
     >
@@ -189,11 +193,13 @@ function MessageRowBase({
         </button>
       ) : null}
 
-      <div className="mb-0.5 flex items-baseline gap-2">
-        <span className="text-[16px] font-semibold text-[color:var(--accent-2)]">{message.authorDisplayName}</span>
-        <span className="text-[12px] text-[color:var(--muted)]">{timestamp}</span>
-        {message.editedAt ? <span className="text-[10px] text-[color:var(--muted)]">(edited)</span> : null}
-      </div>
+      {showHeader ? (
+        <div className="mb-0.5 flex items-baseline gap-2">
+          <span className="text-[16px] font-semibold text-[color:var(--accent-2)]">{message.authorDisplayName}</span>
+          <span className="text-[12px] text-[color:var(--muted)]">{timestamp}</span>
+          {message.editedAt ? <span className="text-[10px] text-[color:var(--muted)]">(edited)</span> : null}
+        </div>
+      ) : null}
       <p className="whitespace-pre-wrap text-[15px] leading-5 text-slate-350">
             {message.deletedAt
           ? "Message deleted"

@@ -2,7 +2,7 @@ import type { MCCPChannel } from "./MultiChannelChatPanel";
 import { type ChatConnection } from "../../api/chat";
 import { useChatMessaging } from "./hooks/useChatMessaging";
 import type { ChatMessageDto } from "@cup/shared-types";
-import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import MessageRow from "./MessageRow";
 import ChatComposer from "./ChatComposer";
 import { useResolvedCustomEmojiMap } from "./hooks/useResolvedCustomEmojiMap";
@@ -16,6 +16,7 @@ type ChannelChatViewProps = {
 
 const TOP_LOAD_THRESHOLD_PX = 200;
 const BOTTOM_AUTO_SCROLL_THRESHOLD_PX = 80;
+const MESSAGE_GROUP_MAX_GAP_MS = 3 * 60 * 1000;
 
 function isNearBottom(container: HTMLDivElement, thresholdPx: number): boolean {
   const distanceToBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
@@ -57,6 +58,34 @@ function shouldShowDateSeparator(previousMessage: ChatMessageDto, currentMessage
   return !isSameLocalDay(previousDate, currentDate);
 }
 
+function shouldShowMessageHeader(previousMessage: ChatMessageDto | null, currentMessage: ChatMessageDto): boolean {
+  if (!previousMessage) {
+    return true;
+  }
+
+  if (currentMessage.replyMessageId) {
+    return true;
+  }
+
+  const previousDate = new Date(previousMessage.createdAt);
+  const currentDate = new Date(currentMessage.createdAt);
+
+  if (!isSameLocalDay(previousDate, currentDate)) {
+    return true;
+  }
+
+  if (previousMessage.authorUserId !== currentMessage.authorUserId) {
+    return true;
+  }
+
+  const gapMs = currentDate.getTime() - previousDate.getTime();
+  if (gapMs > MESSAGE_GROUP_MAX_GAP_MS) {
+    return true;
+  }
+
+  return false;
+}
+
 function formatDateSeparatorLabel(messageCreatedAt: string): string {
   const date = new Date(messageCreatedAt);
   const now = new Date();
@@ -96,12 +125,6 @@ export default function ChannelChatView({ channel, connection, communityId }: Ch
   );
 
   const messageById = useMemo(() => new Map(messages.map((message) => [message.id, message])), [messages]);
-
-  useEffect(() => {
-    setReplyingToMessageId(null);
-    setJumpHighlightMessageId(null);
-    messageElementByIdRef.current.clear();
-  }, [channel?.id]);
 
   const registerMessageElement = useCallback((messageId: string, element: HTMLElement | null) => {
     if (element) {
@@ -232,11 +255,12 @@ export default function ChannelChatView({ channel, connection, communityId }: Ch
         ) : messages.length === 0 ? (
           <p>No messages yet.</p>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-0">
             {isLoadingOlder ? <p className="text-xs text-[color:var(--muted)]">Loading older messages...</p> : null}
             {messages.map((message, index) => {
               const previousMessage = index > 0 ? messages[index - 1] : null;
               const showDateSeparator = previousMessage ? shouldShowDateSeparator(previousMessage, message) : false;
+              const showHeader = shouldShowMessageHeader(previousMessage, message);
 
               return (
                 <Fragment key={message.id}>
@@ -259,6 +283,7 @@ export default function ChannelChatView({ channel, connection, communityId }: Ch
                     onJumpToMessage={handleJumpToMessage}
                     isJumpHighlighted={jumpHighlightMessageId === message.id}
                     registerMessageElement={registerMessageElement}
+                    showHeader={showHeader}
                   />
                 </Fragment>
               );

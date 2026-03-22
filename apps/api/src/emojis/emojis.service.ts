@@ -8,12 +8,17 @@ const MAX_RESOLVE_IDS = 200;
 export class EmojisService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getCatalog(viewerUserId: string | undefined, communityIdRaw: string | undefined): Promise<EmojiCatalogResponseDto> {
+  async getCatalog(
+    viewerUserId: string | undefined,
+    communityIdRaw: string | undefined,
+  ): Promise<EmojiCatalogResponseDto> {
     const communityId = this.normalizeCommunityId(communityIdRaw);
 
-    const scopeFilters: Array<{ scopeType: 'GLOBAL' | 'COMMUNITY' | 'USER'; scopeId?: string }> = [{
-      scopeType: 'GLOBAL',
-    }];
+    const scopeFilters: Array<{ scopeType: 'GLOBAL' | 'COMMUNITY' | 'USER'; scopeId?: string }> = [
+      {
+        scopeType: 'GLOBAL',
+      },
+    ];
 
     if (communityId) {
       scopeFilters.push({

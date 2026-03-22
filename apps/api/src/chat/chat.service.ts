@@ -187,7 +187,11 @@ export class ChatService {
     return Array.from(ids);
   }
 
-  private async assertCanUseCustomEmojiId(channelId: string, senderUserId: string, customEmojiId: string): Promise<void> {
+  private async assertCanUseCustomEmojiId(
+    channelId: string,
+    senderUserId: string,
+    customEmojiId: string,
+  ): Promise<void> {
     const customEmoji = await this.prisma.customEmoji.findUnique({
       where: { id: customEmojiId },
       select: {

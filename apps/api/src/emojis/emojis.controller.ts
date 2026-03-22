@@ -8,7 +8,10 @@ export class EmojisController {
   constructor(private readonly emojisService: EmojisService) {}
 
   @Get('catalog')
-  getCatalog(@Req() req: AuthedRequest, @Query('communityId') communityId: string | undefined): Promise<EmojiCatalogResponseDto> {
+  getCatalog(
+    @Req() req: AuthedRequest,
+    @Query('communityId') communityId: string | undefined,
+  ): Promise<EmojiCatalogResponseDto> {
     return this.emojisService.getCatalog(req.user?.id, communityId);
   }
 

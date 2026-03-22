@@ -71,6 +71,7 @@ export function useResolvedCustomEmojiMap(messages: ChatMessageDto[]): Map<strin
   }, [requiredIds]);
 
   return useMemo(() => {
+    const version = cacheVersion;
     const resolved = new Map<string, CustomEmojiDto | null>();
 
     for (const id of requiredIds) {
@@ -79,6 +80,7 @@ export function useResolvedCustomEmojiMap(messages: ChatMessageDto[]): Map<strin
       }
     }
 
+    void version;
     return resolved;
   }, [requiredIds, cacheVersion]);
 }

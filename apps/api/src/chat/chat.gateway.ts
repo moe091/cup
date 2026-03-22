@@ -218,7 +218,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const roomName = `channel:${trimmedChannelId}`;
 
     if (!authorDisplayName || !userId) {
-      socket.emit('chat:reaction:set:ack', { ok: false, clientMutationId, error: 'User has invalid displayName or userId' });
+      socket.emit('chat:reaction:set:ack', {
+        ok: false,
+        clientMutationId,
+        error: 'User has invalid displayName or userId',
+      });
       return;
     }
 

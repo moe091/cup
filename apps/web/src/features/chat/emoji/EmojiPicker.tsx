@@ -58,7 +58,6 @@ export default function EmojiPicker({
 
   useEffect(() => {
     if (!isOpen || !isAnchored) {
-      setAnchoredTop(null);
       return;
     }
 

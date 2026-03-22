@@ -271,7 +271,11 @@ describe('ChatGateway', () => {
         clientMessageId: 'client-1',
       });
 
-      expect(chatServiceMock.assertCanUseCustomEmojis).toHaveBeenCalledWith('seed-channel-1', 'seed-user-jung', 'Hello world');
+      expect(chatServiceMock.assertCanUseCustomEmojis).toHaveBeenCalledWith(
+        'seed-channel-1',
+        'seed-user-jung',
+        'Hello world',
+      );
       expect(chatServiceMock.createMessage).toHaveBeenCalledWith({
         channelId: 'seed-channel-1',
         authorUserId: 'seed-user-jung',
