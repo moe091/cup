@@ -211,7 +211,6 @@ export class BouncerClient {
   }
 
   emitMessage(name: string, data: unknown) {
-    console.log(`Emitting Message [${name}]: `, data);
     if (name === 'player_state') {
       this.socket.volatile.emit(name, data);
       return;

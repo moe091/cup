@@ -70,7 +70,7 @@ This allows v1 to expose all starter colors while reserving structure for later 
 
 Add user fields:
 
-- `avatarUrl String?`
+- `avatarKey String?`
 - `nameColorToken String?`
 
 Optional follow-up if needed for stronger constraints:
@@ -80,9 +80,9 @@ Optional follow-up if needed for stronger constraints:
 
 ### Validation rules
 
-- `avatarUrl`:
-  - must be null or valid absolute HTTPS URL.
-  - must point to expected storage host pattern (configurable allow-list).
+- `avatarKey`:
+  - must be null or non-empty string.
+  - must match authenticated user-owned S3 key prefix (`<env>/avatars/<userId>/...`).
 - `nameColorToken`:
   - must be null or one of supported predefined tokens.
   - reject unknown tokens with clear 400 message.
@@ -90,8 +90,8 @@ Optional follow-up if needed for stronger constraints:
 ### API surfaces
 
 - Extend `GET /api/users/me` response with new profile fields.
-- Extend `PATCH /api/users/me` to accept avatar + name color updates.
-- Add avatar upload flow endpoints (presign + finalize or equivalent) for object-storage upload path.
+- Add field-specific profile update endpoints (`PATCH /api/users/me/username`, `/display-name`, `/email`, `/avatar`).
+- Add avatar upload target endpoint for direct-to-S3 upload (`POST /api/users/me/avatar/upload-target`).
 
 ### Chat payload changes
 
@@ -139,11 +139,12 @@ Minimum v1 safeguards:
 - file type allow-list (image mime types).
 - max file size limit.
 - generated object keys (do not trust original filename).
-- enforce HTTPS public URL format in persisted profile data.
+- persist object key (`avatarKey`) instead of raw public URL.
+- delete previous avatar object after successful avatar replacement (best-effort cleanup).
 
 ## Migration + Compatibility
 
-- Existing users should get `avatarUrl = null`, `nameColorToken = null`.
+- Existing users should get `avatarKey = null`, `nameColorToken = null`.
 - Existing messages continue to render via fallback defaults.
 - Frontend should tolerate missing fields during rollout by using null-safe guards.
 
@@ -160,8 +161,9 @@ Minimum v1 safeguards:
 
 - Profile fetch returns avatar + name color fields.
 - Profile update rejects unknown color token.
-- Profile update rejects invalid avatar URL.
+- Profile update rejects invalid avatar key (wrong prefix / invalid value).
 - Avatar upload path rejects unsupported file type and oversized file.
+- Avatar update deletes previous avatar object from S3 (best-effort cleanup path).
 - Chat history messages include avatar + name color fields.
 - Realtime chat messages include avatar + name color fields.
 - Grouped rows render correctly with mixed avatar/header visibility.

@@ -10,9 +10,11 @@ import { CsrfMiddleware } from './security/csrf.middleware';
 import { RateLimitMiddleware } from './security/rate-limit.middleware';
 import { CommunitiesModule } from './communities/communities.module';
 import { EmojisModule } from './emojis/emojis.module';
+import { StorageModule } from './storage/storage.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [PrismaModule, AuthModule, GamesModule, UsersModule, ChatModule, CommunitiesModule, EmojisModule],
+  imports: [PrismaModule, AuthModule, GamesModule, UsersModule, ChatModule, CommunitiesModule, EmojisModule, StorageModule, ConfigModule.forRoot({isGlobal: true})],
   controllers: [AppController],
   providers: [AppService],
 })
