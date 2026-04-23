@@ -1,5 +1,10 @@
 # TODOS
 
+### High Level:
+- Allow adding friends, joining communities. Add Friends and Communities pages to profile
+- Render pfps in chat
+- Setup CD and deploy to AWS!
+
 ### Profile/avatar setup, current todos:
 - Add and document environment-specific storage config strategy:
     - dev/staging/prod values for `S3_BUCKET_NAME` and `S3_ENV_PREFIX`
@@ -17,6 +22,7 @@
     - ensure `VITE_S3_BASE_URL` is provided in CI build job
     - keep secrets/config out of committed frontend env files
     - verify prod build artifact contains correct S3 base URL
+- Configure production logging (sink, retention, and log-level policy).
 - Add/verify IAM policy isolation by prefix per environment:
     - dev runtime identity can access only `dev/*`
     - staging runtime identity can access only `staging/*`

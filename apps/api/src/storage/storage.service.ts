@@ -8,16 +8,14 @@ import { storageConfig } from './storage.config';
 
 const AVATAR_UPLOAD_EXPIRES_SECONDS = 120;
 const AVATAR_EXTENSION_BY_MIME: Record<string, string> = {
-  "image/png": "png",
-  "image/jpeg": "jpg",
-  "image/webp": "webp",
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/webp': 'webp',
 };
 const AVATAR_FEATURE_PREFIX = 'avatars';
 
-
 @Injectable()
 export class StorageService {
-
   constructor(@Inject(storageConfig.KEY) private readonly storage: ConfigType<typeof storageConfig>) {}
 
   async createAvatarUploadTarget(userId: string, mimeType: string): Promise<AvatarUploadTargetResponse> {

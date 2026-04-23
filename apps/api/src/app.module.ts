@@ -14,7 +14,17 @@ import { StorageModule } from './storage/storage.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [PrismaModule, AuthModule, GamesModule, UsersModule, ChatModule, CommunitiesModule, EmojisModule, StorageModule, ConfigModule.forRoot({isGlobal: true})],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    GamesModule,
+    UsersModule,
+    ChatModule,
+    CommunitiesModule,
+    EmojisModule,
+    StorageModule,
+    ConfigModule.forRoot({ isGlobal: true }),
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

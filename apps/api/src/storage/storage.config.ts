@@ -1,7 +1,5 @@
 import { registerAs } from '@nestjs/config';
 
-
-
 export const storageConfig = registerAs('storage', () => {
   const bucketName = process.env.S3_BUCKET_NAME;
   const region = process.env.AWS_REGION;

@@ -16,7 +16,10 @@ const USER_PROFILE_SELECT = {
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService, private readonly storageService: StorageService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storageService: StorageService,
+  ) {}
 
   async getMe(userId: string): Promise<UserProfile> {
     const user = await this.prisma.user.findUnique({
@@ -32,11 +35,15 @@ export class UsersService {
   }
 
   // Gets an ObjectKey from s3 to upload avatar image. This is returned to the frontend so that the frontend can directly upload the avatar image to s3
-  async requestAvatarUploadTarget(userId: string, payload: AvatarUploadTargetRequest): Promise<AvatarUploadTargetResponse> {
-    if (!payload || typeof payload !== "object") throw new BadRequestException("payload must be an object");
-    if (typeof payload.mimeType !== "string") throw new BadRequestException("mimeType must exist and be a string");
-    if (typeof payload.sizeBytes !== "number") throw new BadRequestException("sizeBytes must exist and be a number");
-    if (payload.sizeBytes > MAX_AVATAR_SIZE_BYTES) throw new BadRequestException(`Avatar must be <= ${MAX_AVATAR_SIZE_BYTES} bytes`);
+  async requestAvatarUploadTarget(
+    userId: string,
+    payload: AvatarUploadTargetRequest,
+  ): Promise<AvatarUploadTargetResponse> {
+    if (!payload || typeof payload !== 'object') throw new BadRequestException('payload must be an object');
+    if (typeof payload.mimeType !== 'string') throw new BadRequestException('mimeType must exist and be a string');
+    if (typeof payload.sizeBytes !== 'number') throw new BadRequestException('sizeBytes must exist and be a number');
+    if (payload.sizeBytes > MAX_AVATAR_SIZE_BYTES)
+      throw new BadRequestException(`Avatar must be <= ${MAX_AVATAR_SIZE_BYTES} bytes`);
 
     return this.storageService.createAvatarUploadTarget(userId, payload.mimeType);
   }
@@ -77,9 +84,7 @@ export class UsersService {
   async updateAvatarKey(userId: string, payload: unknown): Promise<UserProfile> {
     const body = this.parseBody(payload);
 
-    if (!Object.hasOwn(body, 'avatarKey')) 
-      throw new BadRequestException('avatarKey is required');
-    
+    if (!Object.hasOwn(body, 'avatarKey')) throw new BadRequestException('avatarKey is required');
 
     const avatarKey = this.validateAvatarKey(body.avatarKey, userId);
 
@@ -87,8 +92,7 @@ export class UsersService {
       where: { id: userId },
       select: { avatarKey: true },
     });
-    if (!existing) 
-      throw new NotFoundException('User not found');
+    if (!existing) throw new NotFoundException('User not found');
 
     const previousAvatarKey = existing.avatarKey;
     const updated = await this.updateProfile(userId, { avatarKey });
@@ -209,20 +213,18 @@ export class UsersService {
     if (value === null || value === undefined) {
       return null;
     }
-    if (typeof value !== "string") {
-      throw new BadRequestException("avatarKey must be a string");
+    if (typeof value !== 'string') {
+      throw new BadRequestException('avatarKey must be a string');
     }
     const avatarKey = value.trim();
     if (!avatarKey) {
-      throw new BadRequestException("avatarKey cannot be empty");
+      throw new BadRequestException('avatarKey cannot be empty');
     }
-    const envPrefix = process.env.S3_ENV_PREFIX ?? "dev";
+    const envPrefix = process.env.S3_ENV_PREFIX ?? 'dev';
     const requiredPrefix = `${envPrefix}/avatars/${userId}/`;
     if (!avatarKey.startsWith(requiredPrefix)) {
-      throw new BadRequestException("avatarKey is not valid for this user");
+      throw new BadRequestException('avatarKey is not valid for this user');
     }
     return avatarKey;
   }
-
-
 }
