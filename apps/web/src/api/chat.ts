@@ -27,7 +27,8 @@ export async function fetchChatToken(): Promise<ChatTokenResponse> {
 
 export function createChatSocket(token: string): Promise<Socket> {
   return new Promise((resolve, reject) => {
-    const socket = io('http://localhost:3000/chat', {
+    const socket = io('/chat', {
+      path: '/socket.io',
       auth: { token },
       withCredentials: true,
       transports: ['websocket', 'polling'],

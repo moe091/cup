@@ -1,8 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
-import type { FormEvent } from "react";
+import { useEffect, useState } from "react";
+import type { ChangeEvent } from "react";
 import type { UserProfile } from "@cup/shared-types";
 import { useAuth } from "../../auth";
-import { fetchMyProfile, updateMyProfile } from "../../api/user";
+import {
+  fetchMyProfile,
+  requestAvatarUploadTarget,
+  updateMyAvatarKey,
+  updateMyDisplayName,
+  updateMyEmail,
+  updateMyUsername,
+} from "../../api/user";
+import EditableFieldCard from "./components/EditableFieldCard";
+import { useProfileFieldState } from "./hooks/useProfileFieldState";
+import type { ProfileField } from "./hooks/useProfileFieldState";
+import { buildS3AssetUrl } from "../../config/s3";
 
 type FormState = {
   username: string;
@@ -10,23 +21,30 @@ type FormState = {
   displayName: string;
 };
 
-type EditableField = "username" | "displayName" | "email";
+const DEFAULT_AVATAR_SRC = "/images/avatars/default-profile.png";
 
 export default function ProfilePage() {
   const { user, isLoading, refresh } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [form, setForm] = useState<FormState>({ username: "", email: "", displayName: "" });
-  const [isSaving, setIsSaving] = useState(false);
-  const [isHydrating, setIsHydrating] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [editing, setEditing] = useState<Record<EditableField, boolean>>({
-    username: false,
-    displayName: false,
-    email: false,
-  });
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null); // local selected file for avatar upload
+  const [avatarPreviewSrc, setAvatarPreviewSrc] = useState<string>(DEFAULT_AVATAR_SRC); // local blob preview URL for selected file
 
-  useEffect(() => {
+  const [isHydrating, setIsHydrating] = useState(false);
+  const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
+
+  const {
+    editingByField,
+    savingByField,
+    errorByField,
+    setFieldEditing,
+    setFieldSaving,
+    setFieldError,
+    beginEdit,
+    resetAllFieldUiState,
+  } = useProfileFieldState();
+
+  useEffect(() => { //deps: [user?.id]. Hydrates profile fields
     if (!user?.id) {
       return;
     }
@@ -35,26 +53,28 @@ export default function ProfilePage() {
 
     const loadProfile = async () => {
       setIsHydrating(true);
-      setErrorMessage(null);
+      setLoadErrorMessage(null);
 
       try {
-        const profile = await fetchMyProfile();
+        const nextProfile = await fetchMyProfile();
         if (!active) {
           return;
         }
 
         setForm({
-          username: profile.username,
-          email: profile.email ?? "",
-          displayName: profile.displayName ?? "",
+          username: nextProfile.username,
+          email: nextProfile.email ?? "",
+          displayName: nextProfile.displayName ?? "",
         });
-        setProfile(profile);
-        setEditing({ username: false, displayName: false, email: false });
+        setProfile(nextProfile);
+        resetAllFieldUiState();
+        setSelectedAvatarFile(null);
+        setAvatarPreviewSrc(DEFAULT_AVATAR_SRC);
       } catch (error) {
         if (!active) {
           return;
         }
-        setErrorMessage(error instanceof Error ? error.message : "Failed to load profile.");
+        setLoadErrorMessage(error instanceof Error ? error.message : "Failed to load profile.");
       } finally {
         if (active) {
           setIsHydrating(false);
@@ -67,77 +87,195 @@ export default function ProfilePage() {
     return () => {
       active = false;
     };
-  }, [user?.id]);
+  }, [resetAllFieldUiState, user?.id]);
 
-  const isDirty = useMemo(() => {
-    if (!profile) {
-      return false;
+  //when avatarPreviewSrc is changed(e.g. user selects a new image file for avatar), the cleanup function here will clear the blob for the previously selected image.
+  useEffect(() => { 
+    if (!avatarPreviewSrc.startsWith("blob:")) {
+      return;
     }
 
-    const usernameChanged = profile.username !== form.username.trim();
-    const emailChanged = (profile.email ?? "") !== form.email.trim();
-    const displayNameChanged = (profile.displayName ?? "") !== form.displayName.trim();
-    return usernameChanged || emailChanged || displayNameChanged;
-  }, [form.displayName, form.email, form.username, profile]);
+    return () => {
+      URL.revokeObjectURL(avatarPreviewSrc);
+    };
+  }, [avatarPreviewSrc]);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setErrorMessage(null);
-    setSuccessMessage(null);
+  //bools that indicate whether a profile value has changed(e.g. used to determine whether or not to show 'save' button for that field)
+  const isUsernameDirty = profile ? profile.username !== form.username.trim() : false;
+  const isDisplayNameDirty = profile ? (profile.displayName ?? "") !== form.displayName.trim() : false;
+  const isEmailDirty = profile ? (profile.email ?? "") !== form.email.trim() : false;
+  const isAvatarDirty = selectedAvatarFile !== null;
+  const persistedAvatarSrc = buildS3AssetUrl(profile?.avatarKey ?? null);
+  const visibleAvatarSrc = selectedAvatarFile ? avatarPreviewSrc : persistedAvatarSrc ?? DEFAULT_AVATAR_SRC;
 
-    try {
-      setIsSaving(true);
-      const updated = await updateMyProfile({
-        username: form.username.trim(),
-        email: form.email.trim() ? form.email.trim() : null,
-        displayName: form.displayName.trim() ? form.displayName.trim() : null,
-      });
+  // if username is autogenerated(hasn't been set since account creation) then prompt to change it
+  const shouldPromptCustomUsername = (profile?.usernameAutoGenerated ?? false) || /^newuser\d*$/i.test(form.username.trim());
 
-      setForm({
-        username: updated.username,
-        email: updated.email ?? "",
-        displayName: updated.displayName ?? "",
-      });
-      setProfile(updated);
-      setEditing({ username: false, displayName: false, email: false });
-
-      await refresh();
-      setSuccessMessage("Profile saved.");
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Failed to save profile.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const beginEdit = (field: EditableField) => {
-    setSuccessMessage(null);
-    setEditing((prev) => ({ ...prev, [field]: true }));
-  };
-
-  const cancelEdit = (field: EditableField) => {
+  const cancelEdit = (field: ProfileField) => {
     if (!profile) {
       return;
     }
 
     if (field === "username") {
-      setForm((prev) => ({ ...prev, username: profile.username }));
+      setForm((previous) => ({ ...previous, username: profile.username }));
     }
 
     if (field === "displayName") {
-      setForm((prev) => ({ ...prev, displayName: profile.displayName ?? "" }));
+      setForm((previous) => ({ ...previous, displayName: profile.displayName ?? "" }));
     }
 
     if (field === "email") {
-      setForm((prev) => ({ ...prev, email: profile.email ?? "" }));
+      setForm((previous) => ({ ...previous, email: profile.email ?? "" }));
     }
 
-    setEditing((prev) => ({ ...prev, [field]: false }));
+    if (field === "avatar") {
+      setSelectedAvatarFile(null);
+      setAvatarPreviewSrc(DEFAULT_AVATAR_SRC);
+    }
+
+    setFieldError(field, null);
+    setFieldEditing(field, false);
   };
 
-  const showSaveButton = editing.username || editing.displayName || editing.email;
-  const shouldPromptCustomUsername =
-    (profile?.usernameAutoGenerated ?? false) || /^newuser\d*$/i.test(form.username.trim());
+  const handleAvatarFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    setSelectedAvatarFile(file);
+
+    if (!file) {
+      setAvatarPreviewSrc(DEFAULT_AVATAR_SRC);
+      return;
+    }
+
+    const localPreviewUrl = URL.createObjectURL(file);
+    setAvatarPreviewSrc(localPreviewUrl);
+    event.currentTarget.value = "";
+  };
+
+  const handleSaveUsername = async () => {
+    if (!profile) {
+      return;
+    }
+
+    if (!isUsernameDirty) {
+      setFieldEditing("username", false);
+      return;
+    }
+
+    try {
+      setFieldSaving("username", true);
+      setFieldError("username", null);
+
+      const updated = await updateMyUsername(form.username.trim());
+      setForm((previous) => ({ ...previous, username: updated.username }));
+      setProfile(updated);
+      setFieldEditing("username", false);
+      await refresh();
+    } catch (error) {
+      setFieldError("username", error instanceof Error ? error.message : "Failed to save username.");
+    } finally {
+      setFieldSaving("username", false);
+    }
+  };
+
+  const handleSaveDisplayName = async () => {
+    if (!profile) {
+      return;
+    }
+
+    if (!isDisplayNameDirty) {
+      setFieldEditing("displayName", false);
+      return;
+    }
+
+    try {
+      setFieldSaving("displayName", true);
+      setFieldError("displayName", null);
+
+      const trimmedDisplayName = form.displayName.trim();
+      const updated = await updateMyDisplayName(trimmedDisplayName ? trimmedDisplayName : null);
+
+      setForm((previous) => ({ ...previous, displayName: updated.displayName ?? "" }));
+      setProfile(updated);
+      setFieldEditing("displayName", false);
+      await refresh();
+    } catch (error) {
+      setFieldError("displayName", error instanceof Error ? error.message : "Failed to save display name.");
+    } finally {
+      setFieldSaving("displayName", false);
+    }
+  };
+
+  const handleSaveEmail = async () => {
+    if (!profile) {
+      return;
+    }
+
+    if (!isEmailDirty) {
+      setFieldEditing("email", false);
+      return;
+    }
+
+    try {
+      setFieldSaving("email", true);
+      setFieldError("email", null);
+
+      const trimmedEmail = form.email.trim();
+      const updated = await updateMyEmail(trimmedEmail ? trimmedEmail : null);
+
+      setForm((previous) => ({ ...previous, email: updated.email ?? "" }));
+      setProfile(updated);
+      setFieldEditing("email", false);
+      await refresh();
+    } catch (error) {
+      setFieldError("email", error instanceof Error ? error.message : "Failed to save email.");
+    } finally {
+      setFieldSaving("email", false);
+    }
+  };
+
+  const handleSaveAvatar = async () => {
+    if (!isAvatarDirty) {
+      setFieldEditing("avatar", false);
+      return;
+    }
+
+    try {
+      setFieldSaving("avatar", true);
+      setFieldError("avatar", null);
+
+      if (!selectedAvatarFile) 
+        throw new Error("Must select an avatar file to upload");
+      
+      
+      const payload = {
+        mimeType: selectedAvatarFile.type,
+        sizeBytes: selectedAvatarFile.size
+      };
+
+      const uploadTarget = await requestAvatarUploadTarget(payload);
+
+      const uploadResponse = await fetch(uploadTarget.uploadUrl, {
+        method: uploadTarget.method,
+        headers: uploadTarget.headers,
+        body: selectedAvatarFile,
+      });
+      if (!uploadResponse.ok) {
+        throw new Error(`Avatar upload failed (${uploadResponse.status})`);
+      }
+
+      const updated = await updateMyAvatarKey(uploadTarget.objectKey);
+      setProfile(updated);
+      await refresh();
+
+      setSelectedAvatarFile(null);
+      setAvatarPreviewSrc(DEFAULT_AVATAR_SRC);
+      setFieldEditing("avatar", false);
+    } catch (error) {
+      setFieldError("avatar", error instanceof Error ? error.message : "Failed to save profile picture.");
+    } finally {
+      setFieldSaving("avatar", false);
+    }
+  };
 
   if (isLoading) {
     return <main className="min-h-screen w-full px-6 pt-24 text-[color:var(--text)]" />;
@@ -174,138 +312,121 @@ export default function ProfilePage() {
           </p>
         )}
 
-        {errorMessage && (
+        {loadErrorMessage && (
           <p className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-            {errorMessage}
+            {loadErrorMessage}
           </p>
         )}
 
-        {successMessage && (
-          <p className="mt-3 rounded-md border border-green-500/40 bg-green-500/10 px-3 py-2 text-sm text-green-300">
-            {successMessage}
-          </p>
-        )}
+        <div className="mt-5 grid gap-4">
+          <EditableFieldCard
+            label="Profile picture"
+            isEditing={editingByField.avatar}
+            isSaving={savingByField.avatar}
+            isDirty={isAvatarDirty}
+            onEdit={() => beginEdit("avatar")}
+            onSave={() => void handleSaveAvatar()}
+            onCancel={() => cancelEdit("avatar")}
+            errorMessage={errorByField.avatar}
+            contentClassName="mt-3"
+          >
+            <div className="flex items-center gap-4">
+              <img
+                src={visibleAvatarSrc}
+                alt="Profile picture preview"
+                className="h-20 w-20 rounded-full border border-[color:var(--line)] object-cover bg-[color:var(--panel)]"
+              />
 
-        <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
-          <div className="rounded-md border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-4 py-3">
-            <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--muted)]">Username</p>
-            <div className="mt-1 flex items-center justify-between gap-3">
-              {editing.username ? (
-                <input
-                  id="profile-username"
-                  value={form.username}
-                  onChange={(event) => setForm((prev) => ({ ...prev, username: event.target.value }))}
-                  className="w-full rounded-md border border-[color:var(--line)] bg-[color:var(--panel)] px-3 py-2 text-[color:var(--text)] outline-none focus:border-[color:var(--accent)]"
-                />
-              ) : (
-                <p className="text-base font-semibold text-[color:var(--text)]">{form.username}</p>
-              )}
+              <div className="min-w-0 w-full">
+                {editingByField.avatar ? (
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={handleAvatarFileChange}
+                    className="w-full block text-sm text-[color:var(--muted)] file:mr-3 file:rounded-full file:border file:border-[color:var(--line)] file:bg-transparent file:px-3 file:py-1.5 file:text-sm file:text-[color:var(--text)] hover:file:border-[color:var(--text)]"
+                  />
+                ) : null}
 
-              {editing.username ? (
-                <button
-                  type="button"
-                  onClick={() => cancelEdit("username")}
-                  className="text-xs text-[color:var(--muted)] transition hover:text-[color:var(--text)]"
-                >
-                  Cancel
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => beginEdit("username")}
-                  className="rounded-full border border-[color:var(--line)] px-3 py-1 text-xs text-[color:var(--text)] transition hover:border-[color:var(--text)]"
-                >
-                  Edit
-                </button>
-              )}
+                {editingByField.avatar ? (
+                  <p className="mt-1 text-sm text-[color:var(--muted)]">
+                    {selectedAvatarFile ? selectedAvatarFile.name : "Choose JPG, PNG, or WEBP"}
+                  </p>
+                ) : null}
+              </div>
             </div>
-          </div>
+          </EditableFieldCard>
 
-          <div className="rounded-md border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--muted)]">Display name</p>
-              {editing.displayName ? (
-                <button
-                  type="button"
-                  onClick={() => cancelEdit("displayName")}
-                  className="text-xs text-[color:var(--muted)] transition hover:text-[color:var(--text)]"
-                >
-                  Cancel
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => beginEdit("displayName")}
-                  className="rounded-full border border-[color:var(--line)] px-3 py-1 text-xs text-[color:var(--text)] transition hover:border-[color:var(--text)]"
-                >
-                  Edit
-                </button>
-              )}
-            </div>
+          <EditableFieldCard
+            label="Username"
+            isEditing={editingByField.username}
+            isSaving={savingByField.username}
+            isDirty={isUsernameDirty}
+            onEdit={() => beginEdit("username")}
+            onSave={() => void handleSaveUsername()}
+            onCancel={() => cancelEdit("username")}
+            errorMessage={errorByField.username}
+          >
+            {editingByField.username ? (
+              <input
+                id="profile-username"
+                value={form.username}
+                onChange={(event) => setForm((previous) => ({ ...previous, username: event.target.value }))}
+                className="w-full rounded-md border border-[color:var(--line)] bg-[color:var(--panel)] px-3 py-2 text-[color:var(--text)] outline-none focus:border-[color:var(--accent)]"
+              />
+            ) : (
+              <p className="text-base font-semibold text-[color:var(--text)]">{form.username}</p>
+            )}
+          </EditableFieldCard>
 
-            {editing.displayName ? (
+          <EditableFieldCard
+            label="Display name"
+            isEditing={editingByField.displayName}
+            isSaving={savingByField.displayName}
+            isDirty={isDisplayNameDirty}
+            onEdit={() => beginEdit("displayName")}
+            onSave={() => void handleSaveDisplayName()}
+            onCancel={() => cancelEdit("displayName")}
+            errorMessage={errorByField.displayName}
+          >
+            {editingByField.displayName ? (
               <input
                 id="profile-display-name"
                 value={form.displayName}
-                onChange={(event) => setForm((prev) => ({ ...prev, displayName: event.target.value }))}
+                onChange={(event) => setForm((previous) => ({ ...previous, displayName: event.target.value }))}
                 placeholder="Set your display name"
-                className="mt-2 w-full rounded-md border border-[color:var(--line)] bg-[color:var(--panel)] px-3 py-2 text-[color:var(--text)] outline-none focus:border-[color:var(--accent)]"
+                className="w-full rounded-md border border-[color:var(--line)] bg-[color:var(--panel)] px-3 py-2 text-[color:var(--text)] outline-none focus:border-[color:var(--accent)]"
               />
             ) : (
-              <p className="mt-1 text-base font-semibold text-[color:var(--text)]">
+              <p className="text-base font-semibold text-[color:var(--text)]">
                 {form.displayName.trim() || "Not set"}
               </p>
             )}
-          </div>
+          </EditableFieldCard>
 
-          <div className="rounded-md border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--muted)]">Email (optional)</p>
-              {editing.email ? (
-                <button
-                  type="button"
-                  onClick={() => cancelEdit("email")}
-                  className="text-xs text-[color:var(--muted)] transition hover:text-[color:var(--text)]"
-                >
-                  Cancel
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => beginEdit("email")}
-                  className="rounded-full border border-[color:var(--line)] px-3 py-1 text-xs text-[color:var(--text)] transition hover:border-[color:var(--text)]"
-                >
-                  Edit
-                </button>
-              )}
-            </div>
-
-            {editing.email ? (
+          <EditableFieldCard
+            label="Email (optional)"
+            isEditing={editingByField.email}
+            isSaving={savingByField.email}
+            isDirty={isEmailDirty}
+            onEdit={() => beginEdit("email")}
+            onSave={() => void handleSaveEmail()}
+            onCancel={() => cancelEdit("email")}
+            errorMessage={errorByField.email}
+          >
+            {editingByField.email ? (
               <input
                 id="profile-email"
                 type="email"
                 value={form.email}
-                onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+                onChange={(event) => setForm((previous) => ({ ...previous, email: event.target.value }))}
                 placeholder="Add an email for recovery"
-                className="mt-2 w-full rounded-md border border-[color:var(--line)] bg-[color:var(--panel)] px-3 py-2 text-[color:var(--text)] outline-none focus:border-[color:var(--accent)]"
+                className="w-full rounded-md border border-[color:var(--line)] bg-[color:var(--panel)] px-3 py-2 text-[color:var(--text)] outline-none focus:border-[color:var(--accent)]"
               />
             ) : (
-              <p className="mt-1 text-base font-semibold text-[color:var(--text)]">
-                {form.email.trim() || "Not set"}
-              </p>
+              <p className="text-base font-semibold text-[color:var(--text)]">{form.email.trim() || "Not set"}</p>
             )}
-          </div>
-
-          {showSaveButton && (
-            <button
-              type="submit"
-              disabled={isSaving || isHydrating || !isDirty}
-              className="mt-2 w-fit rounded-full border border-[color:var(--line)] px-5 py-2 text-sm text-[color:var(--text)] transition enabled:hover:border-[color:var(--text)] disabled:opacity-60"
-            >
-              {isSaving ? "Saving..." : "Save changes"}
-            </button>
-          )}
-        </form>
+          </EditableFieldCard>
+        </div>
       </div>
     </main>
   );

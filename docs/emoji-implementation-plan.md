@@ -11,6 +11,14 @@ Implement emoji support in chat incrementally with strict TypeScript contracts a
 - Composer should support inserting and previewing emoji while typing.
 - Message wire/storage format should remain plain text, not HTML.
 
+## Known Follow-up Debt
+
+- Backend emoji metadata caching for send-time validation is not implemented yet (single-instance simplicity for now).
+- Cache invalidation strategy for emoji update/delete events is still pending.
+- "Show more reactors" API + UI pagination is not implemented.
+- Reply notification/ping integration is not implemented.
+- OpenMoji replacement for standard Unicode emoji is still deferred.
+
 
 ## Locked Decisions
 
@@ -184,10 +192,29 @@ Implemented so far:
 - Frontend token-resolution cache/hook:
   - `useResolvedCustomEmojiMap` resolves unknown ids in batch
   - caches resolved ids and unresolved/deleted ids to avoid repeated lookups
+- Reactions implemented end-to-end:
+  - `MessageReaction` persistence model + migration
+  - socket write event `chat:reaction:set`
+  - realtime update event `chat:reaction:update`
+  - frontend quick-react + picker-react toggle wiring
+  - reaction chip rendering on message rows
+- Replies implemented end-to-end (MVP):
+  - `replyMessageId` on messages + migration
+  - send-time backend validation (target exists + same channel)
+  - realtime/history payload support
+  - composer `replyingTo` state flow (owned by `ChannelChatView`)
+  - reply preview line rendering with author + snippet
+  - jump-to-replied-message with fade highlight
+- Grouped message rendering implemented:
+  - consecutive same-author messages group when <= 3 minutes
+  - reply messages always start a group (header shown)
+  - date boundaries break groups
 
 Not implemented yet:
 
 - Backend/server cache layer for send-time emoji validation metadata.
+- "Show more reactors" API + UI pagination flow.
+- Notification/ping integration for replies.
 
 
 ## Implementation Checklist
@@ -239,6 +266,29 @@ Phase 2 pre-work completed:
 - [ ] Add OpenMoji replacement pass for standard Unicode emoji (optional follow-up).
 - [ ] Add paid-tier/friends user-emoji authorization extension.
 
+### Phase 6 - Reactions (Completed MVP)
+
+- [x] Add message reaction persistence model with uniqueness constraints.
+- [x] Add reaction set/toggle socket event.
+- [x] Broadcast realtime reaction updates to channel room.
+- [x] Render reaction chips in message rows.
+- [x] Support quick-react and picker-based reaction toggles.
+
+### Phase 7 - Replies (Completed MVP)
+
+- [x] Add `replyMessageId` to message schema/DTO/realtime payloads.
+- [x] Validate reply targets server-side (exists + same channel).
+- [x] Add composer reply state + cancel controls.
+- [x] Include reply preview above reply messages.
+- [x] Add jump-to-target + temporary highlight behavior.
+
+### Phase 8 - Message Grouping (Completed)
+
+- [x] Group consecutive same-author messages when <= 3 minutes.
+- [x] Break groups on date boundary.
+- [x] Force reply messages to start new groups.
+- [x] Hide repeated header metadata for grouped rows.
+
 
 ## Risks and Mitigations
 
@@ -263,11 +313,10 @@ Phase 2 pre-work completed:
 
 Planned message-list polish that pairs with reactions/reply UX:
 
-- Add grouped-message rendering in chat list to reduce repeated metadata noise.
-- Rule: when consecutive messages are from the same `authorUserId` and within ~5 minutes, collapse repeated header metadata.
-- In grouped rows, hide repeated author/timestamp (and future avatar) while keeping message body/actions visible.
-- Keep first message in each group as the anchor row showing full metadata.
-- This should be implemented as a presentation-layer grouping decision in list rendering (no DB/schema changes required).
+- Implemented.
+- Current rule: when consecutive messages are from the same `authorUserId` and within `<= 3 minutes`, collapse repeated header metadata.
+- Reply messages always start a group and show header metadata.
+- In grouped rows, repeated author/timestamp is hidden while message content/actions remain visible.
 
 ## Test Scenarios
 
@@ -343,6 +392,18 @@ Use this checklist to validate emoji/reaction behavior end-to-end.
 - Chip hover/focus style changes are visible and accessible.
 - Tooltip/title shows first 3 reactor display names from summary data.
 - Missing custom emoji in reaction chip renders fallback symbol/text safely.
+
+### Replies + Grouping
+
+- Replying to a message shows composer "Replying to" UI with cancel and Escape support.
+- Sending while replying includes `replyMessageId` and clears reply state on success.
+- Reply preview shows replied-to author and preview snippet.
+- Reply preview click jumps to target message when loaded.
+- Jump target highlight appears and fades smoothly.
+- Reply target missing from loaded message window shows graceful fallback text.
+- Grouping hides repeated header metadata for same-author messages within <=3 min.
+- Grouping breaks on date changes.
+- Reply messages always show header/start group.
 
 ### Anchored Picker + Message Action Menu
 
