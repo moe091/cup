@@ -1,5 +1,5 @@
 ---
-description: Implementation plan for profile customization (avatar + user-selected display name color) with chat integration.
+description: Current implementation status and forward plan for profile customization (avatar + name color) with chat integration.
 ---
 
 ## Goal
@@ -11,6 +11,32 @@ Implement profile customization in a production-minded way with strict TypeScrip
 - Chat surfaces use per-user avatar and name color in both history and realtime payloads.
 - The name-color system can later support unlockable colors via points/currency without breaking API contracts.
 
+---
+
+## Current Status (Merged to `master`)
+
+### Avatar feature: **Implemented end-to-end**
+
+Implemented and verified:
+
+- User can select avatar image on `/profile` and preview before save.
+- Frontend requests presigned upload target from backend.
+- Frontend uploads file directly to S3 via presigned `PUT` URL.
+- Backend persists `avatarKey` to user profile via field-specific endpoint.
+- Profile page renders persisted avatar from key-derived S3 URL.
+- Replacing avatar deletes old S3 object (best-effort cleanup).
+- If persisted avatar object is missing in S3, frontend naturally shows broken image (no silent forced default mutation).
+
+### Name color feature: **Not implemented yet**
+
+Still planned, with locked direction:
+
+- predefined token values
+- user-selectable in profile
+- unlock-ready architecture for future points/currency system
+
+---
+
 ## Locked Decisions
 
 - `nameColor` uses predefined values only (not arbitrary user hex input).
@@ -19,159 +45,129 @@ Implement profile customization in a production-minded way with strict TypeScrip
 - Additional tokens can be unlocked later.
 - Chat rendering falls back safely when color/avatar is unset.
 
-## Name Color Model (Design)
+### Avatar storage decisions
 
-### Why token-based values
+- Persist `avatarKey` (not public URL) on `User`.
+- Use S3 object storage with key format:
+  - `<envPrefix>/avatars/<userId>/<uuid>.<ext>`
+- Upload flow is direct-to-S3 with backend-issued presigned targets.
+- Frontend renders avatar by resolving `avatarKey` against `VITE_S3_BASE_URL`.
 
-- Keeps backend validation simple and strict.
-- Prevents invalid or unreadable user-provided colors.
-- Supports theme-aware color mapping on frontend.
-- Allows adding unlock mechanics without changing existing payload shapes.
+---
 
-### Recommended data shape
+## Implemented Architecture
 
-- Persist `nameColorToken: string | null` on `User`.
-- Null means use existing default chat accent behavior.
-- Tokens are stable identifiers (for example `ember`, `moss`, `sky`) rather than CSS/hex values.
+### Backend
 
-### Catalog and unlock-readiness
+#### Data model
 
-Model the color options as data (shared contract), with each option containing:
+- `User.avatarKey: String?` added and in use.
 
-- `token`: canonical id.
-- `label`: user-facing name.
-- `hexLight` and `hexDark` or one theme-adaptive CSS variable key.
-- `sortOrder`: deterministic picker order.
-- `unlockRequirement`: nullable metadata for future economy integration.
+#### Users API surface (current)
 
-This allows v1 to expose all starter colors while reserving structure for later locked/unlocked states.
+- `GET /api/users/me`
+- `PATCH /api/users/me/username`
+- `PATCH /api/users/me/display-name`
+- `PATCH /api/users/me/email`
+- `PATCH /api/users/me/avatar` (stores/clears `avatarKey`)
+- `POST /api/users/me/avatar/upload-target`
 
-## Scope (v1 for this branch)
+#### Avatar upload target flow
 
-### Included
+- Request payload: `{ mimeType, sizeBytes }`
+- Validates payload shape + max size.
+- Storage service validates supported mime and signs S3 PUT URL.
+- Returns `{ uploadUrl, method, headers, objectKey, expiresInSeconds }`.
 
-- Add profile fields for avatar and name color token.
-- Add API support to read/update those fields.
-- Add profile UI controls for avatar and name color selection.
-- Update shared chat DTOs so messages include author avatar + name color token.
-- Render avatar + token-based name color in chat message rows.
-- Preserve grouped message behavior.
+#### Avatar replace cleanup
 
-### Deferred
+- `PATCH /api/users/me/avatar` reads previous `avatarKey`.
+- Updates DB to new key.
+- If previous key existed and changed, calls `storageService.deleteObject(oldKey)`.
+- Delete failure is logged as warning and does not fail avatar update response.
 
-- Points/currency balance and earning mechanics.
-- Unlock ownership persistence and entitlement checks.
-- Paid/premium color gating logic.
-- Moderation tooling for avatar uploads.
+#### Config
 
-## Backend Plan
+- Uses Nest `@nestjs/config` with storage-specific config provider.
+- Storage config fields:
+  - `S3_BUCKET_NAME`
+  - `AWS_REGION`
+  - `S3_ENV_PREFIX` (default `dev`)
 
-### Prisma
+### Frontend
 
-Add user fields:
+#### Profile UI behavior
 
-- `avatarKey String?`
-- `nameColorToken String?`
+- Field-specific save/cancel/edit flow per profile field.
+- Avatar field supports local preview + upload + save.
+- Avatar save sequence:
+  1. request upload target
+  2. upload to S3
+  3. patch `avatarKey`
+  4. refresh profile/auth state
 
-Optional follow-up if needed for stronger constraints:
+#### S3 URL config
 
-- introduce enum for tokens once token set is stable enough.
-- or keep string token with service-level allow-list validation for easier iteration.
+- `buildS3AssetUrl` helper in `apps/web/src/config/s3.ts`
+- Reads `VITE_S3_BASE_URL`.
+- Warns once in dev if unset.
 
-### Validation rules
+---
 
-- `avatarKey`:
-  - must be null or non-empty string.
-  - must match authenticated user-owned S3 key prefix (`<env>/avatars/<userId>/...`).
-- `nameColorToken`:
-  - must be null or one of supported predefined tokens.
-  - reject unknown tokens with clear 400 message.
+## Security / Validation Notes (Current)
 
-### API surfaces
+- Upload target endpoint requires authenticated session + CSRF.
+- Avatar key update validates user-owned key prefix (`<env>/avatars/<userId>/...`).
+- Supported avatar mime allow-list in storage service (`png`, `jpeg`, `webp`).
+- Max avatar size enforced in users service.
 
-- Extend `GET /api/users/me` response with new profile fields.
-- Add field-specific profile update endpoints (`PATCH /api/users/me/username`, `/display-name`, `/email`, `/avatar`).
-- Add avatar upload target endpoint for direct-to-S3 upload (`POST /api/users/me/avatar/upload-target`).
+Note:
 
-### Chat payload changes
+- Current rendering strategy assumes S3 URLs are browser-readable for avatar keys in use.
+- Public-read policy configuration is an infrastructure concern and may evolve to CDN/signed-read later.
 
-Extend shared + backend mapping for both history and realtime:
+---
 
-- `authorAvatarUrl: string | null`
-- `authorNameColorToken: string | null`
+## Testing Status
 
-Required in:
+- Added/updated unit tests for users controller/service and storage service relevant to avatar flow.
+- API test suite currently passes.
+- Covered behavior includes:
+  - avatar upload target delegation/validation
+  - avatar key update behavior
+  - old avatar delete best-effort behavior
+  - storage service upload target + delete command behavior
 
-- `ChatMessageDto` (history)
-- `ChatRealtimeMessage` (socket)
+---
 
-## Frontend Plan
+## Deferred / Next Work
 
-### Profile page
+### Name color (next profile customization milestone)
 
-- Add avatar upload UI (file picker + preview + upload progress/error state).
-- Add name-color picker using predefined token list.
-- Save via profile update flow.
-- Keep existing inline validation and error/success patterns.
+- Add `nameColorToken` profile field + validation.
+- Add predefined token catalog and profile picker UI.
+- Add chat rendering support for per-user name color.
 
-### Chat rendering
+### Chat avatar integration
 
-- `MessageRow`:
-  - show avatar in message header row.
-  - color author display name using token mapping.
-  - apply fallback to existing accent when token missing/unknown.
-- grouped rows:
-  - maintain compact layout when header is hidden.
-  - ensure alignment and spacing still look intentional with avatar present.
+- Add avatar fields into chat DTOs/realtime payloads for message rows.
+- Render avatar in chat message rows (including grouped message layout rules).
 
-### Shared token-to-style mapping
+### Infrastructure follow-ups
 
-- Store a single source of truth for token -> CSS color mapping in frontend.
-- Keep mapping theme-aware and readable against current backgrounds.
-- Avoid hardcoding token styles inside chat row component.
+- Finalize env strategy for dev/staging/prod + CI injection.
+- Prefix-scoped IAM policy hardening per environment.
+- Production logging policy (sink, retention, levels).
 
-## Upload/Storage Direction
+---
 
-Use object storage (S3-compatible) for avatars with CDN-friendly URLs.
+## Quick Context for New Chats
 
-Minimum v1 safeguards:
+If starting a new chat and you want to continue from current state, this is the key summary:
 
-- file type allow-list (image mime types).
-- max file size limit.
-- generated object keys (do not trust original filename).
-- persist object key (`avatarKey`) instead of raw public URL.
-- delete previous avatar object after successful avatar replacement (best-effort cleanup).
-
-## Migration + Compatibility
-
-- Existing users should get `avatarKey = null`, `nameColorToken = null`.
-- Existing messages continue to render via fallback defaults.
-- Frontend should tolerate missing fields during rollout by using null-safe guards.
-
-## Implementation Phases
-
-1. Add shared type updates and Prisma fields/migration.
-2. Add backend users/chat payload wiring and validation.
-3. Add avatar upload endpoints and storage integration.
-4. Add profile UI for avatar + name color selection.
-5. Add chat UI updates (avatar + token color rendering).
-6. Run lint/typecheck/test and do manual chat/profile verification.
-
-## Test Scenarios (Targeted)
-
-- Profile fetch returns avatar + name color fields.
-- Profile update rejects unknown color token.
-- Profile update rejects invalid avatar key (wrong prefix / invalid value).
-- Avatar upload path rejects unsupported file type and oversized file.
-- Avatar update deletes previous avatar object from S3 (best-effort cleanup path).
-- Chat history messages include avatar + name color fields.
-- Realtime chat messages include avatar + name color fields.
-- Grouped rows render correctly with mixed avatar/header visibility.
-- Missing token/URL falls back without UI breakage.
-
-## Open Questions
-
-- Final starter token list and display labels.
-- Whether token catalog should live in shared package immediately or start in web/api with mirrored constants.
-- Whether to add a dedicated color-catalog endpoint now or embed starter catalog in frontend for v1.
-- Exact upload endpoint shape (single-step server proxy upload vs presigned direct upload with finalize).
+- Avatar upload/persist/display is fully implemented and merged.
+- Backend uses field-specific user update endpoints (generic `PATCH /users/me` removed).
+- `avatarKey` is source of truth in DB.
+- Frontend resolves `avatarKey` via `VITE_S3_BASE_URL`.
+- Old avatar S3 objects are deleted on replacement (best-effort).
+- Next major profile task is name color tokens and chat integration.
