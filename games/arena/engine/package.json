@@ -1,0 +1,45 @@
+{
+  "name": "@cup/arena-engine",
+  "version": "1.0.0",
+  "description": "Deterministic fixed-tick AABB platformer physics engine",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json -w",
+    "start:dev": "pnpm run build:watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "pnpm run typecheck",
+    "format": "prettier --config ../../../apps/api/.prettierrc --check \"src/**/*.ts\"",
+    "format:fix": "prettier --config ../../../apps/api/.prettierrc --write \"src/**/*.ts\"",
+    "test": "pnpm run build && node --test dist/**/*.test.js",
+    "visual:dev": "vite visual --host",
+    "visual:build": "vite build visual",
+    "determinism:trace:node": "pnpm run build && node scripts/determinism-trace-node.mjs",
+    "determinism:trace:browser": "node scripts/determinism-trace-browser.mjs",
+    "determinism:node": "pnpm run determinism:trace:node -- --ticks=3000 --sampleEvery=1 --out=determinism-results/node-trace.json",
+    "determinism:master": "pnpm run determinism:trace:node -- --ticks=3000 --sampleEvery=1 --out=determinism-results/master-trace.json",
+    "determinism:chromium": "pnpm run determinism:trace:browser -- --browser=chromium --ticks=3000 --sampleEvery=1 --out=determinism-results/chromium-trace.json",
+    "determinism:firefox": "pnpm run determinism:trace:browser -- --browser=firefox --ticks=3000 --sampleEvery=1 --out=determinism-results/firefox-trace.json",
+    "determinism:webkit": "pnpm run determinism:trace:browser -- --browser=webkit --ticks=3000 --sampleEvery=1 --out=determinism-results/webkit-trace.json",
+    "determinism:full-test": "node scripts/determinism-full-test.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.26.1",
+  "devDependencies": {
+    "@types/node": "^24.7.2",
+    "@playwright/test": "^1.56.1",
+    "phaser": "^3.90.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.10"
+  }
+}

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arena Determinism Visual Harness</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      body {
+        margin: 0;
+        background: #0f111a;
+        color: #d7dbef;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }
+
+      #layout {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        min-height: 100vh;
+      }
+
+      #game-root {
+        min-width: 0;
+      }
+
+      #panel {
+        border-left: 1px solid #2a2f45;
+        padding: 16px;
+        background: #121522;
+      }
+
+      #panel h1 {
+        font-size: 16px;
+        margin: 0 0 12px;
+      }
+
+      #panel p,
+      #panel li,
+      #panel pre {
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 12px 0;
+      }
+
+      button {
+        background: #28304f;
+        color: #eff1ff;
+        border: 1px solid #3d4b77;
+        border-radius: 6px;
+        font-size: 12px;
+        padding: 7px 10px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #34406a;
+      }
+
+      pre {
+        background: #0b0d15;
+        border: 1px solid #2a2f45;
+        border-radius: 6px;
+        padding: 10px;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="layout">
+      <div id="game-root"></div>
+      <aside id="panel">
+        <h1>Arena Visual Determinism Harness</h1>
+        <p>Fixed-step simulation at 30 ticks/sec. Deterministic input script.</p>
+        <div class="controls">
+          <button id="btn-pause">Pause</button>
+          <button id="btn-step">Step</button>
+          <button id="btn-reset">Reset</button>
+        </div>
+        <ul>
+          <li><strong>P</strong> toggle pause/play</li>
+          <li><strong>N</strong> single-step</li>
+          <li><strong>R</strong> reset simulation</li>
+        </ul>
+        <pre id="debug"></pre>
+      </aside>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
