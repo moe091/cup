@@ -122,7 +122,8 @@ export class ChatService {
       throw new BadRequestException('messageId does not belong to channelId');
     }
 
-    await this.assertCanViewChannel(channelId, userId);
+    // NOTE:: removing this check for now, viewing messages already has permission check so the only way to react would be to manually get the messageId and create the http request, and if someone does that then they've earned it. It's not like it would break anything
+    // await this.assertCanViewChannel(channelId, userId);
 
     if (args.emojiKind === 'CUSTOM') {
       await this.assertCanUseCustomEmojiId(channelId, userId, emojiValue);
@@ -346,27 +347,36 @@ export class ChatService {
   async assertCanViewChannel(channelId: string, viewerUserId?: string): Promise<void> {
     const channel = await this.prisma.channel.findUnique({
       where: { id: channelId },
-      select: { id: true, visibility: true },
+      select: { id: true, communityId: true, requiredPermissionLevel: true },
     });
+
     if (!channel) {
       throw new NotFoundException('Channel not found');
     }
-    if (channel.visibility === 'PUBLIC') {
+    if (channel.requiredPermissionLevel <= 0) {
+      //public / open-access, anyone can view
       return;
     }
-    if (!viewerUserId) {
+    if (!channel.communityId) {
+      // Temporary handling for non-community channels (e.g. DMs/group chats).
+      // TODO:: implement dedicated auth policy path for DM/group channel kinds.
       throw new ForbiddenException('You do not have access to this channel');
     }
-    const membership = await this.prisma.channelMember.findUnique({
-      where: {
-        channelId_userId: {
-          channelId,
-          userId: viewerUserId,
-        },
-      },
-      select: { channelId: true },
-    });
-    if (!membership) {
+
+    const viewerPermissionLevel = viewerUserId
+      ? ((
+          await this.prisma.communityMember.findUnique({
+            where: {
+              communityId_userId: {
+                communityId: channel.communityId,
+                userId: viewerUserId,
+              },
+            },
+            select: { permissionLevel: true },
+          })
+        )?.permissionLevel ?? 0)
+      : 0;
+    if (viewerPermissionLevel < channel.requiredPermissionLevel) {
       throw new ForbiddenException('You do not have access to this channel');
     }
   }

@@ -130,6 +130,12 @@ enum MembershipSource {
   DERIVED
 }
 
+enum CommunityJoinMode {
+  PUBLIC
+  REQUEST
+  INVITE_ONLY
+}
+
 enum CustomEmojiScopeType {
   GLOBAL
   COMMUNITY
@@ -147,6 +153,7 @@ model Community {
   description String?
   slug        String?  @unique
   ownerUserId String?
+  joinMode    CommunityJoinMode @default(PUBLIC)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -162,6 +169,7 @@ model CommunityMember {
   communityId String
   userId      String
   primaryRole String   @default("member")
+  permissionLevel Int  @default(1)
   joinedAt    DateTime @default(now())
 
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
@@ -178,6 +186,7 @@ model Channel {
   name            String
   kind            ChannelKind
   visibility      ChannelVisibility @default(PRIVATE)
+  requiredPermissionLevel Int       @default(0)
   createdByUserId String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt

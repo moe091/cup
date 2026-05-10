@@ -5,6 +5,17 @@
     "description": "A quiet lounge for sharing ideas, projects, and late-night game plans.",
     "slug": "collective-archive",
     "ownerUserId": "seed-user-jung",
+    "joinMode": "PUBLIC",
+    "createdAt": "2026-01-15T18:00:00.000Z",
+    "updatedAt": "2026-01-15T18:00:00.000Z"
+  },
+  {
+    "id": "seed-community-midnight-lab",
+    "name": "Midnight Lab",
+    "description": "A private build room for experiments and prototypes.",
+    "slug": "midnight-lab",
+    "ownerUserId": "seed-user-freud",
+    "joinMode": "REQUEST",
     "createdAt": "2026-01-15T18:00:00.000Z",
     "updatedAt": "2026-01-15T18:00:00.000Z"
   }

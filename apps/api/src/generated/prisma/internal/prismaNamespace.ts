@@ -1329,6 +1329,7 @@ export const CommunityScalarFieldEnum = {
   description: 'description',
   slug: 'slug',
   ownerUserId: 'ownerUserId',
+  joinMode: 'joinMode',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1340,6 +1341,7 @@ export const CommunityMemberScalarFieldEnum = {
   communityId: 'communityId',
   userId: 'userId',
   primaryRole: 'primaryRole',
+  permissionLevel: 'permissionLevel',
   joinedAt: 'joinedAt'
 } as const
 
@@ -1352,6 +1354,7 @@ export const ChannelScalarFieldEnum = {
   name: 'name',
   kind: 'kind',
   visibility: 'visibility',
+  requiredPermissionLevel: 'requiredPermissionLevel',
   createdByUserId: 'createdByUserId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -1554,6 +1557,20 @@ export type EnumBouncerLevelVisibilityFieldRefInput<$PrismaModel> = FieldRefInpu
  * Reference to a field of type 'BouncerLevelVisibility[]'
  */
 export type ListEnumBouncerLevelVisibilityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BouncerLevelVisibility[]'>
+    
+
+
+/**
+ * Reference to a field of type 'CommunityJoinMode'
+ */
+export type EnumCommunityJoinModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CommunityJoinMode'>
+    
+
+
+/**
+ * Reference to a field of type 'CommunityJoinMode[]'
+ */
+export type ListEnumCommunityJoinModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CommunityJoinMode[]'>
     
 
 

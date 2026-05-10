@@ -54,6 +54,15 @@ export const MembershipSource = {
 export type MembershipSource = (typeof MembershipSource)[keyof typeof MembershipSource]
 
 
+export const CommunityJoinMode = {
+  PUBLIC: 'PUBLIC',
+  REQUEST: 'REQUEST',
+  INVITE_ONLY: 'INVITE_ONLY'
+} as const
+
+export type CommunityJoinMode = (typeof CommunityJoinMode)[keyof typeof CommunityJoinMode]
+
+
 export const CustomEmojiScopeType = {
   GLOBAL: 'GLOBAL',
   COMMUNITY: 'COMMUNITY',

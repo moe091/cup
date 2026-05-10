@@ -30,6 +30,7 @@ export type CommunityMinAggregateOutputType = {
   description: string | null
   slug: string | null
   ownerUserId: string | null
+  joinMode: $Enums.CommunityJoinMode | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -40,6 +41,7 @@ export type CommunityMaxAggregateOutputType = {
   description: string | null
   slug: string | null
   ownerUserId: string | null
+  joinMode: $Enums.CommunityJoinMode | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -50,6 +52,7 @@ export type CommunityCountAggregateOutputType = {
   description: number
   slug: number
   ownerUserId: number
+  joinMode: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -62,6 +65,7 @@ export type CommunityMinAggregateInputType = {
   description?: true
   slug?: true
   ownerUserId?: true
+  joinMode?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -72,6 +76,7 @@ export type CommunityMaxAggregateInputType = {
   description?: true
   slug?: true
   ownerUserId?: true
+  joinMode?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -82,6 +87,7 @@ export type CommunityCountAggregateInputType = {
   description?: true
   slug?: true
   ownerUserId?: true
+  joinMode?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -165,6 +171,7 @@ export type CommunityGroupByOutputType = {
   description: string | null
   slug: string | null
   ownerUserId: string | null
+  joinMode: $Enums.CommunityJoinMode
   createdAt: Date
   updatedAt: Date
   _count: CommunityCountAggregateOutputType | null
@@ -196,6 +203,7 @@ export type CommunityWhereInput = {
   description?: Prisma.StringNullableFilter<"Community"> | string | null
   slug?: Prisma.StringNullableFilter<"Community"> | string | null
   ownerUserId?: Prisma.StringNullableFilter<"Community"> | string | null
+  joinMode?: Prisma.EnumCommunityJoinModeFilter<"Community"> | $Enums.CommunityJoinMode
   createdAt?: Prisma.DateTimeFilter<"Community"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Community"> | Date | string
   owner?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
@@ -209,6 +217,7 @@ export type CommunityOrderByWithRelationInput = {
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   slug?: Prisma.SortOrderInput | Prisma.SortOrder
   ownerUserId?: Prisma.SortOrderInput | Prisma.SortOrder
+  joinMode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   owner?: Prisma.UserOrderByWithRelationInput
@@ -225,6 +234,7 @@ export type CommunityWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"Community"> | string
   description?: Prisma.StringNullableFilter<"Community"> | string | null
   ownerUserId?: Prisma.StringNullableFilter<"Community"> | string | null
+  joinMode?: Prisma.EnumCommunityJoinModeFilter<"Community"> | $Enums.CommunityJoinMode
   createdAt?: Prisma.DateTimeFilter<"Community"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Community"> | Date | string
   owner?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
@@ -238,6 +248,7 @@ export type CommunityOrderByWithAggregationInput = {
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   slug?: Prisma.SortOrderInput | Prisma.SortOrder
   ownerUserId?: Prisma.SortOrderInput | Prisma.SortOrder
+  joinMode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.CommunityCountOrderByAggregateInput
@@ -254,6 +265,7 @@ export type CommunityScalarWhereWithAggregatesInput = {
   description?: Prisma.StringNullableWithAggregatesFilter<"Community"> | string | null
   slug?: Prisma.StringNullableWithAggregatesFilter<"Community"> | string | null
   ownerUserId?: Prisma.StringNullableWithAggregatesFilter<"Community"> | string | null
+  joinMode?: Prisma.EnumCommunityJoinModeWithAggregatesFilter<"Community"> | $Enums.CommunityJoinMode
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Community"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Community"> | Date | string
 }
@@ -263,6 +275,7 @@ export type CommunityCreateInput = {
   name: string
   description?: string | null
   slug?: string | null
+  joinMode?: $Enums.CommunityJoinMode
   createdAt?: Date | string
   updatedAt?: Date | string
   owner?: Prisma.UserCreateNestedOneWithoutCommunitiesOwnedInput
@@ -276,6 +289,7 @@ export type CommunityUncheckedCreateInput = {
   description?: string | null
   slug?: string | null
   ownerUserId?: string | null
+  joinMode?: $Enums.CommunityJoinMode
   createdAt?: Date | string
   updatedAt?: Date | string
   channels?: Prisma.ChannelUncheckedCreateNestedManyWithoutCommunityInput
@@ -287,6 +301,7 @@ export type CommunityUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   owner?: Prisma.UserUpdateOneWithoutCommunitiesOwnedNestedInput
@@ -300,6 +315,7 @@ export type CommunityUncheckedUpdateInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ownerUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   channels?: Prisma.ChannelUncheckedUpdateManyWithoutCommunityNestedInput
@@ -312,6 +328,7 @@ export type CommunityCreateManyInput = {
   description?: string | null
   slug?: string | null
   ownerUserId?: string | null
+  joinMode?: $Enums.CommunityJoinMode
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -321,6 +338,7 @@ export type CommunityUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -331,6 +349,7 @@ export type CommunityUncheckedUpdateManyInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ownerUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -351,6 +370,7 @@ export type CommunityCountOrderByAggregateInput = {
   description?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   ownerUserId?: Prisma.SortOrder
+  joinMode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -361,6 +381,7 @@ export type CommunityMaxOrderByAggregateInput = {
   description?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   ownerUserId?: Prisma.SortOrder
+  joinMode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -371,6 +392,7 @@ export type CommunityMinOrderByAggregateInput = {
   description?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   ownerUserId?: Prisma.SortOrder
+  joinMode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -427,6 +449,10 @@ export type CommunityUncheckedUpdateManyWithoutOwnerNestedInput = {
   deleteMany?: Prisma.CommunityScalarWhereInput | Prisma.CommunityScalarWhereInput[]
 }
 
+export type EnumCommunityJoinModeFieldUpdateOperationsInput = {
+  set?: $Enums.CommunityJoinMode
+}
+
 export type CommunityCreateNestedOneWithoutMembersInput = {
   create?: Prisma.XOR<Prisma.CommunityCreateWithoutMembersInput, Prisma.CommunityUncheckedCreateWithoutMembersInput>
   connectOrCreate?: Prisma.CommunityCreateOrConnectWithoutMembersInput
@@ -462,6 +488,7 @@ export type CommunityCreateWithoutOwnerInput = {
   name: string
   description?: string | null
   slug?: string | null
+  joinMode?: $Enums.CommunityJoinMode
   createdAt?: Date | string
   updatedAt?: Date | string
   channels?: Prisma.ChannelCreateNestedManyWithoutCommunityInput
@@ -473,6 +500,7 @@ export type CommunityUncheckedCreateWithoutOwnerInput = {
   name: string
   description?: string | null
   slug?: string | null
+  joinMode?: $Enums.CommunityJoinMode
   createdAt?: Date | string
   updatedAt?: Date | string
   channels?: Prisma.ChannelUncheckedCreateNestedManyWithoutCommunityInput
@@ -514,6 +542,7 @@ export type CommunityScalarWhereInput = {
   description?: Prisma.StringNullableFilter<"Community"> | string | null
   slug?: Prisma.StringNullableFilter<"Community"> | string | null
   ownerUserId?: Prisma.StringNullableFilter<"Community"> | string | null
+  joinMode?: Prisma.EnumCommunityJoinModeFilter<"Community"> | $Enums.CommunityJoinMode
   createdAt?: Prisma.DateTimeFilter<"Community"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Community"> | Date | string
 }
@@ -523,6 +552,7 @@ export type CommunityCreateWithoutMembersInput = {
   name: string
   description?: string | null
   slug?: string | null
+  joinMode?: $Enums.CommunityJoinMode
   createdAt?: Date | string
   updatedAt?: Date | string
   owner?: Prisma.UserCreateNestedOneWithoutCommunitiesOwnedInput
@@ -535,6 +565,7 @@ export type CommunityUncheckedCreateWithoutMembersInput = {
   description?: string | null
   slug?: string | null
   ownerUserId?: string | null
+  joinMode?: $Enums.CommunityJoinMode
   createdAt?: Date | string
   updatedAt?: Date | string
   channels?: Prisma.ChannelUncheckedCreateNestedManyWithoutCommunityInput
@@ -561,6 +592,7 @@ export type CommunityUpdateWithoutMembersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   owner?: Prisma.UserUpdateOneWithoutCommunitiesOwnedNestedInput
@@ -573,6 +605,7 @@ export type CommunityUncheckedUpdateWithoutMembersInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ownerUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   channels?: Prisma.ChannelUncheckedUpdateManyWithoutCommunityNestedInput
@@ -583,6 +616,7 @@ export type CommunityCreateWithoutChannelsInput = {
   name: string
   description?: string | null
   slug?: string | null
+  joinMode?: $Enums.CommunityJoinMode
   createdAt?: Date | string
   updatedAt?: Date | string
   owner?: Prisma.UserCreateNestedOneWithoutCommunitiesOwnedInput
@@ -595,6 +629,7 @@ export type CommunityUncheckedCreateWithoutChannelsInput = {
   description?: string | null
   slug?: string | null
   ownerUserId?: string | null
+  joinMode?: $Enums.CommunityJoinMode
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.CommunityMemberUncheckedCreateNestedManyWithoutCommunityInput
@@ -621,6 +656,7 @@ export type CommunityUpdateWithoutChannelsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   owner?: Prisma.UserUpdateOneWithoutCommunitiesOwnedNestedInput
@@ -633,6 +669,7 @@ export type CommunityUncheckedUpdateWithoutChannelsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ownerUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.CommunityMemberUncheckedUpdateManyWithoutCommunityNestedInput
@@ -643,6 +680,7 @@ export type CommunityCreateManyOwnerInput = {
   name: string
   description?: string | null
   slug?: string | null
+  joinMode?: $Enums.CommunityJoinMode
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -652,6 +690,7 @@ export type CommunityUpdateWithoutOwnerInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   channels?: Prisma.ChannelUpdateManyWithoutCommunityNestedInput
@@ -663,6 +702,7 @@ export type CommunityUncheckedUpdateWithoutOwnerInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   channels?: Prisma.ChannelUncheckedUpdateManyWithoutCommunityNestedInput
@@ -674,6 +714,7 @@ export type CommunityUncheckedUpdateManyWithoutOwnerInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -724,6 +765,7 @@ export type CommunitySelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   description?: boolean
   slug?: boolean
   ownerUserId?: boolean
+  joinMode?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   owner?: boolean | Prisma.Community$ownerArgs<ExtArgs>
@@ -738,6 +780,7 @@ export type CommunitySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   description?: boolean
   slug?: boolean
   ownerUserId?: boolean
+  joinMode?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   owner?: boolean | Prisma.Community$ownerArgs<ExtArgs>
@@ -749,6 +792,7 @@ export type CommunitySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   description?: boolean
   slug?: boolean
   ownerUserId?: boolean
+  joinMode?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   owner?: boolean | Prisma.Community$ownerArgs<ExtArgs>
@@ -760,11 +804,12 @@ export type CommunitySelectScalar = {
   description?: boolean
   slug?: boolean
   ownerUserId?: boolean
+  joinMode?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type CommunityOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "slug" | "ownerUserId" | "createdAt" | "updatedAt", ExtArgs["result"]["community"]>
+export type CommunityOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "slug" | "ownerUserId" | "joinMode" | "createdAt" | "updatedAt", ExtArgs["result"]["community"]>
 export type CommunityInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   owner?: boolean | Prisma.Community$ownerArgs<ExtArgs>
   channels?: boolean | Prisma.Community$channelsArgs<ExtArgs>
@@ -791,6 +836,7 @@ export type $CommunityPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     description: string | null
     slug: string | null
     ownerUserId: string | null
+    joinMode: $Enums.CommunityJoinMode
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["community"]>
@@ -1224,6 +1270,7 @@ export interface CommunityFieldRefs {
   readonly description: Prisma.FieldRef<"Community", 'String'>
   readonly slug: Prisma.FieldRef<"Community", 'String'>
   readonly ownerUserId: Prisma.FieldRef<"Community", 'String'>
+  readonly joinMode: Prisma.FieldRef<"Community", 'CommunityJoinMode'>
   readonly createdAt: Prisma.FieldRef<"Community", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Community", 'DateTime'>
 }
