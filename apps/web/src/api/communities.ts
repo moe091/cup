@@ -1,4 +1,4 @@
-import type { CommunityChannelDto, CommunitySummaryDto } from "@cup/shared-types";
+import type { CommunityChannelDto, CommunitySummaryDto, MyCommunitiesResponseDto } from "@cup/shared-types";
 
 export async function fetchCommunityBySlug(slug: string): Promise<CommunitySummaryDto> {
   const response = await fetch(`/api/communities/${encodeURIComponent(slug)}`, {
@@ -24,4 +24,18 @@ export async function fetchCommunityChannelsBySlug(slug: string): Promise<Commun
   }
 
   return (await response.json()) as CommunityChannelDto[];
+}
+
+
+export async function fetchMyCommunities(): Promise<MyCommunitiesResponseDto> {
+  const response = await fetch('/api/communities/me', {
+    credentials: "include",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch your community list: ${response.status}`);
+  }
+
+  return (await response.json()) as MyCommunitiesResponseDto;
 }

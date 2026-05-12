@@ -27,6 +27,7 @@ type CommunitySeed = {
   description: string | null;
   slug: string | null;
   ownerUserId: string | null;
+  iconKey: string | null;
   joinMode: 'PUBLIC' | 'REQUEST' | 'INVITE_ONLY';
   createdAt: string;
   updatedAt: string;
@@ -204,6 +205,7 @@ async function main() {
         description: community.description,
         slug: community.slug,
         ownerUserId: community.ownerUserId,
+        iconKey: community.iconKey,
         joinMode: community.joinMode,
         createdAt: new Date(community.createdAt),
         updatedAt: new Date(community.updatedAt),
@@ -214,6 +216,7 @@ async function main() {
         description: community.description,
         slug: community.slug,
         ownerUserId: community.ownerUserId,
+        iconKey: community.iconKey,
         joinMode: community.joinMode,
         createdAt: new Date(community.createdAt),
         updatedAt: new Date(community.updatedAt),

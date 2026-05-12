@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { CommunityChannelDto, CommunitySummaryDto } from '@cup/shared-types';
+import type { CommunityChannelDto, CommunitySummaryDto, MyCommunitiesResponseDto } from '@cup/shared-types';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { userInfo } from 'os';
 
 @Injectable()
 export class CommunitiesService {
@@ -65,35 +66,40 @@ export class CommunitiesService {
       throw new NotFoundException('Community not found');
     }
 
-    const channels = viewerUserId
-      ? await this.prisma.channel.findMany({
-          where: {
+    let viewerPermissionLevel = 0;
+
+    if (viewerUserId) {
+      const membership = await this.prisma.communityMember.findUnique({
+        where: {
+          communityId_userId: {
             communityId: comm.id,
-            OR: [{ visibility: 'PUBLIC' }, { members: { some: { userId: viewerUserId } } }],
+            userId: viewerUserId,
           },
-          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-          select: {
-            id: true,
-            name: true,
-            kind: true,
-            visibility: true,
-            createdAt: true,
-          },
-        })
-      : await this.prisma.channel.findMany({
-          where: {
-            communityId: comm.id,
-            visibility: 'PUBLIC',
-          },
-          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-          select: {
-            id: true,
-            name: true,
-            kind: true,
-            visibility: true,
-            createdAt: true,
-          },
-        });
+        },
+        select: {
+          permissionLevel: true,
+        },
+      });
+
+      viewerPermissionLevel = membership?.permissionLevel ?? 0;
+    }
+
+    const channels = await this.prisma.channel.findMany({
+      where: {
+        communityId: comm.id,
+        requiredPermissionLevel: {
+          lte: viewerPermissionLevel,
+        },
+      },
+      orderBy: [{createdAt: 'asc'}, {id: 'asc'}],
+      select: {
+        id: true,
+        name: true,
+        kind: true,
+        visibility: true,
+        createdAt: true,
+      },
+    });
 
     return channels.map((channel) => ({
       id: channel.id,
@@ -103,4 +109,37 @@ export class CommunitiesService {
       createdAt: channel.createdAt.toISOString(),
     }));
   }
+
+  async getMyCommunities(userId: string): Promise<MyCommunitiesResponseDto> {
+    const memberships = await this.prisma.communityMember.findMany({
+      where: {
+        userId: userId,
+      },
+      select: {
+        permissionLevel: true,
+        joinedAt: true,
+        community: {
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            iconKey: true,
+          },
+        },
+      },
+      orderBy: [{ joinedAt: 'desc' }, { communityId: 'asc' }],
+    });
+
+    return memberships
+      .filter((membership) => membership.community.slug)
+      .map((membership) => ({
+        id: membership.community.id,
+        slug: membership.community.slug as string,
+        name: membership.community.name,
+        iconKey: membership.community.iconKey,
+        permissionLevel: membership.permissionLevel,
+        joinedAt: membership.joinedAt.toISOString(),
+      }));
+    }
+
 }

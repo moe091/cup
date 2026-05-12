@@ -1331,7 +1331,8 @@ export const CommunityScalarFieldEnum = {
   ownerUserId: 'ownerUserId',
   joinMode: 'joinMode',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  iconKey: 'iconKey'
 } as const
 
 export type CommunityScalarFieldEnum = (typeof CommunityScalarFieldEnum)[keyof typeof CommunityScalarFieldEnum]

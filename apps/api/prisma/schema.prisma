@@ -156,6 +156,7 @@ model Community {
   joinMode    CommunityJoinMode @default(PUBLIC)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  iconKey     String?
 
   owner    User?             @relation("CommunityOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
   channels Channel[]

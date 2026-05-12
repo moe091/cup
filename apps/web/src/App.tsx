@@ -4,6 +4,7 @@ import type { SessionUser } from "@cup/shared-types";
 import { useAuth } from "./auth";
 import TopBar from "./panels/TopBar";
 import ProfilePage from "./routes/profile/ProfilePage";
+import ChatPage from "./routes/chat/ChatPage";
 //import './assets/games.css';
 
 const CommunityPage = lazy(() => import("./routes/communities/CommunityPage"));
@@ -154,6 +155,14 @@ export default function App() {
           element={
             <Suspense fallback={null}>
               <ChatSocketTest />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            <Suspense fallback={null}>
+              <ChatPage />
             </Suspense>
           }
         />

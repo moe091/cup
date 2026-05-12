@@ -114,10 +114,10 @@ export default function TopBar() {
             Games
           </Link>
           <Link
-            to="/friends"
+            to="/chat"
             className="hover:text-[color:var(--text)] transition"
           >
-            Friends
+            Chat
           </Link>
           <Link
             to="/home"

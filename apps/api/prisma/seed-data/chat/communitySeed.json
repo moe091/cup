@@ -5,6 +5,7 @@
     "description": "A quiet lounge for sharing ideas, projects, and late-night game plans.",
     "slug": "collective-archive",
     "ownerUserId": "seed-user-jung",
+    "iconKey": "dev/communities/seed-community-archive/chromagram.jfif",
     "joinMode": "PUBLIC",
     "createdAt": "2026-01-15T18:00:00.000Z",
     "updatedAt": "2026-01-15T18:00:00.000Z"
@@ -15,6 +16,7 @@
     "description": "A private build room for experiments and prototypes.",
     "slug": "midnight-lab",
     "ownerUserId": "seed-user-freud",
+    "iconKey": "dev/communities/seed-community-archive/chromagram.jfif",
     "joinMode": "REQUEST",
     "createdAt": "2026-01-15T18:00:00.000Z",
     "updatedAt": "2026-01-15T18:00:00.000Z"
