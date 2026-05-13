@@ -94,8 +94,8 @@ export default function TopBar() {
   }, [isUserMenuOpen]);
 
   return (
-    <div className="fixed top-0 z-10 w-full border-b border-[color:var(--line)] bg-black backdrop-blur">
-      <div className="mx-auto max-w-6xl px-6 py-3 flex items-center justify-between">
+    <div className="fixed top-0 z-10 h-[var(--topbar-h)] w-full bg-black backdrop-blur">
+      <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-6">
         {/* Left: brand */}
         <Link
           to="/"

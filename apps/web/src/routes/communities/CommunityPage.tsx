@@ -45,12 +45,12 @@ export default function Community() {
   }, [slug]);
 
   if (isLoading) {
-    return <main className="min-h-screen w-full px-6 pt-24 text-[color:var(--text)]" />;
+    return <main className="min-h-screen w-full px-6 pt-[calc(var(--topbar-h)+2rem)] text-[color:var(--text)]" />;
   }
 
   if (errorMessage) {
     return (
-      <main className="min-h-screen w-full px-6 pt-24 text-[color:var(--text)]">
+      <main className="min-h-screen w-full px-6 pt-[calc(var(--topbar-h)+2rem)] text-[color:var(--text)]">
         <div className="mx-auto w-full max-w-3xl rounded-2xl border border-red-500/40 bg-red-500/10 p-6 text-sm text-red-300">
           {errorMessage}
         </div>
@@ -59,13 +59,13 @@ export default function Community() {
   }
 
   if (!commSummary) {
-    return <main className="min-h-screen w-full px-6 pt-24 text-[color:var(--text)]" />;
+    return <main className="min-h-screen w-full px-6 pt-[calc(var(--topbar-h)+2rem)] text-[color:var(--text)]" />;
   }
 
   const createdAtFormatted = new Date(commSummary.createdAt).toLocaleDateString();
 
   return (
-    <main className="min-h-screen w-full px-6 pt-24 text-[color:var(--text)]">
+    <main className="min-h-screen w-full px-6 pt-[calc(var(--topbar-h)+2rem)] text-[color:var(--text)]">
       <div className="mx-auto w-full max-w-3xl rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)]/90 p-6">
         <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--muted)]">Community</p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">{commSummary.name}</h1>

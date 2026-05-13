@@ -278,16 +278,16 @@ export default function ProfilePage() {
   };
 
   if (isLoading) {
-    return <main className="min-h-screen w-full px-6 pt-24 text-[color:var(--text)]" />;
+    return <main className="min-h-screen w-full px-6 pt-[calc(var(--topbar-h)+2rem)] text-[color:var(--text)]" />;
   }
 
   if (user && (isHydrating || !profile)) {
-    return <main className="min-h-screen w-full px-6 pt-24 text-[color:var(--text)]" />;
+    return <main className="min-h-screen w-full px-6 pt-[calc(var(--topbar-h)+2rem)] text-[color:var(--text)]" />;
   }
 
   if (!user) {
     return (
-      <main className="min-h-screen w-full px-6 pt-24 text-[color:var(--text)]">
+      <main className="min-h-screen w-full px-6 pt-[calc(var(--topbar-h)+2rem)] text-[color:var(--text)]">
         <div className="mx-auto w-full max-w-3xl rounded-xl border border-[color:var(--line)] bg-[color:var(--panel)]/90 p-5">
           You are not logged in.
         </div>
@@ -296,7 +296,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="min-h-screen w-full px-6 pt-24 text-[color:var(--text)]">
+    <main className="min-h-screen w-full px-6 pt-[calc(var(--topbar-h)+2rem)] text-[color:var(--text)]">
       <div className="mx-auto w-full max-w-3xl rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)]/90 p-6">
         <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
 
