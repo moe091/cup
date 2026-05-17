@@ -1,4 +1,14 @@
-import type { CommunityChannelDto, CommunitySummaryDto, MyCommunitiesResponseDto } from "@cup/shared-types";
+import type {
+  CommunityChannelDto,
+  CommunitySummaryDto,
+  CreateCommunityRequestDto,
+  CreateCommunityResponseDto,
+  MyCommunitiesResponseDto,
+  CommunityIconUploadTargetRequestDto,
+  CommunityIconUploadTargetResponseDto,
+  UpdateCommunityIconRequestDto,
+} from "@cup/shared-types";
+import { buildCsrfHeaders } from "./csrf";
 
 export async function fetchCommunityBySlug(slug: string): Promise<CommunitySummaryDto> {
   const response = await fetch(`/api/communities/${encodeURIComponent(slug)}`, {
@@ -38,4 +48,78 @@ export async function fetchMyCommunities(): Promise<MyCommunitiesResponseDto> {
   }
 
   return (await response.json()) as MyCommunitiesResponseDto;
+}
+
+export async function createCommunity(payload: CreateCommunityRequestDto): Promise<CreateCommunityResponseDto> {
+  const csrfHeaders = await buildCsrfHeaders();
+
+  const response = await fetch('/api/communities', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      ...csrfHeaders,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, 'Failed to create community.'));
+  }
+
+  return (await response.json()) as CreateCommunityResponseDto;
+}
+
+//request s3 target for uploading community icon. TODO:: create a generic s3 helper func for image uploads that takes the path as an arg, when I add more img uploads they will use the same logic
+export async function requestCommunityIconUploadTarget(communityId: string, payload: CommunityIconUploadTargetRequestDto): Promise<CommunityIconUploadTargetResponseDto> {
+  const csrfHeaders = await buildCsrfHeaders();
+  const response = await fetch(`/api/communities/${encodeURIComponent(communityId)}/icon/upload-target`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      ...csrfHeaders,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, "Failed to get community icon upload target."));
+  }
+  return (await response.json()) as CommunityIconUploadTargetResponseDto;
+}
+
+//after successful community icon upload to s3, we need to notify backend so it can add the iconKey to the DB. If upload fails, we simply don't send this request, we can show a frontend err msg but iconKey is nullable and has good fallback behavior so backend doesn't care
+export async function updateCommunityIconKey(communityId: string, payload: UpdateCommunityIconRequestDto): Promise<CreateCommunityResponseDto> {
+  const csrfHeaders = await buildCsrfHeaders();
+  const response = await fetch(`/api/communities/${encodeURIComponent(communityId)}/icon`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: {
+      ...csrfHeaders,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, "Failed to update community icon."));
+  }
+  return (await response.json()) as CreateCommunityResponseDto;
+}
+
+async function readErrorMessage(response: Response, fallbackMessage: string): Promise<string> {
+  try {
+    const data = (await response.json()) as { message?: string | string[] };
+
+    if (Array.isArray(data.message) && data.message.length > 0) {
+      return data.message[0];
+    }
+
+    if (typeof data.message === 'string' && data.message.length > 0) {
+      return data.message;
+    }
+  } catch {
+    return fallbackMessage;
+  }
+
+  return fallbackMessage;
 }

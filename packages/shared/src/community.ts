@@ -1,3 +1,5 @@
+import type { ChannelKind, ChannelVisibility } from "./chat";
+
 export type MyCommunityListItemDto = {
   id: string;
   slug: string;
@@ -25,3 +27,40 @@ export type CommunityChannelDto = {
   visibility: ChannelVisibility;
   createdAt: string;
 };
+
+export type CommunityJoinMode = "PUBLIC" | "REQUEST" | "INVITE_ONLY";
+
+export type CreateCommunityRequestDto = {
+  name: string;
+  joinMode: CommunityJoinMode;
+  description?: string | null;
+};
+
+export type CreateCommunityResponseDto = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  joinMode: CommunityJoinMode;
+  iconKey: string | null;
+};
+
+export type CommunityIconUploadTargetRequestDto = {
+  mimeType: string;
+  sizeBytes: number;
+};
+
+export type CommunityIconUploadTargetResponseDto = {
+  uploadUrl: string;
+  method: "PUT";
+  headers: {
+    "Content-Type": string;
+  };
+  objectKey: string;
+  expiresInSeconds: number;
+};
+
+export type UpdateCommunityIconRequestDto = {
+  iconKey: string | null;
+};
+

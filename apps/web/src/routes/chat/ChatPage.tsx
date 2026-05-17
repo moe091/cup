@@ -1,48 +1,79 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth";
 import type { MyCommunitiesResponseDto } from "@cup/shared-types"; 
 import { useCallback, useEffect, useState } from "react";
 import { fetchMyCommunities } from "../../api/communities";
 import CommunitiesSidebar from "../../features/chat/CommunitiesSidebar";
 import CommunityChatContainer from "../../features/chat/CommunityChatContainer";
+import { LoginModal, type AuthMode } from "../../auth/LoginModal";
+import CreateCommunityModal from "../../features/communities/CreateCommunityModal";
+import type { CreateCommunityResponseDto } from "@cup/shared-types";
 
 export default function ChatPage() {
   const { user, isLoading } = useAuth();
   const [communities, setCommunities] = useState<MyCommunitiesResponseDto>([]);
-  const [isCommsLoading, setIsCommsLoading] = useState<boolean>(false);
-  const [commsErrorMsg, setCommsErrorMsg] = useState<string | null>(null);
-  const [selectedCommSlug, setSelectedCommSlug] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [loginModalInitialMode, setLoginModalInitialMode] = useState<AuthMode>("login");
+  const [isCreateCommunityModalOpen, setIsCreateCommunityModalOpen] = useState(false);
+  const [communityCreateWarning, setCommunityCreateWarning] = useState<string | null>(null);
+
+  const openLoginModal = () => {
+    setLoginModalInitialMode("login");
+    setIsLoginModalOpen(true);
+  };
+
+  const openSignupModal = () => {
+    setLoginModalInitialMode("signup");
+    setIsLoginModalOpen(true);
+  };
+
+  const closeLoginModal = () => {
+    setIsLoginModalOpen(false);
+  };
+
+  const openCreateCommunityModal = () => {
+    setIsCreateCommunityModalOpen(true);
+  };
+
+  const closeCreateCommunityModal = () => {
+    setIsCreateCommunityModalOpen(false);
+  };
+
+  const handleCommunityCreated = useCallback(async (createdCommunity: CreateCommunityResponseDto, warningMessage?: string) => {
+    const refreshed = await fetchMyCommunities();
+    setCommunities(refreshed);
+
+    if (warningMessage) {
+      setCommunityCreateWarning(warningMessage);
+    }
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("community", createdCommunity.slug);
+    nextParams.delete("channel");
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   //effect to fetch community list for current user
   useEffect(() => { 
     if (!user) { //not logged in, don't try to fetch communities
-      setCommunities([]);
-      setIsCommsLoading(false);
       return;
     }
     let active = true;
 
     const load = async () => {
-      setIsCommsLoading(true);
-      setCommsErrorMsg(null);
-
       try {
         const data = await fetchMyCommunities();
         if (!active) return; //active is set to false in dismount, if we have dismounted while req was loading then don't do anything, state will be stale
 
         setCommunities(data);
-        console.log("COMS: ", communities);
-      } catch (error) {
+      } catch {
         if (!active) return;
-        setCommsErrorMsg(error instanceof Error ? error.message : "Failed to load communities");
         setCommunities([]);
-      } finally {
-        if (active) setIsCommsLoading(false);
       }
     };
 
-    load();
+    void load();
 
     return () => {
       active = false;
@@ -57,35 +88,25 @@ export default function ChatPage() {
     setSearchParams(nextParams);
   }, [searchParams, setSearchParams]);
 
+  const selectedCommSlug = searchParams.get("community") ?? communities[0]?.slug ?? null;
 
-  //updates selectedCommSlug based on url params(url params are set by the effect above, in response to callback function called when user clicks a comm in the comm sidebar)
+  //if no slug exists in url but user has communities, set url to first community
   useEffect(() => {
     if (!communities.length) {
-      setSelectedCommSlug(null);
       return;
     }
 
-    //if we have a slug in URL just set it then return
     const requestedSlug = searchParams.get("community");
     if (requestedSlug) {
-      if (selectedCommSlug !== requestedSlug) {
-        setSelectedCommSlug(requestedSlug);
-      }
       return;
     }
 
-    //if we don't have a slug use a fallback(first community in list)
     const fallbackSlug = communities[0].slug;
-    if (selectedCommSlug !== fallbackSlug) {
-      setSelectedCommSlug(fallbackSlug);
-    }
-
-    //then update the search params to reflect current state
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set("community", fallbackSlug);
     nextParams.delete("channel");
     setSearchParams(nextParams, { replace: true });
-  }, [communities, searchParams, selectedCommSlug, setSearchParams]);
+  }, [communities, searchParams, setSearchParams]);
   
   
   if (isLoading) {
@@ -101,14 +122,29 @@ export default function ChatPage() {
             Log in to view your communities and DMs.
           </p>
           <div className="mt-5">
-            <Link
-              to="/"
-              className="inline-flex rounded-full px-5 py-2 text-sm text-[color:var(--text)] transition hover:text-[color:var(--muted)]"
-            >
-              Go to Home to Login
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={openLoginModal}
+                className="cursor-pointer rounded-full px-5 py-2 text-sm text-[color:var(--text)] transition hover:text-[color:var(--muted)]"
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                onClick={openSignupModal}
+                className="cursor-pointer rounded-full px-5 py-2 text-sm text-[color:var(--text)] transition hover:text-[color:var(--muted)]"
+              >
+                Sign Up
+              </button>
+            </div>
           </div>
         </div>
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={closeLoginModal}
+          initialMode={loginModalInitialMode}
+        />
       </main>
     );
   }
@@ -116,17 +152,21 @@ export default function ChatPage() {
     <main className="h-screen w-full bg-[#111317] pt-[var(--topbar-h)] overflow-hidden text-[color:var(--text)]">
       <div className="flex h-full min-h-0 w-full">
         {/* Left rail */}
-        <aside className="h-full w-16 shrink-0 bg-black pl-2.5 pt-2.5">
+        <aside className="h-full w-16 shrink-0 bg-black px-2.5 pt-2.5">
           <CommunitiesSidebar
             communities={communities}
-            isCommsLoading={isCommsLoading}
-            commsErrorMsg={commsErrorMsg}
             selectedCommSlug={selectedCommSlug}
             onSelectCommunity={onSelectCommunity}
+            onCreateCommunityClick={openCreateCommunityModal}
           />
         </aside>
         {/* Right content area */}
         <section className="h-full min-w-0 flex-1">
+          {communityCreateWarning ? (
+            <div className="mx-4 mt-3 rounded-md bg-yellow-500/10 px-3 py-2 text-sm text-yellow-300">
+              {communityCreateWarning}
+            </div>
+          ) : null}
           {selectedCommSlug ? (
             <CommunityChatContainer communitySlug={selectedCommSlug} embedded />
           ) : (
@@ -134,6 +174,11 @@ export default function ChatPage() {
           )}
         </section>
       </div>
+      <CreateCommunityModal
+        isOpen={isCreateCommunityModalOpen}
+        onClose={closeCreateCommunityModal}
+        onCreated={handleCommunityCreated}
+      />
     </main>
   );
 }

@@ -133,7 +133,7 @@ export default function TopBar() {
             <div className="relative" ref={userMenuContainerRef}>
               <button
                 type="button"
-                className="hover:text-[color:var(--text)] transition"
+                className="cursor-pointer hover:text-[color:var(--text)] transition"
                 onClick={() => setIsUserMenuOpen((prev) => !prev)}
                 aria-haspopup="menu"
                 aria-expanded={isUserMenuOpen}

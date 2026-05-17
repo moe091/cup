@@ -133,6 +133,7 @@ export default function CommunityChatContainer({ communitySlug, embedded = false
           communityId={communityId}
           communityName={communityName}
           channels={channels}
+          isLoading={isLoading}
         />
       </div>
     );
@@ -161,6 +162,7 @@ export default function CommunityChatContainer({ communitySlug, embedded = false
           communityId={communityId}
           communityName={communityName}
           channels={channels}
+          isLoading={isLoading}
         />
       </div>
     </main>

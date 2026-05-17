@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Inject } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { AvatarUploadTargetResponse } from '@cup/shared-types';
+import { AvatarUploadTargetResponse, CommunityIconUploadTargetResponseDto } from '@cup/shared-types';
 import type { ConfigType } from '@nestjs/config';
 import { storageConfig } from './storage.config';
 
@@ -37,6 +37,36 @@ export class StorageService {
       expiresIn: AVATAR_UPLOAD_EXPIRES_SECONDS,
     });
 
+    return {
+      uploadUrl,
+      method: 'PUT',
+      headers: {
+        'Content-Type': mimeType,
+      },
+      objectKey,
+      expiresInSeconds: AVATAR_UPLOAD_EXPIRES_SECONDS,
+    };
+  }
+
+  async createCommunityIconUploadTarget(communityIdRaw: string, mimeType: string): Promise<CommunityIconUploadTargetResponseDto> {
+    const communityId = communityIdRaw.trim();
+    if (!communityId) {
+      throw new BadRequestException('communityId is required');
+    }
+    const extension = AVATAR_EXTENSION_BY_MIME[mimeType];
+    if (!extension) {
+      throw new BadRequestException(`Unsupported community icon mimeType: ${mimeType}`);
+    }
+    const objectKey = `${this.storage.envPrefix}/communities/${communityId}/${randomUUID()}.${extension}`;
+    const s3 = new S3Client({ region: this.storage.region });
+    const command = new PutObjectCommand({
+      Bucket: this.storage.bucketName,
+      Key: objectKey,
+      ContentType: mimeType,
+    });
+    const uploadUrl = await getSignedUrl(s3, command, {
+      expiresIn: AVATAR_UPLOAD_EXPIRES_SECONDS,
+    });
     return {
       uploadUrl,
       method: 'PUT',

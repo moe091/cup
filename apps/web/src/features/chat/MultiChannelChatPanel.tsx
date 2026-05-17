@@ -17,6 +17,7 @@ export type MCCPProps = {
   communityId: string | null;
   communityName?: string;
   channels: MCCPChannel[];
+  isLoading?: boolean;
 };
 
 export default function MultiChannelChatPanel({
@@ -25,6 +26,7 @@ export default function MultiChannelChatPanel({
   communityId,
   communityName,
   channels,
+  isLoading = false,
 }: MCCPProps) {
   const hasChannels = channels.length > 0;
   const selectedChannel = useMemo(
@@ -48,6 +50,10 @@ export default function MultiChannelChatPanel({
     );
   }
 
+  function renderLoadingState() {
+    return <section className="h-full min-h-0 bg-[color:var(--panel-strong)]" />;
+  }
+
   return (
     <div className="grid h-full min-h-0 grid-cols-1 bg-[color:var(--panel)]/95 text-[15px] text-[color:var(--text)] lg:grid-cols-[300px_1fr]">
       <div className="min-h-0">
@@ -60,7 +66,11 @@ export default function MultiChannelChatPanel({
       </div>
 
       <div className="min-h-0">
-        {hasChannels && selectedChannel ? <ChannelChatView channel={selectedChannel} connection={connection} communityId={communityId} /> : renderNoChannels()}
+        {isLoading
+          ? renderLoadingState()
+          : hasChannels && selectedChannel
+            ? <ChannelChatView channel={selectedChannel} connection={connection} communityId={communityId} />
+            : renderNoChannels()}
       </div>
     </div>
   );
