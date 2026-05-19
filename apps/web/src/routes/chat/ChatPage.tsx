@@ -2,12 +2,13 @@ import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth";
 import type { MyCommunitiesResponseDto } from "@cup/shared-types"; 
 import { useCallback, useEffect, useState } from "react";
-import { fetchMyCommunities } from "../../api/communities";
+import { deleteCommunityBySlug, fetchMyCommunities, leaveCommunityBySlug } from "../../api/communities";
 import CommunitiesSidebar from "../../features/chat/CommunitiesSidebar";
 import CommunityChatContainer from "../../features/chat/CommunityChatContainer";
 import { LoginModal, type AuthMode } from "../../auth/LoginModal";
 import CreateCommunityModal from "../../features/communities/CreateCommunityModal";
 import type { CreateCommunityResponseDto } from "@cup/shared-types";
+import ConfirmTextModal from "../../components/ConfirmTextModal";
 
 export default function ChatPage() {
   const { user, isLoading } = useAuth();
@@ -17,6 +18,9 @@ export default function ChatPage() {
   const [loginModalInitialMode, setLoginModalInitialMode] = useState<AuthMode>("login");
   const [isCreateCommunityModalOpen, setIsCreateCommunityModalOpen] = useState(false);
   const [communityCreateWarning, setCommunityCreateWarning] = useState<string | null>(null);
+  const [communityNotice, setCommunityNotice] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ slug: string; name: string } | null>(null);
+  const [isDeletingCommunity, setIsDeletingCommunity] = useState(false);
 
   const openLoginModal = () => {
     setLoginModalInitialMode("login");
@@ -54,6 +58,20 @@ export default function ChatPage() {
     setSearchParams(nextParams, { replace: true });
   }, [searchParams, setSearchParams]);
 
+  useEffect(() => {
+    if (!communityNotice) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setCommunityNotice(null);
+    }, 2500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [communityNotice]);
+
   //effect to fetch community list for current user
   useEffect(() => { 
     if (!user) { //not logged in, don't try to fetch communities
@@ -87,6 +105,69 @@ export default function ChatPage() {
     nextParams.delete("channel");
     setSearchParams(nextParams);
   }, [searchParams, setSearchParams]);
+
+  const onLeaveCommunity = useCallback(async (slug: string) => {
+    await leaveCommunityBySlug(slug);
+    const refreshed = await fetchMyCommunities();
+    setCommunities(refreshed);
+
+    const currentSlug = searchParams.get('community');
+    if (currentSlug !== slug) {
+      return;
+    }
+
+    const nextParams = new URLSearchParams(searchParams);
+    const fallbackSlug = refreshed[0]?.slug;
+    if (fallbackSlug) {
+      nextParams.set('community', fallbackSlug);
+    } else {
+      nextParams.delete('community');
+    }
+    nextParams.delete('channel');
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  const onRequestDeleteCommunity = useCallback((community: { slug: string; name: string }) => {
+    setDeleteTarget(community);
+  }, []);
+
+  const onCancelDeleteCommunity = useCallback(() => {
+    if (isDeletingCommunity) {
+      return;
+    }
+    setDeleteTarget(null);
+  }, [isDeletingCommunity]);
+
+  const onConfirmDeleteCommunity = useCallback(async () => {
+    if (!deleteTarget) {
+      return;
+    }
+
+    setIsDeletingCommunity(true);
+    try {
+      await deleteCommunityBySlug(deleteTarget.slug);
+      const refreshed = await fetchMyCommunities();
+      setCommunities(refreshed);
+
+      const currentSlug = searchParams.get('community');
+      if (currentSlug === deleteTarget.slug) {
+        const nextParams = new URLSearchParams(searchParams);
+        const fallbackSlug = refreshed[0]?.slug;
+        if (fallbackSlug) {
+          nextParams.set('community', fallbackSlug);
+        } else {
+          nextParams.delete('community');
+        }
+        nextParams.delete('channel');
+        setSearchParams(nextParams, { replace: true });
+      }
+
+      setDeleteTarget(null);
+      setCommunityNotice('Community deleted.');
+    } finally {
+      setIsDeletingCommunity(false);
+    }
+  }, [deleteTarget, searchParams, setSearchParams]);
 
   const selectedCommSlug = searchParams.get("community") ?? communities[0]?.slug ?? null;
 
@@ -152,12 +233,15 @@ export default function ChatPage() {
     <main className="h-screen w-full bg-[#111317] pt-[var(--topbar-h)] overflow-hidden text-[color:var(--text)]">
       <div className="flex h-full min-h-0 w-full">
         {/* Left rail */}
-        <aside className="h-full w-16 shrink-0 bg-black px-2.5 pt-2.5">
+        <aside className="h-full w-[4.5rem] shrink-0 bg-black pt-2.5">
           <CommunitiesSidebar
             communities={communities}
             selectedCommSlug={selectedCommSlug}
             onSelectCommunity={onSelectCommunity}
             onCreateCommunityClick={openCreateCommunityModal}
+            onLeaveCommunity={onLeaveCommunity}
+            onRequestDeleteCommunity={onRequestDeleteCommunity}
+            onNotice={setCommunityNotice}
           />
         </aside>
         {/* Right content area */}
@@ -179,6 +263,23 @@ export default function ChatPage() {
         onClose={closeCreateCommunityModal}
         onCreated={handleCommunityCreated}
       />
+      <ConfirmTextModal
+        isOpen={Boolean(deleteTarget)}
+        title="Delete Community"
+        message={deleteTarget ? `This will permanently delete ${deleteTarget.name}. This action cannot be undone.` : ''}
+        confirmLabel="Delete Community"
+        confirmationText="DELETE"
+        isSubmitting={isDeletingCommunity}
+        onCancel={onCancelDeleteCommunity}
+        onConfirm={onConfirmDeleteCommunity}
+      />
+      {communityNotice ? (
+        <div className="pointer-events-none fixed left-1/2 top-[calc(var(--topbar-h)+0.75rem)] z-[160] -translate-x-1/2">
+          <div className="rounded-xl border border-[color:var(--line)] bg-[color:var(--panel-lighter)]/95 px-6 py-3 text-center text-base font-medium text-[color:var(--text)] shadow-[0_10px_28px_rgba(0,0,0,0.35)]">
+            {communityNotice}
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

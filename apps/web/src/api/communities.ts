@@ -3,9 +3,14 @@ import type {
   CommunitySummaryDto,
   CreateCommunityRequestDto,
   CreateCommunityResponseDto,
+  DeleteCommunityResponseDto,
+  GetPublicCommunitiesQueryDto,
+  JoinCommunityResponseDto,
+  LeaveCommunityResponseDto,
   MyCommunitiesResponseDto,
   CommunityIconUploadTargetRequestDto,
   CommunityIconUploadTargetResponseDto,
+  PublicCommunitiesResponseDto,
   UpdateCommunityIconRequestDto,
 } from "@cup/shared-types";
 import { buildCsrfHeaders } from "./csrf";
@@ -48,6 +53,87 @@ export async function fetchMyCommunities(): Promise<MyCommunitiesResponseDto> {
   }
 
   return (await response.json()) as MyCommunitiesResponseDto;
+}
+
+export async function fetchPublicCommunities(query: GetPublicCommunitiesQueryDto): Promise<PublicCommunitiesResponseDto> {
+  const params = new URLSearchParams();
+
+  if (query.search?.trim()) {
+    params.set('search', query.search.trim());
+  }
+  if (query.limit !== undefined) {
+    params.set('limit', String(query.limit));
+  }
+  if (query.cursor) {
+    params.set('cursor', query.cursor);
+  }
+
+  const queryString = params.toString();
+  const endpoint = queryString
+    ? `/api/communities/public?${queryString}`
+    : '/api/communities/public';
+
+  const response = await fetch(endpoint, {
+    credentials: 'include',
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch public communities: ${response.status}`);
+  }
+
+  return (await response.json()) as PublicCommunitiesResponseDto;
+}
+
+export async function joinCommunityBySlug(slug: string): Promise<JoinCommunityResponseDto> {
+  const csrfHeaders = await buildCsrfHeaders();
+  const response = await fetch(`/api/communities/${encodeURIComponent(slug)}/join`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      ...csrfHeaders,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, 'Failed to join community.'));
+  }
+
+  return (await response.json()) as JoinCommunityResponseDto;
+}
+
+export async function leaveCommunityBySlug(slug: string): Promise<LeaveCommunityResponseDto> {
+  const csrfHeaders = await buildCsrfHeaders();
+  const response = await fetch(`/api/communities/${encodeURIComponent(slug)}/leave`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      ...csrfHeaders,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, 'Failed to leave community.'));
+  }
+
+  return (await response.json()) as LeaveCommunityResponseDto;
+}
+
+export async function deleteCommunityBySlug(slug: string): Promise<DeleteCommunityResponseDto> {
+  const csrfHeaders = await buildCsrfHeaders();
+  const response = await fetch(`/api/communities/${encodeURIComponent(slug)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      ...csrfHeaders,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, 'Failed to delete community.'));
+  }
+
+  return (await response.json()) as DeleteCommunityResponseDto;
 }
 
 export async function createCommunity(payload: CreateCommunityRequestDto): Promise<CreateCommunityResponseDto> {

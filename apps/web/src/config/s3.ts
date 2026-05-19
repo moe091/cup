@@ -6,7 +6,6 @@ function trimSlashes(value: string): string {
 }
 
 export function buildS3AssetUrl(objectKey: string | null | undefined): string | null {
-  console.log("s3baseurl: ", S3_BASE_URL);
   if (!objectKey) {
     return null;
   }

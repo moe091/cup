@@ -7,31 +7,290 @@
     "joinedAt": "2026-01-15T18:01:00.000Z"
   },
   {
-    "communityId": "seed-community-archive",
-    "userId": "seed-user-freud",
-    "primaryRole": "moderator",
-    "permissionLevel": 2,
-    "joinedAt": "2026-01-15T18:02:00.000Z"
-  },
-  {
-    "communityId": "seed-community-archive",
-    "userId": "seed-user-adler",
+    "communityId": "seed-community-gaming-hub",
+    "userId": "seed-user-jung",
     "primaryRole": "member",
     "permissionLevel": 1,
-    "joinedAt": "2026-01-15T18:03:00.000Z"
+    "joinedAt": "2026-01-15T18:11:00.000Z"
+  },
+  {
+    "communityId": "seed-community-plant-club",
+    "userId": "seed-user-jung",
+    "primaryRole": "member",
+    "permissionLevel": 1,
+    "joinedAt": "2026-01-15T18:31:00.000Z"
+  },
+  {
+    "communityId": "seed-community-movie-lounge",
+    "userId": "seed-user-jung",
+    "primaryRole": "moderator",
+    "permissionLevel": 2,
+    "joinedAt": "2026-01-15T18:41:00.000Z"
   },
   {
     "communityId": "seed-community-midnight-lab",
     "userId": "seed-user-freud",
     "primaryRole": "owner",
     "permissionLevel": 10,
-    "joinedAt": "2026-01-15T18:04:00.000Z"
+    "joinedAt": "2026-01-15T18:06:00.000Z"
+  },
+  {
+    "communityId": "seed-community-philosophy-corner",
+    "userId": "seed-user-freud",
+    "primaryRole": "member",
+    "permissionLevel": 1,
+    "joinedAt": "2026-01-15T18:16:00.000Z"
+  },
+  {
+    "communityId": "seed-community-coding-workshop",
+    "userId": "seed-user-freud",
+    "primaryRole": "moderator",
+    "permissionLevel": 2,
+    "joinedAt": "2026-01-15T18:26:00.000Z"
+  },
+  {
+    "communityId": "seed-community-biking-group",
+    "userId": "seed-user-freud",
+    "primaryRole": "member",
+    "permissionLevel": 1,
+    "joinedAt": "2026-01-15T18:36:00.000Z"
+  },
+  {
+    "communityId": "seed-community-art-studio",
+    "userId": "seed-user-adler",
+    "primaryRole": "owner",
+    "permissionLevel": 10,
+    "joinedAt": "2026-01-15T18:21:00.000Z"
+  },
+  {
+    "communityId": "seed-community-music-room",
+    "userId": "seed-user-adler",
+    "primaryRole": "member",
+    "permissionLevel": 1,
+    "joinedAt": "2026-01-15T18:46:00.000Z"
+  },
+  {
+    "communityId": "seed-community-fitness-forum",
+    "userId": "seed-user-adler",
+    "primaryRole": "member",
+    "permissionLevel": 1,
+    "joinedAt": "2026-01-15T18:51:00.000Z"
+  },
+  {
+    "communityId": "seed-community-cooking-club",
+    "userId": "seed-user-adler",
+    "primaryRole": "moderator",
+    "permissionLevel": 2,
+    "joinedAt": "2026-01-15T18:56:00.000Z"
+  },
+  {
+    "communityId": "seed-community-gaming-hub",
+    "userId": "seed-user-iris",
+    "primaryRole": "member",
+    "permissionLevel": 3,
+    "joinedAt": "2026-01-15T19:01:00.000Z"
+  },
+  {
+    "communityId": "seed-community-coding-workshop",
+    "userId": "seed-user-iris",
+    "primaryRole": "member",
+    "permissionLevel": 2,
+    "joinedAt": "2026-01-15T19:02:00.000Z"
+  },
+  {
+    "communityId": "seed-community-plant-club",
+    "userId": "seed-user-iris",
+    "primaryRole": "member",
+    "permissionLevel": 1,
+    "joinedAt": "2026-01-15T19:03:00.000Z"
+  },
+  {
+    "communityId": "seed-community-music-room",
+    "userId": "seed-user-iris",
+    "primaryRole": "member",
+    "permissionLevel": 4,
+    "joinedAt": "2026-01-15T19:04:00.000Z"
+  },
+  {
+    "communityId": "seed-community-philosophy-corner",
+    "userId": "seed-user-luca",
+    "primaryRole": "member",
+    "permissionLevel": 1,
+    "joinedAt": "2026-01-15T19:05:00.000Z"
+  },
+  {
+    "communityId": "seed-community-art-studio",
+    "userId": "seed-user-luca",
+    "primaryRole": "member",
+    "permissionLevel": 2,
+    "joinedAt": "2026-01-15T19:06:00.000Z"
+  },
+  {
+    "communityId": "seed-community-movie-lounge",
+    "userId": "seed-user-luca",
+    "primaryRole": "member",
+    "permissionLevel": 3,
+    "joinedAt": "2026-01-15T19:07:00.000Z"
+  },
+  {
+    "communityId": "seed-community-fitness-forum",
+    "userId": "seed-user-luca",
+    "primaryRole": "member",
+    "permissionLevel": 1,
+    "joinedAt": "2026-01-15T19:08:00.000Z"
+  },
+  {
+    "communityId": "seed-community-cooking-club",
+    "userId": "seed-user-luca",
+    "primaryRole": "member",
+    "permissionLevel": 2,
+    "joinedAt": "2026-01-15T19:09:00.000Z"
+  },
+  {
+    "communityId": "seed-community-archive",
+    "userId": "seed-user-nina",
+    "primaryRole": "member",
+    "permissionLevel": 2,
+    "joinedAt": "2026-01-15T19:10:00.000Z"
+  },
+  {
+    "communityId": "seed-community-gaming-hub",
+    "userId": "seed-user-nina",
+    "primaryRole": "member",
+    "permissionLevel": 1,
+    "joinedAt": "2026-01-15T19:11:00.000Z"
+  },
+  {
+    "communityId": "seed-community-biking-group",
+    "userId": "seed-user-nina",
+    "primaryRole": "member",
+    "permissionLevel": 4,
+    "joinedAt": "2026-01-15T19:12:00.000Z"
+  },
+  {
+    "communityId": "seed-community-music-room",
+    "userId": "seed-user-nina",
+    "primaryRole": "member",
+    "permissionLevel": 2,
+    "joinedAt": "2026-01-15T19:13:00.000Z"
+  },
+  {
+    "communityId": "seed-community-cooking-club",
+    "userId": "seed-user-nina",
+    "primaryRole": "member",
+    "permissionLevel": 3,
+    "joinedAt": "2026-01-15T19:14:00.000Z"
   },
   {
     "communityId": "seed-community-midnight-lab",
-    "userId": "seed-user-jung",
+    "userId": "seed-user-omar",
+    "primaryRole": "member",
+    "permissionLevel": 2,
+    "joinedAt": "2026-01-15T19:15:00.000Z"
+  },
+  {
+    "communityId": "seed-community-coding-workshop",
+    "userId": "seed-user-omar",
+    "primaryRole": "member",
+    "permissionLevel": 4,
+    "joinedAt": "2026-01-15T19:16:00.000Z"
+  },
+  {
+    "communityId": "seed-community-plant-club",
+    "userId": "seed-user-omar",
     "primaryRole": "member",
     "permissionLevel": 1,
-    "joinedAt": "2026-01-15T18:03:00.000Z"
+    "joinedAt": "2026-01-15T19:17:00.000Z"
+  },
+  {
+    "communityId": "seed-community-biking-group",
+    "userId": "seed-user-omar",
+    "primaryRole": "member",
+    "permissionLevel": 3,
+    "joinedAt": "2026-01-15T19:18:00.000Z"
+  },
+  {
+    "communityId": "seed-community-fitness-forum",
+    "userId": "seed-user-omar",
+    "primaryRole": "member",
+    "permissionLevel": 2,
+    "joinedAt": "2026-01-15T19:19:00.000Z"
+  },
+  {
+    "communityId": "seed-community-gaming-hub",
+    "userId": "seed-user-priya",
+    "primaryRole": "member",
+    "permissionLevel": 2,
+    "joinedAt": "2026-01-15T19:20:00.000Z"
+  },
+  {
+    "communityId": "seed-community-philosophy-corner",
+    "userId": "seed-user-priya",
+    "primaryRole": "member",
+    "permissionLevel": 4,
+    "joinedAt": "2026-01-15T19:21:00.000Z"
+  },
+  {
+    "communityId": "seed-community-art-studio",
+    "userId": "seed-user-priya",
+    "primaryRole": "member",
+    "permissionLevel": 3,
+    "joinedAt": "2026-01-15T19:22:00.000Z"
+  },
+  {
+    "communityId": "seed-community-movie-lounge",
+    "userId": "seed-user-priya",
+    "primaryRole": "member",
+    "permissionLevel": 1,
+    "joinedAt": "2026-01-15T19:23:00.000Z"
+  },
+  {
+    "communityId": "seed-community-music-room",
+    "userId": "seed-user-priya",
+    "primaryRole": "member",
+    "permissionLevel": 2,
+    "joinedAt": "2026-01-15T19:24:00.000Z"
+  },
+  {
+    "communityId": "seed-community-cooking-club",
+    "userId": "seed-user-priya",
+    "primaryRole": "member",
+    "permissionLevel": 1,
+    "joinedAt": "2026-01-15T19:25:00.000Z"
+  },
+  {
+    "communityId": "seed-community-archive",
+    "userId": "seed-user-quinn",
+    "primaryRole": "member",
+    "permissionLevel": 3,
+    "joinedAt": "2026-01-15T19:26:00.000Z"
+  },
+  {
+    "communityId": "seed-community-midnight-lab",
+    "userId": "seed-user-quinn",
+    "primaryRole": "member",
+    "permissionLevel": 1,
+    "joinedAt": "2026-01-15T19:27:00.000Z"
+  },
+  {
+    "communityId": "seed-community-coding-workshop",
+    "userId": "seed-user-quinn",
+    "primaryRole": "member",
+    "permissionLevel": 2,
+    "joinedAt": "2026-01-15T19:28:00.000Z"
+  },
+  {
+    "communityId": "seed-community-biking-group",
+    "userId": "seed-user-quinn",
+    "primaryRole": "member",
+    "permissionLevel": 4,
+    "joinedAt": "2026-01-15T19:29:00.000Z"
+  },
+  {
+    "communityId": "seed-community-fitness-forum",
+    "userId": "seed-user-quinn",
+    "primaryRole": "member",
+    "permissionLevel": 2,
+    "joinedAt": "2026-01-15T19:30:00.000Z"
   }
 ]

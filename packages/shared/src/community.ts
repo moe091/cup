@@ -64,3 +64,43 @@ export type UpdateCommunityIconRequestDto = {
   iconKey: string | null;
 };
 
+export type GetPublicCommunitiesQueryDto = {
+  search?: string;
+  limit?: number | string;
+  cursor?: string;
+};
+
+export type PublicCommunityListItemDto = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  joinMode: CommunityJoinMode;
+  iconKey: string | null;
+  createdAt: string;
+  memberCount: number;
+  joinedByMe: boolean;
+};
+
+export type PublicCommunitiesResponseDto = {
+  items: PublicCommunityListItemDto[];
+  nextCursor: string | null;
+};
+
+export type JoinCommunityResponseDto = {
+  communityId: string;
+  slug: string;
+  joined: boolean;
+};
+
+export type LeaveCommunityResponseDto = {
+  communityId: string;
+  slug: string;
+  left: boolean;
+};
+
+export type DeleteCommunityResponseDto = {
+  communityId: string;
+  slug: string;
+  deleted: boolean;
+};

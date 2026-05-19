@@ -5,9 +5,14 @@ import type {
   CommunityJoinMode,
   CreateCommunityRequestDto,
   CreateCommunityResponseDto,
+  DeleteCommunityResponseDto,
+  GetPublicCommunitiesQueryDto,
+  JoinCommunityResponseDto,
+  LeaveCommunityResponseDto,
   MyCommunitiesResponseDto,
   CommunityIconUploadTargetRequestDto,
   CommunityIconUploadTargetResponseDto,
+  PublicCommunitiesResponseDto,
   UpdateCommunityIconRequestDto,
 } from '@cup/shared-types';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -17,6 +22,8 @@ const COMMUNITY_NAME_MAX_LENGTH = 60;
 const COMMUNITY_DESCRIPTION_MAX_LENGTH = 240;
 const DEFAULT_PUBLIC_CHANNEL_LEVEL = 0;
 const DEFAULT_NON_PUBLIC_CHANNEL_LEVEL = 1;
+const PUBLIC_COMMUNITY_DEFAULT_LIMIT = 20;
+const PUBLIC_COMMUNITY_MAX_LIMIT = 50;
 
 @Injectable()
 export class CommunitiesService {
@@ -83,7 +90,7 @@ export class CommunitiesService {
 
     return {
       id: created.id,
-      slug: created.slug ?? '',
+      slug: created.slug,
       name: created.name,
       description: created.description,
       joinMode: created.joinMode as CommunityJoinMode,
@@ -120,7 +127,7 @@ export class CommunitiesService {
       },
     });
 
-    if (!comm || !comm.slug) {
+    if (!comm) {
       throw new NotFoundException('Community not found');
     }
 
@@ -285,11 +292,238 @@ export class CommunitiesService {
 
     return {
       id: updated.id,
-      slug: updated.slug ?? '',
+      slug: updated.slug,
       name: updated.name,
       description: updated.description,
       joinMode: updated.joinMode as CommunityJoinMode,
       iconKey: updated.iconKey,
+    };
+  }
+
+  async getPublicCommunities(
+    query: GetPublicCommunitiesQueryDto,
+    viewerUserId?: string,
+  ): Promise<PublicCommunitiesResponseDto> {
+    const parsedLimit = Number.parseInt(String(query.limit ?? PUBLIC_COMMUNITY_DEFAULT_LIMIT), 10);
+    const limit = Number.isNaN(parsedLimit)
+      ? PUBLIC_COMMUNITY_DEFAULT_LIMIT
+      : Math.min(Math.max(parsedLimit, 1), PUBLIC_COMMUNITY_MAX_LIMIT);
+    const search = query.search?.trim();
+
+    const rows = await this.prisma.community.findMany({
+      where: {
+        joinMode: 'PUBLIC',
+        ...(search
+          ? {
+            OR: [
+              {
+                name: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                description: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+            ],
+          }
+          : {}),
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: limit + 1,
+      ...(query.cursor
+        ? {
+          cursor: { id: query.cursor },
+          skip: 1,
+        }
+        : {}),
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        description: true,
+        joinMode: true,
+        iconKey: true,
+        createdAt: true,
+        _count: {
+          select: {
+            members: true,
+          },
+        },
+        ...(viewerUserId
+          ? {
+            members: {
+              where: {
+                userId: viewerUserId,
+              },
+              select: {
+                userId: true,
+              },
+              take: 1,
+            },
+          }
+          : {}),
+      },
+    });
+
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+
+    return {
+      items: items.map((community) => ({
+        id: community.id,
+        slug: community.slug,
+        name: community.name,
+        description: community.description,
+        joinMode: community.joinMode as CommunityJoinMode,
+        iconKey: community.iconKey,
+        createdAt: community.createdAt.toISOString(),
+        memberCount: community._count.members,
+        joinedByMe:
+          viewerUserId && 'members' in community
+            ? community.members.length > 0
+            : false,
+      })),
+      nextCursor: hasMore ? rows[limit].id : null,
+    };
+  }
+
+  async joinCommunityBySlug(userId: string, slug: string): Promise<JoinCommunityResponseDto> {
+    const normalizedSlug = slug.trim();
+    if (!normalizedSlug) {
+      throw new BadRequestException('Community slug is required');
+    }
+
+    const community = await this.prisma.community.findUnique({
+      where: { slug: normalizedSlug },
+      select: { id: true, slug: true, joinMode: true },
+    });
+
+    if (!community) {
+      throw new NotFoundException('Community not found');
+    }
+
+    if (community.joinMode !== 'PUBLIC') {
+      throw new ForbiddenException('Only public communities can be joined directly');
+    }
+
+    const existingMembership = await this.prisma.communityMember.findUnique({
+      where: {
+        communityId_userId: {
+          communityId: community.id,
+          userId,
+        },
+      },
+      select: { userId: true },
+    });
+
+    if (existingMembership) {
+      return {
+        communityId: community.id,
+        slug: community.slug,
+        joined: false,
+      };
+    }
+
+    await this.prisma.communityMember.create({
+      data: {
+        communityId: community.id,
+        userId,
+        primaryRole: 'member',
+        permissionLevel: 1,
+      },
+    });
+
+    return {
+      communityId: community.id,
+      slug: community.slug,
+      joined: true,
+    };
+  }
+
+  async leaveCommunityBySlug(userId: string, slug: string): Promise<LeaveCommunityResponseDto> {
+    const normalizedSlug = slug.trim();
+    if (!normalizedSlug) {
+      throw new BadRequestException('Community slug is required');
+    }
+
+    const community = await this.prisma.community.findUnique({
+      where: { slug: normalizedSlug },
+      select: { id: true, slug: true, ownerUserId: true },
+    });
+
+    if (!community) {
+      throw new NotFoundException('Community not found');
+    }
+
+    if (community.ownerUserId === userId) {
+      throw new ForbiddenException('Community owner cannot leave their own community');
+    }
+
+    const existingMembership = await this.prisma.communityMember.findUnique({
+      where: {
+        communityId_userId: {
+          communityId: community.id,
+          userId,
+        },
+      },
+      select: { userId: true },
+    });
+
+    if (!existingMembership) {
+      return {
+        communityId: community.id,
+        slug: community.slug,
+        left: false,
+      };
+    }
+
+    await this.prisma.communityMember.delete({
+      where: {
+        communityId_userId: {
+          communityId: community.id,
+          userId,
+        },
+      },
+    });
+
+    return {
+      communityId: community.id,
+      slug: community.slug,
+      left: true,
+    };
+  }
+
+  async deleteCommunityBySlug(userId: string, slug: string): Promise<DeleteCommunityResponseDto> {
+    const normalizedSlug = slug.trim();
+    if (!normalizedSlug) {
+      throw new BadRequestException('Community slug is required');
+    }
+
+    const community = await this.prisma.community.findUnique({
+      where: { slug: normalizedSlug },
+      select: { id: true, slug: true, ownerUserId: true },
+    });
+
+    if (!community) {
+      throw new NotFoundException('Community not found');
+    }
+
+    if (community.ownerUserId !== userId) {
+      throw new ForbiddenException('Only the community owner can delete this community');
+    }
+
+    await this.prisma.community.delete({
+      where: { id: community.id },
+    });
+
+    return {
+      communityId: community.id,
+      slug: community.slug,
+      deleted: true,
     };
   }
 
@@ -313,11 +547,9 @@ export class CommunitiesService {
       orderBy: [{ joinedAt: 'desc' }, { communityId: 'asc' }],
     });
 
-    return memberships
-      .filter((membership) => membership.community.slug)
-      .map((membership) => ({
+    return memberships.map((membership) => ({
         id: membership.community.id,
-        slug: membership.community.slug as string,
+        slug: membership.community.slug,
         name: membership.community.name,
         iconKey: membership.community.iconKey,
         permissionLevel: membership.permissionLevel,

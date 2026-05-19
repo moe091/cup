@@ -106,5 +106,113 @@
     "createdAt": "2026-01-15T18:17:48.000Z",
     "editedAt": null,
     "deletedAt": null
+  },
+  {
+    "id": "seed-msg-gaming-001",
+    "channelId": "seed-channel-gaming-general",
+    "authorUserId": "seed-user-jung",
+    "body": "Seeded test message for gaming community.",
+    "createdAt": "2026-01-15T19:31:00.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-gaming-002",
+    "channelId": "seed-channel-gaming-lfg",
+    "authorUserId": "seed-user-iris",
+    "body": "Looking for group for quick co-op sessions.",
+    "createdAt": "2026-01-15T19:31:30.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-philosophy-001",
+    "channelId": "seed-channel-philosophy-general",
+    "authorUserId": "seed-user-freud",
+    "body": "Seeded test message for philosophy discussions.",
+    "createdAt": "2026-01-15T19:32:00.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-art-001",
+    "channelId": "seed-channel-art-showcase",
+    "authorUserId": "seed-user-adler",
+    "body": "Posting a placeholder artwork thread for testing.",
+    "createdAt": "2026-01-15T19:32:30.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-coding-001",
+    "channelId": "seed-channel-coding-general",
+    "authorUserId": "seed-user-freud",
+    "body": "Seeded test message for coding workshop.",
+    "createdAt": "2026-01-15T19:33:00.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-coding-002",
+    "channelId": "seed-channel-coding-help",
+    "authorUserId": "seed-user-omar",
+    "body": "Can someone review this simple TypeScript type error?",
+    "createdAt": "2026-01-15T19:33:30.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-plants-001",
+    "channelId": "seed-channel-plant-care",
+    "authorUserId": "seed-user-jung",
+    "body": "Seeded test message for plant care tips.",
+    "createdAt": "2026-01-15T19:34:00.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-biking-001",
+    "channelId": "seed-channel-biking-routes",
+    "authorUserId": "seed-user-freud",
+    "body": "Sharing a short beginner-friendly route for testing.",
+    "createdAt": "2026-01-15T19:34:30.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-movie-001",
+    "channelId": "seed-channel-movie-recommendations",
+    "authorUserId": "seed-user-jung",
+    "body": "Seeded test message for movie recommendations.",
+    "createdAt": "2026-01-15T19:35:00.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-music-001",
+    "channelId": "seed-channel-music-sharing",
+    "authorUserId": "seed-user-adler",
+    "body": "Drop a track you are listening to this week.",
+    "createdAt": "2026-01-15T19:35:30.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-fitness-001",
+    "channelId": "seed-channel-fitness-routines",
+    "authorUserId": "seed-user-adler",
+    "body": "Seeded test message for workout routine chat.",
+    "createdAt": "2026-01-15T19:36:00.000Z",
+    "editedAt": null,
+    "deletedAt": null
+  },
+  {
+    "id": "seed-msg-cooking-001",
+    "channelId": "seed-channel-cooking-recipes",
+    "authorUserId": "seed-user-priya",
+    "body": "Seeded test message for simple recipe sharing.",
+    "createdAt": "2026-01-15T19:36:30.000Z",
+    "editedAt": null,
+    "deletedAt": null
   }
 ]

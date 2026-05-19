@@ -25,7 +25,7 @@ type CommunitySeed = {
   id: string;
   name: string;
   description: string | null;
-  slug: string | null;
+  slug: string;
   ownerUserId: string | null;
   iconKey: string | null;
   joinMode: 'PUBLIC' | 'REQUEST' | 'INVITE_ONLY';

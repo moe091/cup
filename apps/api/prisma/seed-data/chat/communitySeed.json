@@ -2,10 +2,10 @@
   {
     "id": "seed-community-archive",
     "name": "Collective Archive",
-    "description": "A quiet lounge for sharing ideas, projects, and late-night game plans.",
+    "description": "Seeded test community about shared projects, used for testing purposes.",
     "slug": "collective-archive",
     "ownerUserId": "seed-user-jung",
-    "iconKey": "dev/communities/seed-community-archive/chromagram.jfif",
+    "iconKey": null,
     "joinMode": "PUBLIC",
     "createdAt": "2026-01-15T18:00:00.000Z",
     "updatedAt": "2026-01-15T18:00:00.000Z"
@@ -13,12 +13,122 @@
   {
     "id": "seed-community-midnight-lab",
     "name": "Midnight Lab",
-    "description": "A private build room for experiments and prototypes.",
+    "description": "Seeded test community about private experiments, used for testing purposes.",
     "slug": "midnight-lab",
     "ownerUserId": "seed-user-freud",
-    "iconKey": "dev/communities/seed-community-archive/chromagram.jfif",
+    "iconKey": null,
     "joinMode": "REQUEST",
-    "createdAt": "2026-01-15T18:00:00.000Z",
-    "updatedAt": "2026-01-15T18:00:00.000Z"
+    "createdAt": "2026-01-15T18:05:00.000Z",
+    "updatedAt": "2026-01-15T18:05:00.000Z"
+  },
+  {
+    "id": "seed-community-gaming-hub",
+    "name": "Gaming Hub",
+    "description": "Seeded test community about gaming, used for testing purposes.",
+    "slug": "gaming-hub",
+    "ownerUserId": null,
+    "iconKey": null,
+    "joinMode": "PUBLIC",
+    "createdAt": "2026-01-15T18:10:00.000Z",
+    "updatedAt": "2026-01-15T18:10:00.000Z"
+  },
+  {
+    "id": "seed-community-philosophy-corner",
+    "name": "Philosophy Corner",
+    "description": "Seeded test community about philosophy, used for testing purposes.",
+    "slug": "philosophy-corner",
+    "ownerUserId": null,
+    "iconKey": null,
+    "joinMode": "PUBLIC",
+    "createdAt": "2026-01-15T18:15:00.000Z",
+    "updatedAt": "2026-01-15T18:15:00.000Z"
+  },
+  {
+    "id": "seed-community-art-studio",
+    "name": "Art Studio",
+    "description": "Seeded test community about art, used for testing purposes.",
+    "slug": "art-studio",
+    "ownerUserId": "seed-user-adler",
+    "iconKey": null,
+    "joinMode": "PUBLIC",
+    "createdAt": "2026-01-15T18:20:00.000Z",
+    "updatedAt": "2026-01-15T18:20:00.000Z"
+  },
+  {
+    "id": "seed-community-coding-workshop",
+    "name": "Coding Workshop",
+    "description": "Seeded test community about coding, used for testing purposes.",
+    "slug": "coding-workshop",
+    "ownerUserId": null,
+    "iconKey": null,
+    "joinMode": "PUBLIC",
+    "createdAt": "2026-01-15T18:25:00.000Z",
+    "updatedAt": "2026-01-15T18:25:00.000Z"
+  },
+  {
+    "id": "seed-community-plant-club",
+    "name": "Plant Club",
+    "description": "Seeded test community about plants, used for testing purposes.",
+    "slug": "plant-club",
+    "ownerUserId": null,
+    "iconKey": null,
+    "joinMode": "PUBLIC",
+    "createdAt": "2026-01-15T18:30:00.000Z",
+    "updatedAt": "2026-01-15T18:30:00.000Z"
+  },
+  {
+    "id": "seed-community-biking-group",
+    "name": "Biking Group",
+    "description": "Seeded test community about biking, used for testing purposes.",
+    "slug": "biking-group",
+    "ownerUserId": null,
+    "iconKey": null,
+    "joinMode": "PUBLIC",
+    "createdAt": "2026-01-15T18:35:00.000Z",
+    "updatedAt": "2026-01-15T18:35:00.000Z"
+  },
+  {
+    "id": "seed-community-movie-lounge",
+    "name": "Movie Lounge",
+    "description": "Seeded test community about movies, used for testing purposes.",
+    "slug": "movie-lounge",
+    "ownerUserId": null,
+    "iconKey": null,
+    "joinMode": "PUBLIC",
+    "createdAt": "2026-01-15T18:40:00.000Z",
+    "updatedAt": "2026-01-15T18:40:00.000Z"
+  },
+  {
+    "id": "seed-community-music-room",
+    "name": "Music Room",
+    "description": "Seeded test community about music, used for testing purposes.",
+    "slug": "music-room",
+    "ownerUserId": null,
+    "iconKey": null,
+    "joinMode": "PUBLIC",
+    "createdAt": "2026-01-15T18:45:00.000Z",
+    "updatedAt": "2026-01-15T18:45:00.000Z"
+  },
+  {
+    "id": "seed-community-fitness-forum",
+    "name": "Fitness Forum",
+    "description": "Seeded test community about fitness, used for testing purposes.",
+    "slug": "fitness-forum",
+    "ownerUserId": null,
+    "iconKey": null,
+    "joinMode": "PUBLIC",
+    "createdAt": "2026-01-15T18:50:00.000Z",
+    "updatedAt": "2026-01-15T18:50:00.000Z"
+  },
+  {
+    "id": "seed-community-cooking-club",
+    "name": "Cooking Club",
+    "description": "Seeded test community about cooking, used for testing purposes.",
+    "slug": "cooking-club",
+    "ownerUserId": null,
+    "iconKey": null,
+    "joinMode": "INVITE_ONLY",
+    "createdAt": "2026-01-15T18:55:00.000Z",
+    "updatedAt": "2026-01-15T18:55:00.000Z"
   }
 ]

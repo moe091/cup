@@ -151,7 +151,7 @@ model Community {
   id          String   @id @default(uuid())
   name        String
   description String?
-  slug        String?  @unique
+  slug        String   @unique
   ownerUserId String?
   joinMode    CommunityJoinMode @default(PUBLIC)
   createdAt   DateTime @default(now())

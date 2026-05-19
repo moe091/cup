@@ -10,9 +10,14 @@ describe('CommunitiesService', () => {
     $transaction: jest.Mock;
     community: {
       findUnique: jest.Mock;
+      findMany: jest.Mock;
+      delete: jest.Mock;
       update: jest.Mock;
     };
     communityMember: {
+      findUnique: jest.Mock;
+      create: jest.Mock;
+      delete: jest.Mock;
       findMany: jest.Mock;
     };
   };
@@ -25,9 +30,14 @@ describe('CommunitiesService', () => {
       $transaction: jest.fn(),
       community: {
         findUnique: jest.fn(),
+        findMany: jest.fn(),
+        delete: jest.fn(),
         update: jest.fn(),
       },
       communityMember: {
+        findUnique: jest.fn(),
+        create: jest.fn(),
+        delete: jest.fn(),
         findMany: jest.fn(),
       },
     };
@@ -203,5 +213,191 @@ describe('CommunitiesService', () => {
         sizeBytes: 1024,
       }),
     ).rejects.toThrow(NotFoundException);
+  });
+
+  it('lists public communities with substring search and nextCursor', async () => {
+    prismaMock.community.findMany.mockResolvedValue([
+      {
+        id: 'community-3',
+        slug: 'dog-lovers',
+        name: 'Dog Lovers Community',
+        description: 'all about dogs',
+        joinMode: 'PUBLIC',
+        iconKey: null,
+        createdAt: new Date('2026-01-03T00:00:00.000Z'),
+        _count: { members: 5 },
+        members: [],
+      },
+      {
+        id: 'community-2',
+        slug: 'hotdog-fans',
+        name: 'Hotdog Fans',
+        description: null,
+        joinMode: 'PUBLIC',
+        iconKey: null,
+        createdAt: new Date('2026-01-02T00:00:00.000Z'),
+        _count: { members: 7 },
+        members: [{ userId: 'viewer-1' }],
+      },
+      {
+        id: 'community-1',
+        slug: 'old-dogs',
+        name: 'Old Dogs',
+        description: null,
+        joinMode: 'PUBLIC',
+        iconKey: null,
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        _count: { members: 2 },
+        members: [],
+      },
+    ]);
+
+    const result = await service.getPublicCommunities({ search: 'dog', limit: '2' }, 'viewer-1');
+
+    expect(prismaMock.community.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          joinMode: 'PUBLIC',
+          OR: expect.any(Array),
+        }),
+        take: 3,
+      }),
+    );
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0].slug).toBe('dog-lovers');
+    expect(result.items[1].slug).toBe('hotdog-fans');
+    expect(result.items[1].joinedByMe).toBe(true);
+    expect(result.nextCursor).toBe('community-1');
+  });
+
+  it('lists public communities for unauthenticated viewer with joinedByMe false', async () => {
+    prismaMock.community.findMany.mockResolvedValue([
+      {
+        id: 'community-1',
+        slug: 'dog-lovers',
+        name: 'Dog Lovers',
+        description: null,
+        joinMode: 'PUBLIC',
+        iconKey: null,
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        _count: { members: 4 },
+      },
+    ]);
+
+    const result = await service.getPublicCommunities({});
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].joinedByMe).toBe(false);
+    expect(result.nextCursor).toBeNull();
+  });
+
+  it('joins a public community when user is not yet a member', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({ id: 'community-1', slug: 'gaming-hub', joinMode: 'PUBLIC' });
+    prismaMock.communityMember.findUnique.mockResolvedValue(null);
+    prismaMock.communityMember.create.mockResolvedValue(undefined);
+
+    const result = await service.joinCommunityBySlug('user-1', 'gaming-hub');
+
+    expect(prismaMock.communityMember.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          communityId: 'community-1',
+          userId: 'user-1',
+          primaryRole: 'member',
+          permissionLevel: 1,
+        }),
+      }),
+    );
+    expect(result.joined).toBe(true);
+  });
+
+  it('returns joined false when membership already exists', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({ id: 'community-1', slug: 'gaming-hub', joinMode: 'PUBLIC' });
+    prismaMock.communityMember.findUnique.mockResolvedValue({ userId: 'user-1' });
+
+    const result = await service.joinCommunityBySlug('user-1', 'gaming-hub');
+
+    expect(prismaMock.communityMember.create).not.toHaveBeenCalled();
+    expect(result.joined).toBe(false);
+  });
+
+  it('rejects join for non-public communities', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({ id: 'community-1', slug: 'midnight-lab', joinMode: 'REQUEST' });
+
+    await expect(service.joinCommunityBySlug('user-1', 'midnight-lab')).rejects.toThrow(ForbiddenException);
+    expect(prismaMock.communityMember.create).not.toHaveBeenCalled();
+  });
+
+  it('leaves a community when membership exists', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({
+      id: 'community-1',
+      slug: 'gaming-hub',
+      ownerUserId: 'owner-1',
+    });
+    prismaMock.communityMember.findUnique.mockResolvedValue({ userId: 'user-1' });
+    prismaMock.communityMember.delete.mockResolvedValue(undefined);
+
+    const result = await service.leaveCommunityBySlug('user-1', 'gaming-hub');
+
+    expect(prismaMock.communityMember.delete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          communityId_userId: {
+            communityId: 'community-1',
+            userId: 'user-1',
+          },
+        },
+      }),
+    );
+    expect(result.left).toBe(true);
+  });
+
+  it('returns left false when membership does not exist', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({
+      id: 'community-1',
+      slug: 'gaming-hub',
+      ownerUserId: 'owner-1',
+    });
+    prismaMock.communityMember.findUnique.mockResolvedValue(null);
+
+    const result = await service.leaveCommunityBySlug('user-1', 'gaming-hub');
+
+    expect(prismaMock.communityMember.delete).not.toHaveBeenCalled();
+    expect(result.left).toBe(false);
+  });
+
+  it('rejects owner leaving their own community', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({
+      id: 'community-1',
+      slug: 'gaming-hub',
+      ownerUserId: 'user-1',
+    });
+
+    await expect(service.leaveCommunityBySlug('user-1', 'gaming-hub')).rejects.toThrow(ForbiddenException);
+  });
+
+  it('deletes community when requester is owner', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({
+      id: 'community-1',
+      slug: 'gaming-hub',
+      ownerUserId: 'user-1',
+    });
+    prismaMock.community.delete.mockResolvedValue(undefined);
+
+    const result = await service.deleteCommunityBySlug('user-1', 'gaming-hub');
+
+    expect(prismaMock.community.delete).toHaveBeenCalledWith({ where: { id: 'community-1' } });
+    expect(result.deleted).toBe(true);
+  });
+
+  it('rejects delete when requester is not owner', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({
+      id: 'community-1',
+      slug: 'gaming-hub',
+      ownerUserId: 'owner-1',
+    });
+
+    await expect(service.deleteCommunityBySlug('user-1', 'gaming-hub')).rejects.toThrow(ForbiddenException);
+    expect(prismaMock.community.delete).not.toHaveBeenCalled();
   });
 });
