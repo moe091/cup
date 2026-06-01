@@ -10,6 +10,7 @@ import ChatPage from "./routes/chat/ChatPage";
 const CommunityPage = lazy(() => import("./routes/communities/CommunityPage"));
 const CommunityChatPage = lazy(() => import("./routes/communities/CommunityChatPage"));
 const CommunitiesDiscoverPage = lazy(() => import("./routes/communities/CommunitiesDiscoverPage"));
+const CommunitySettingsPage = lazy(() => import("./routes/communities/CommunitySettingsPage"));
 const GamesLayout = lazy(() => import("./routes/games/GamesLayout"));
 const Browse = lazy(() => import("./routes/games/Browse"));
 const BouncerLayout = lazy(() => import("./routes/games/bouncer/BouncerLayout"));
@@ -140,6 +141,14 @@ export default function App() {
           element={
             <Suspense fallback={null}>
               <CommunitiesDiscoverPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/communities/:slug/settings"
+          element={
+            <Suspense fallback={null}>
+              <CommunitySettingsPage />
             </Suspense>
           }
         />

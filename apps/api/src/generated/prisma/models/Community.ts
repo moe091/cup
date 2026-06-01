@@ -55,6 +55,7 @@ export type CommunityCountAggregateOutputType = {
   slug: number
   ownerUserId: number
   joinMode: number
+  permissionConfig: number
   createdAt: number
   updatedAt: number
   iconKey: number
@@ -93,6 +94,7 @@ export type CommunityCountAggregateInputType = {
   slug?: true
   ownerUserId?: true
   joinMode?: true
+  permissionConfig?: true
   createdAt?: true
   updatedAt?: true
   iconKey?: true
@@ -178,6 +180,7 @@ export type CommunityGroupByOutputType = {
   slug: string
   ownerUserId: string | null
   joinMode: $Enums.CommunityJoinMode
+  permissionConfig: runtime.JsonValue
   createdAt: Date
   updatedAt: Date
   iconKey: string | null
@@ -211,6 +214,7 @@ export type CommunityWhereInput = {
   slug?: Prisma.StringFilter<"Community"> | string
   ownerUserId?: Prisma.StringNullableFilter<"Community"> | string | null
   joinMode?: Prisma.EnumCommunityJoinModeFilter<"Community"> | $Enums.CommunityJoinMode
+  permissionConfig?: Prisma.JsonFilter<"Community">
   createdAt?: Prisma.DateTimeFilter<"Community"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Community"> | Date | string
   iconKey?: Prisma.StringNullableFilter<"Community"> | string | null
@@ -226,6 +230,7 @@ export type CommunityOrderByWithRelationInput = {
   slug?: Prisma.SortOrder
   ownerUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   joinMode?: Prisma.SortOrder
+  permissionConfig?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   iconKey?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -244,6 +249,7 @@ export type CommunityWhereUniqueInput = Prisma.AtLeast<{
   description?: Prisma.StringNullableFilter<"Community"> | string | null
   ownerUserId?: Prisma.StringNullableFilter<"Community"> | string | null
   joinMode?: Prisma.EnumCommunityJoinModeFilter<"Community"> | $Enums.CommunityJoinMode
+  permissionConfig?: Prisma.JsonFilter<"Community">
   createdAt?: Prisma.DateTimeFilter<"Community"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Community"> | Date | string
   iconKey?: Prisma.StringNullableFilter<"Community"> | string | null
@@ -259,6 +265,7 @@ export type CommunityOrderByWithAggregationInput = {
   slug?: Prisma.SortOrder
   ownerUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   joinMode?: Prisma.SortOrder
+  permissionConfig?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   iconKey?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -277,6 +284,7 @@ export type CommunityScalarWhereWithAggregatesInput = {
   slug?: Prisma.StringWithAggregatesFilter<"Community"> | string
   ownerUserId?: Prisma.StringNullableWithAggregatesFilter<"Community"> | string | null
   joinMode?: Prisma.EnumCommunityJoinModeWithAggregatesFilter<"Community"> | $Enums.CommunityJoinMode
+  permissionConfig?: Prisma.JsonWithAggregatesFilter<"Community">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Community"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Community"> | Date | string
   iconKey?: Prisma.StringNullableWithAggregatesFilter<"Community"> | string | null
@@ -288,6 +296,7 @@ export type CommunityCreateInput = {
   description?: string | null
   slug: string
   joinMode?: $Enums.CommunityJoinMode
+  permissionConfig: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   iconKey?: string | null
@@ -303,6 +312,7 @@ export type CommunityUncheckedCreateInput = {
   slug: string
   ownerUserId?: string | null
   joinMode?: $Enums.CommunityJoinMode
+  permissionConfig: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   iconKey?: string | null
@@ -316,6 +326,7 @@ export type CommunityUpdateInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
+  permissionConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   iconKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -331,6 +342,7 @@ export type CommunityUncheckedUpdateInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   ownerUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
+  permissionConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   iconKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -345,6 +357,7 @@ export type CommunityCreateManyInput = {
   slug: string
   ownerUserId?: string | null
   joinMode?: $Enums.CommunityJoinMode
+  permissionConfig: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   iconKey?: string | null
@@ -356,6 +369,7 @@ export type CommunityUpdateManyMutationInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
+  permissionConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   iconKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -368,6 +382,7 @@ export type CommunityUncheckedUpdateManyInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   ownerUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
+  permissionConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   iconKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -390,6 +405,7 @@ export type CommunityCountOrderByAggregateInput = {
   slug?: Prisma.SortOrder
   ownerUserId?: Prisma.SortOrder
   joinMode?: Prisma.SortOrder
+  permissionConfig?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   iconKey?: Prisma.SortOrder
@@ -511,6 +527,7 @@ export type CommunityCreateWithoutOwnerInput = {
   description?: string | null
   slug: string
   joinMode?: $Enums.CommunityJoinMode
+  permissionConfig: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   iconKey?: string | null
@@ -524,6 +541,7 @@ export type CommunityUncheckedCreateWithoutOwnerInput = {
   description?: string | null
   slug: string
   joinMode?: $Enums.CommunityJoinMode
+  permissionConfig: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   iconKey?: string | null
@@ -567,6 +585,7 @@ export type CommunityScalarWhereInput = {
   slug?: Prisma.StringFilter<"Community"> | string
   ownerUserId?: Prisma.StringNullableFilter<"Community"> | string | null
   joinMode?: Prisma.EnumCommunityJoinModeFilter<"Community"> | $Enums.CommunityJoinMode
+  permissionConfig?: Prisma.JsonFilter<"Community">
   createdAt?: Prisma.DateTimeFilter<"Community"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Community"> | Date | string
   iconKey?: Prisma.StringNullableFilter<"Community"> | string | null
@@ -578,6 +597,7 @@ export type CommunityCreateWithoutMembersInput = {
   description?: string | null
   slug: string
   joinMode?: $Enums.CommunityJoinMode
+  permissionConfig: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   iconKey?: string | null
@@ -592,6 +612,7 @@ export type CommunityUncheckedCreateWithoutMembersInput = {
   slug: string
   ownerUserId?: string | null
   joinMode?: $Enums.CommunityJoinMode
+  permissionConfig: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   iconKey?: string | null
@@ -620,6 +641,7 @@ export type CommunityUpdateWithoutMembersInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
+  permissionConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   iconKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -634,6 +656,7 @@ export type CommunityUncheckedUpdateWithoutMembersInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   ownerUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
+  permissionConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   iconKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -646,6 +669,7 @@ export type CommunityCreateWithoutChannelsInput = {
   description?: string | null
   slug: string
   joinMode?: $Enums.CommunityJoinMode
+  permissionConfig: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   iconKey?: string | null
@@ -660,6 +684,7 @@ export type CommunityUncheckedCreateWithoutChannelsInput = {
   slug: string
   ownerUserId?: string | null
   joinMode?: $Enums.CommunityJoinMode
+  permissionConfig: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   iconKey?: string | null
@@ -688,6 +713,7 @@ export type CommunityUpdateWithoutChannelsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
+  permissionConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   iconKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -702,6 +728,7 @@ export type CommunityUncheckedUpdateWithoutChannelsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   ownerUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
+  permissionConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   iconKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -714,6 +741,7 @@ export type CommunityCreateManyOwnerInput = {
   description?: string | null
   slug: string
   joinMode?: $Enums.CommunityJoinMode
+  permissionConfig: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   iconKey?: string | null
@@ -725,6 +753,7 @@ export type CommunityUpdateWithoutOwnerInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
+  permissionConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   iconKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -738,6 +767,7 @@ export type CommunityUncheckedUpdateWithoutOwnerInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
+  permissionConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   iconKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -751,6 +781,7 @@ export type CommunityUncheckedUpdateManyWithoutOwnerInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   joinMode?: Prisma.EnumCommunityJoinModeFieldUpdateOperationsInput | $Enums.CommunityJoinMode
+  permissionConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   iconKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -803,6 +834,7 @@ export type CommunitySelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   slug?: boolean
   ownerUserId?: boolean
   joinMode?: boolean
+  permissionConfig?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   iconKey?: boolean
@@ -819,6 +851,7 @@ export type CommunitySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   slug?: boolean
   ownerUserId?: boolean
   joinMode?: boolean
+  permissionConfig?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   iconKey?: boolean
@@ -832,6 +865,7 @@ export type CommunitySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   slug?: boolean
   ownerUserId?: boolean
   joinMode?: boolean
+  permissionConfig?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   iconKey?: boolean
@@ -845,12 +879,13 @@ export type CommunitySelectScalar = {
   slug?: boolean
   ownerUserId?: boolean
   joinMode?: boolean
+  permissionConfig?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   iconKey?: boolean
 }
 
-export type CommunityOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "slug" | "ownerUserId" | "joinMode" | "createdAt" | "updatedAt" | "iconKey", ExtArgs["result"]["community"]>
+export type CommunityOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "slug" | "ownerUserId" | "joinMode" | "permissionConfig" | "createdAt" | "updatedAt" | "iconKey", ExtArgs["result"]["community"]>
 export type CommunityInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   owner?: boolean | Prisma.Community$ownerArgs<ExtArgs>
   channels?: boolean | Prisma.Community$channelsArgs<ExtArgs>
@@ -878,6 +913,7 @@ export type $CommunityPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     slug: string
     ownerUserId: string | null
     joinMode: $Enums.CommunityJoinMode
+    permissionConfig: runtime.JsonValue
     createdAt: Date
     updatedAt: Date
     iconKey: string | null
@@ -1313,6 +1349,7 @@ export interface CommunityFieldRefs {
   readonly slug: Prisma.FieldRef<"Community", 'String'>
   readonly ownerUserId: Prisma.FieldRef<"Community", 'String'>
   readonly joinMode: Prisma.FieldRef<"Community", 'CommunityJoinMode'>
+  readonly permissionConfig: Prisma.FieldRef<"Community", 'Json'>
   readonly createdAt: Prisma.FieldRef<"Community", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Community", 'DateTime'>
   readonly iconKey: Prisma.FieldRef<"Community", 'String'>

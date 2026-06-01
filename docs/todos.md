@@ -8,6 +8,10 @@
 ### Community/channel permission notes:
 - When channel create/edit endpoints are implemented, enforce rule: non-public communities (`REQUEST`, `INVITE_ONLY`) cannot have channels with `requiredPermissionLevel = 0`.
 
+### Chat features
+- Store currently typed messages in localStorage so that if user leaves the page, changes channels, etc, they won't lose any in-progress messages.
+- add a frontend-character limit restriction with UI so that users know the message length and don't type out super long messages only to have them fail
+
 ### Profile/avatar setup, current todos:
 - Add and document environment-specific storage config strategy:
     - dev/staging/prod values for `S3_BUCKET_NAME` and `S3_ENV_PREFIX`

@@ -1,3 +1,13 @@
+Quick setup on laptop(use powershell):
+
+ssh cup-desktop         // windows desktop alias
+wsl -d Ubuntu-24.04     // command to start wsl
+ssh cup-wsl-tunnel      // ssh alias for desktop wsl with 5173 and 3001 port forwarding included
+
+Those are the main commands I actually need. Below are a bunch of notes written by Codex in case something breaks 
+and I need to remember how this all works
+
+
 ---
 description: Quick reference commands for remote dev over LAN SSH.
 ---

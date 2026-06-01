@@ -1,3 +1,7 @@
+import React, { useState } from "react";
+import type { ContextMenuState } from "../../components/common/ContextMenu";
+import ContextMenu from "../../components/common/ContextMenu";
+
 export type ChatChannelListItem = {
   id: string;
   name: string;
@@ -5,13 +9,49 @@ export type ChatChannelListItem = {
 };
 
 type ChannelListProps = {
-  communityName?: string;
+  communityName: string | null;
+  communitySlug: string | null;
   channels: ChatChannelListItem[];
   selectedChannelId: string | null;
   onSelectChannel: (channelId: string) => void;
 };
 
 export default function ChannelList({ communityName, channels, selectedChannelId, onSelectChannel }: ChannelListProps) {
+  const [rightClickMenu, setRightClickMenu] = useState<ContextMenuState | null>(null);
+  const closeContextMenu = () => setRightClickMenu(null); 
+
+  //for when an actual existing channel is right clicked - display right click menu and include delete/edit options
+  function channelRightClick(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    setRightClickMenu({
+      isOpen: true,
+      x: event.clientX,
+      y: event.clientY,
+      items: [
+        { id: "create_channel", label: "Create channel", clickHandler: async () => { console.log("create handler") } },
+        { id: "edit_channel", label: "Edit channel name", clickHandler: async () => { console.log("edit handler") } },
+        { id: "delete_channel", label: "Delete channel", clickHandler: async () => { console.log("dekete handler") } },
+      ]
+    });
+  }
+
+  //for when empty/blank area on the channelList is right clicked, show right-click menu, only need the 'create' option
+  function emptyRightClick(event: React.MouseEvent<HTMLElement>) {
+    const target = event.target as HTMLElement;
+    //return if one of the channel buttons was right clicked since that will handle showing the right-click menu
+    if (target.closest('button[data-channel-item="true"]')) 
+      return; 
+
+    event.preventDefault();
+    setRightClickMenu({
+      isOpen: true,
+      x: event.clientX,
+      y: event.clientY,
+      items: [
+        { id: "create_channel", label: "Create channel", clickHandler: async () => {console.log("blank create handler")} },
+      ]
+    });
+  } 
 
   function renderChannels() {
     return (
@@ -22,8 +62,10 @@ export default function ChannelList({ communityName, channels, selectedChannelId
           return (
             <button
               key={channel.id}
+              data-channel-item="true"
               type="button"
               onClick={() => onSelectChannel(channel.id)}
+              onContextMenu={channelRightClick}
               className={`flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-[13px] transition ${
                 isSelected
                   ? "border border-[color:var(--accent)] bg-[color:var(--panel)]"
@@ -51,7 +93,7 @@ export default function ChannelList({ communityName, channels, selectedChannelId
 
 
   return (
-    <aside className="flex h-full flex-col border-r border-[color:var(--line)] bg-[color:var(--panel-strong)] p-2.5">
+    <aside className="flex h-full flex-col border-r border-[color:var(--line)] bg-[color:var(--panel-strong)] p-2.5" onContextMenu={emptyRightClick}>
       <div className="-mx-2.5 -mt-2.5 mb-2.5 px-2.5 py-2.5">
         {communityName ? <h1 className="text-lg font-semibold">{communityName}</h1> : null}
         <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[color:var(--muted)]">Channels</p>
@@ -59,6 +101,7 @@ export default function ChannelList({ communityName, channels, selectedChannelId
 
       { channels.length === 0 ? renderNoChannels() : renderChannels() }
       
+      {rightClickMenu ? <ContextMenu {...rightClickMenu} onClose={closeContextMenu} /> : null}
     </aside>
   );
 }

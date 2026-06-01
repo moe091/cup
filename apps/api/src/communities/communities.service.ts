@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type {
   CommunityChannelDto,
+  CommunitySettingsDto,
   CommunitySummaryDto,
   CommunityJoinMode,
   CreateCommunityRequestDto,
@@ -14,9 +15,13 @@ import type {
   CommunityIconUploadTargetResponseDto,
   PublicCommunitiesResponseDto,
   UpdateCommunityIconRequestDto,
+  UpdateCommunitySettingsRequestDto,
+  CreateChannelRequestDTO,
+  CreateChannelResponseDTO,
 } from '@cup/shared-types';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/storage/storage.service';
+import { DEFAULT_COMMUNITY_PERMISSION_CONFIG, readCommunityPermissionConfig } from './community-permissions';
 
 const COMMUNITY_NAME_MAX_LENGTH = 60;
 const COMMUNITY_DESCRIPTION_MAX_LENGTH = 240;
@@ -24,6 +29,9 @@ const DEFAULT_PUBLIC_CHANNEL_LEVEL = 0;
 const DEFAULT_NON_PUBLIC_CHANNEL_LEVEL = 1;
 const PUBLIC_COMMUNITY_DEFAULT_LIMIT = 20;
 const PUBLIC_COMMUNITY_MAX_LIMIT = 50;
+const CHANNEL_NAME_MAX_LENGTH = 60;
+const MIN_PERMISSION_LEVEL = 0;
+const MAX_PERMISSION_LEVEL = 10;
 
 @Injectable()
 export class CommunitiesService {
@@ -44,6 +52,7 @@ export class CommunitiesService {
           joinMode: parsed.joinMode,
           ownerUserId: userId,
           iconKey: null,
+          permissionConfig: DEFAULT_COMMUNITY_PERMISSION_CONFIG,
         },
         select: {
           id: true,
@@ -140,6 +149,124 @@ export class CommunitiesService {
       ownerDisplayName: comm.owner?.displayName ?? comm.owner?.username ?? null,
       createdAt: comm.createdAt.toISOString(),
       channelCount: comm._count.channels,
+    };
+  }
+
+  async getCommunitySettingsBySlug(slug: string, viewerUserId?: string): Promise<CommunitySettingsDto> {
+    const normalizedSlug = slug.trim();
+    if (!normalizedSlug) {
+      throw new BadRequestException('Community slug is required');
+    }
+
+        const community = await this.prisma.community.findUnique({
+      where: { slug: normalizedSlug },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        description: true,
+        joinMode: true,
+        iconKey: true,
+        permissionConfig: true,
+      },
+    });
+
+    if (!community) {
+      throw new NotFoundException('Community not found');
+    }
+
+    let viewerPermissionLevel = 0;
+    if (viewerUserId) {
+      const membership = await this.prisma.communityMember.findUnique({
+        where: {
+          communityId_userId: {
+            communityId: community.id,
+            userId: viewerUserId,
+          },
+        },
+        select: { permissionLevel: true },
+      });
+      viewerPermissionLevel = membership?.permissionLevel ?? 0;
+    }
+
+    const permissionConfig = readCommunityPermissionConfig(community.permissionConfig);
+
+    return {
+      id: community.id,
+      slug: community.slug,
+      name: community.name,
+      description: community.description,
+      joinMode: community.joinMode as CommunityJoinMode,
+      iconKey: community.iconKey,
+      permissionConfig,
+      viewerPermissionLevel,
+      canEditGeneral: viewerPermissionLevel >= permissionConfig.editGeneral,
+    };
+  }
+
+  async updateCommunitySettingsBySlug(
+    requesterUserId: string,
+    slug: string,
+    payload: UpdateCommunitySettingsRequestDto,
+  ): Promise<CommunitySettingsDto> {
+    const normalizedSlug = slug.trim();
+    if (!normalizedSlug) {
+      throw new BadRequestException('Community slug is required');
+    }
+
+    const parsed = this.parseCreateCommunityPayload(payload);
+
+    const community = await this.prisma.community.findUnique({
+      where: { slug: normalizedSlug },
+      select: { id: true, permissionConfig: true },
+    });
+    if (!community) {
+      throw new NotFoundException('Community not found');
+    }
+
+    const permissionConfig = readCommunityPermissionConfig(community.permissionConfig);
+    const membership = await this.prisma.communityMember.findUnique({
+      where: {
+        communityId_userId: {
+          communityId: community.id,
+          userId: requesterUserId,
+        },
+      },
+      select: { permissionLevel: true },
+    });
+    const viewerPermissionLevel = membership?.permissionLevel ?? 0;
+    if (viewerPermissionLevel < permissionConfig.editGeneral) {
+      throw new ForbiddenException('You do not have permission to edit this community');
+    }
+
+    const updated = await this.prisma.community.update({
+      where: { id: community.id },
+      data: {
+        name: parsed.name,
+        description: parsed.description,
+        joinMode: parsed.joinMode,
+      },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        description: true,
+        joinMode: true,
+        iconKey: true,
+        permissionConfig: true,
+      },
+    });
+
+    return {
+      id: updated.id,
+      slug: updated.slug,
+      name: updated.name,
+      description: updated.description,
+      joinMode: updated.joinMode as CommunityJoinMode,
+      iconKey: updated.iconKey,
+      permissionConfig: readCommunityPermissionConfig(updated.permissionConfig),
+      viewerPermissionLevel,
+      canEditGeneral: true,
     };
   }
 
@@ -555,6 +682,69 @@ export class CommunitiesService {
         permissionLevel: membership.permissionLevel,
         joinedAt: membership.joinedAt.toISOString(),
       }));
+  }
+
+  async createCommunityChannel(userId: string, slug: string, body: CreateChannelRequestDTO): Promise<CreateChannelResponseDTO> {
+    if (!slug)
+      throw new BadRequestException('valid community slug is required');
+
+    if (!Number.isFinite(body.requiredPermissionLevel) || body.requiredPermissionLevel > MAX_PERMISSION_LEVEL || body.requiredPermissionLevel < MIN_PERMISSION_LEVEL)
+      throw new BadRequestException(`permission level must be a number from ${MIN_PERMISSION_LEVEL} to ${MAX_PERMISSION_LEVEL}`);
+
+    const channelName = body.name.trim();
+
+    if (!channelName || channelName.length >= CHANNEL_NAME_MAX_LENGTH)
+      throw new BadRequestException(`must specify channel name that is ${CHANNEL_NAME_MAX_LENGTH} characters or less`);
+
+    
+
+    const community = await this.prisma.community.findUnique({
+      where: { slug },
+      select: { id: true, permissionConfig: true }
+    });
+
+    if (!community)
+      throw new NotFoundException('Community not found');
+
+    const perms = readCommunityPermissionConfig(community.permissionConfig); //throws automatically if perm config is malformed
+
+    const member = await this.prisma.communityMember.findUnique({
+      where: { communityId_userId: {
+        communityId: community.id,
+        userId: userId,
+      }},
+      select: { permissionLevel: true },
+    });
+
+    if (!member) 
+      throw new ForbiddenException('non-community-members cannot create channels in a community');
+
+    if (member.permissionLevel < perms.createChannel)
+      throw new ForbiddenException("You don't have the required permission level to create a channel in this community");
+
+    const created = await this.prisma.channel.create({
+      data: {
+        communityId: community.id,
+        name: channelName,
+        kind: 'COMMUNITY',
+        visibility: 'PUBLIC',
+        requiredPermissionLevel: body.requiredPermissionLevel,
+        createdByUserId: userId,
+      },
+      select: {
+        id: true,
+        name: true,
+        requiredPermissionLevel: true,
+        createdAt: true,
+      },
+    });
+
+    return {
+      id: created.id,
+      name: created.name,
+      requiredPermissionLevel: created.requiredPermissionLevel,
+      createdAt: created.createdAt.toISOString(),
+    };
   }
 
   private parseCreateCommunityPayload(payload: CreateCommunityRequestDto): {

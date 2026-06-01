@@ -143,6 +143,7 @@ export const CommunityScalarFieldEnum = {
   slug: 'slug',
   ownerUserId: 'ownerUserId',
   joinMode: 'joinMode',
+  permissionConfig: 'permissionConfig',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   iconKey: 'iconKey'

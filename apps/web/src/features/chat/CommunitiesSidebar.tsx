@@ -28,6 +28,7 @@ type CommunitiesSidebarProps = {
   onCreateCommunityClick: () => void;
   onLeaveCommunity: (slug: string) => Promise<void>;
   onRequestDeleteCommunity: (community: { slug: string; name: string }) => void;
+  onOpenCommunitySettings: (slug: string) => void;
   onNotice: (message: string) => void;
 };
 
@@ -38,6 +39,7 @@ export default function CommunitiesSidebar({
   onCreateCommunityClick,
   onLeaveCommunity,
   onRequestDeleteCommunity,
+  onOpenCommunitySettings,
   onNotice,
 }: CommunitiesSidebarProps) {
   const [tooltip, setTooltip] = useState<{
@@ -114,7 +116,7 @@ export default function CommunitiesSidebar({
       return;
     }
 
-    const inviteUrl = `${window.location.origin}/chat?community=${encodeURIComponent(contextMenu.slug)}&invite=${encodeURIComponent(contextMenu.slug)}`;
+    const inviteUrl = `${window.location.origin}/communities/${encodeURIComponent(contextMenu.slug)}?invite=true`;
     try {
       await navigator.clipboard.writeText(inviteUrl);
       onNotice('Invite link copied.');
@@ -268,7 +270,11 @@ export default function CommunitiesSidebar({
         </button>
         <button
           type="button"
-          className="block w-full rounded-md px-2.5 py-2 text-left text-[color:var(--muted)]"
+          onClick={() => {
+            onOpenCommunitySettings(contextMenu.slug);
+            setContextMenu(null);
+          }}
+          className="block w-full rounded-md px-2.5 py-2 text-left transition hover:bg-white/10"
         >
           Server settings
         </button>

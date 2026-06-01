@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UnauthorizedException } from '@nestjs/common';
 import type {
+  CommunitySettingsDto,
   CommunityChannelDto,
   DeleteCommunityResponseDto,
   CommunityIconUploadTargetRequestDto,
@@ -13,6 +14,9 @@ import type {
   MyCommunitiesResponseDto,
   PublicCommunitiesResponseDto,
   UpdateCommunityIconRequestDto,
+  UpdateCommunitySettingsRequestDto,
+  CreateChannelResponseDTO,
+  CreateChannelRequestDTO,
 } from '@cup/shared-types';
 import type { AuthedRequest } from 'src/auth/auth.types';
 import { CommunitiesService } from './communities.service';
@@ -44,6 +48,24 @@ export class CommunitiesController {
     @Req() req: AuthedRequest,
   ): Promise<PublicCommunitiesResponseDto> {
     return this.communitiesService.getPublicCommunities(query, req.user?.id);
+  }
+
+  @Get(':slug/settings')
+  getCommunitySettingsBySlug(@Param('slug') slug: string, @Req() req: AuthedRequest): Promise<CommunitySettingsDto> {
+    return this.communitiesService.getCommunitySettingsBySlug(slug, req.user?.id);
+  }
+
+  @Patch(':slug/settings')
+  updateCommunitySettingsBySlug(
+    @Param('slug') slug: string,
+    @Req() req: AuthedRequest,
+    @Body() body: UpdateCommunitySettingsRequestDto,
+  ): Promise<CommunitySettingsDto> {
+    if (!req.user) {
+      throw new UnauthorizedException();
+    }
+
+    return this.communitiesService.updateCommunitySettingsBySlug(req.user.id, slug, body);
   }
 
   @Get(':slug')
@@ -102,5 +124,14 @@ export class CommunitiesController {
     }
 
     return this.communitiesService.updateCommunityIcon(req.user.id, communityId, body);
+  }
+
+  @Post(':slug/channels')
+  createChannel(@Param('slug') slug: string, @Req() req: AuthedRequest, @Body() body: CreateChannelRequestDTO): Promise<CreateChannelResponseDTO> {
+    if (!req.user) { //non logged-in users can't create channels ever
+      throw new UnauthorizedException();
+    }
+
+    return this.communitiesService.createCommunityChannel(req.user.id, slug, body);
   }
 }

@@ -4,7 +4,7 @@ import { fetchCommunityBySlug, fetchCommunityChannelsBySlug } from "../../api/co
 import MultiChannelChatPanel, { type MCCPChannel } from "./MultiChannelChatPanel";
 
 type CommunityChatContainerProps = {
-  communitySlug: string | undefined;
+  communitySlug: string | null;
   embedded?: boolean;
 };
 
@@ -131,6 +131,7 @@ export default function CommunityChatContainer({ communitySlug, embedded = false
           selectedChannelId={selectedChannelId}
           onSelectedChannelIdChange={handleSelectedChannelIdChange}
           communityId={communityId}
+          communitySlug={communitySlug}
           communityName={communityName}
           channels={channels}
           isLoading={isLoading}
@@ -160,6 +161,7 @@ export default function CommunityChatContainer({ communitySlug, embedded = false
           selectedChannelId={selectedChannelId}
           onSelectedChannelIdChange={handleSelectedChannelIdChange}
           communityId={communityId}
+          communitySlug={communitySlug}
           communityName={communityName}
           channels={channels}
           isLoading={isLoading}

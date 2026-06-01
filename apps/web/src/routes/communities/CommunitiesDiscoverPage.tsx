@@ -160,7 +160,14 @@ export default function CommunitiesDiscoverPage() {
                     </div>
                   )}
                   <div className="min-w-0">
-                    <h2 className="truncate text-sm font-medium">{community.name}</h2>
+                    <h2 className="truncate text-sm font-medium">
+                      <Link
+                        to={`/communities/${encodeURIComponent(community.slug)}`}
+                        className="transition hover:text-[color:var(--muted)]"
+                      >
+                        {community.name}
+                      </Link>
+                    </h2>
                     <p className="truncate text-xs text-[color:var(--muted)]">
                       {community.description ?? 'No description yet'}
                     </p>

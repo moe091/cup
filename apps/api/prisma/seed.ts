@@ -29,6 +29,12 @@ type CommunitySeed = {
   ownerUserId: string | null;
   iconKey: string | null;
   joinMode: 'PUBLIC' | 'REQUEST' | 'INVITE_ONLY';
+  permissionConfig: {
+    createChannel: number;
+    editChannelName: number;
+    deleteChannel: number;
+    editGeneral: number;
+  };
   createdAt: string;
   updatedAt: string;
 };
@@ -207,6 +213,7 @@ async function main() {
         ownerUserId: community.ownerUserId,
         iconKey: community.iconKey,
         joinMode: community.joinMode,
+        permissionConfig: community.permissionConfig,
         createdAt: new Date(community.createdAt),
         updatedAt: new Date(community.updatedAt),
       },
@@ -218,6 +225,7 @@ async function main() {
         ownerUserId: community.ownerUserId,
         iconKey: community.iconKey,
         joinMode: community.joinMode,
+        permissionConfig: community.permissionConfig,
         createdAt: new Date(community.createdAt),
         updatedAt: new Date(community.updatedAt),
       },

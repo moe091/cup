@@ -1,5 +1,6 @@
 import type {
   CommunityChannelDto,
+  CommunitySettingsDto,
   CommunitySummaryDto,
   CreateCommunityRequestDto,
   CreateCommunityResponseDto,
@@ -12,6 +13,9 @@ import type {
   CommunityIconUploadTargetResponseDto,
   PublicCommunitiesResponseDto,
   UpdateCommunityIconRequestDto,
+  UpdateCommunitySettingsRequestDto,
+  CreateChannelRequestDTO,
+  CreateChannelResponseDTO,
 } from "@cup/shared-types";
 import { buildCsrfHeaders } from "./csrf";
 
@@ -39,6 +43,41 @@ export async function fetchCommunityChannelsBySlug(slug: string): Promise<Commun
   }
 
   return (await response.json()) as CommunityChannelDto[];
+}
+
+export async function fetchCommunitySettingsBySlug(slug: string): Promise<CommunitySettingsDto> {
+  const response = await fetch(`/api/communities/${encodeURIComponent(slug)}/settings`, {
+    credentials: 'include',
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Community settings fetch failed: ${response.status}`);
+  }
+
+  return (await response.json()) as CommunitySettingsDto;
+}
+
+export async function updateCommunitySettingsBySlug(
+  slug: string,
+  payload: UpdateCommunitySettingsRequestDto,
+): Promise<CommunitySettingsDto> {
+  const csrfHeaders = await buildCsrfHeaders();
+  const response = await fetch(`/api/communities/${encodeURIComponent(slug)}/settings`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: {
+      ...csrfHeaders,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, 'Failed to update community settings.'));
+  }
+
+  return (await response.json()) as CommunitySettingsDto;
 }
 
 
@@ -191,6 +230,24 @@ export async function updateCommunityIconKey(communityId: string, payload: Updat
   }
   return (await response.json()) as CreateCommunityResponseDto;
 }
+
+export async function createCommunityChannel(slug: string, payload: CreateChannelRequestDTO): Promise<CreateChannelResponseDTO> {
+  const csrfHeaders = await buildCsrfHeaders();
+  const response = await fetch(`/api/communities/${encodeURIComponent(slug)}/channels`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      ...csrfHeaders,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, "Failed to create channel."));
+  }
+  return (await response.json()) as CreateChannelResponseDTO;
+}
+
 
 async function readErrorMessage(response: Response, fallbackMessage: string): Promise<string> {
   try {

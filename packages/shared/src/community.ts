@@ -30,6 +30,13 @@ export type CommunityChannelDto = {
 
 export type CommunityJoinMode = "PUBLIC" | "REQUEST" | "INVITE_ONLY";
 
+export type CommunityPermissionConfig = {
+  createChannel: number;
+  editChannelName: number;
+  deleteChannel: number;
+  editGeneral: number;
+};
+
 export type CreateCommunityRequestDto = {
   name: string;
   joinMode: CommunityJoinMode;
@@ -104,3 +111,33 @@ export type DeleteCommunityResponseDto = {
   slug: string;
   deleted: boolean;
 };
+
+export type CommunitySettingsDto = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  joinMode: CommunityJoinMode;
+  iconKey: string | null;
+  permissionConfig: CommunityPermissionConfig;
+  viewerPermissionLevel: number;
+  canEditGeneral: boolean;
+};
+
+export type UpdateCommunitySettingsRequestDto = {
+  name: string;
+  description?: string | null;
+  joinMode: CommunityJoinMode;
+};
+
+export type CreateChannelRequestDTO = {
+  name: string;
+  requiredPermissionLevel: number;
+}
+
+export type CreateChannelResponseDTO = {
+  id: string;
+  name: string;
+  requiredPermissionLevel: number;
+  createdAt: string; // ISO
+}

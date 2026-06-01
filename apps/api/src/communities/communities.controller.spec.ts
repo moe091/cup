@@ -11,6 +11,8 @@ describe('CommunitiesController', () => {
     createCommunity: jest.Mock;
     getMyCommunities: jest.Mock;
     getPublicCommunities: jest.Mock;
+    getCommunitySettingsBySlug: jest.Mock;
+    updateCommunitySettingsBySlug: jest.Mock;
     joinCommunityBySlug: jest.Mock;
     leaveCommunityBySlug: jest.Mock;
     deleteCommunityBySlug: jest.Mock;
@@ -23,6 +25,8 @@ describe('CommunitiesController', () => {
       createCommunity: jest.fn(),
       getMyCommunities: jest.fn(),
       getPublicCommunities: jest.fn(),
+      getCommunitySettingsBySlug: jest.fn(),
+      updateCommunitySettingsBySlug: jest.fn(),
       joinCommunityBySlug: jest.fn(),
       leaveCommunityBySlug: jest.fn(),
       deleteCommunityBySlug: jest.fn(),
@@ -78,6 +82,30 @@ describe('CommunitiesController', () => {
     await controller.getPublicCommunities(query, {} as AuthedRequest);
 
     expect(communitiesServiceMock.getPublicCommunities).toHaveBeenCalledWith(query, undefined);
+  });
+
+  it('returns community settings for viewer', async () => {
+    const req = { user: { id: 'user-1' } } as AuthedRequest;
+    communitiesServiceMock.getCommunitySettingsBySlug.mockResolvedValue({ id: 'community-1' });
+
+    await controller.getCommunitySettingsBySlug('gaming-hub', req);
+
+    expect(communitiesServiceMock.getCommunitySettingsBySlug).toHaveBeenCalledWith('gaming-hub', 'user-1');
+  });
+
+  it('updates community settings for authenticated editor', async () => {
+    const req = { user: { id: 'user-1' } } as AuthedRequest;
+    const payload = { name: 'Gaming Hub', description: 'desc', joinMode: 'PUBLIC' as const };
+    communitiesServiceMock.updateCommunitySettingsBySlug.mockResolvedValue({ id: 'community-1' });
+
+    await controller.updateCommunitySettingsBySlug('gaming-hub', req, payload);
+
+    expect(communitiesServiceMock.updateCommunitySettingsBySlug).toHaveBeenCalledWith('user-1', 'gaming-hub', payload);
+  });
+
+  it('rejects settings update when unauthenticated', async () => {
+    const payload = { name: 'Gaming Hub', description: 'desc', joinMode: 'PUBLIC' as const };
+    expect(() => controller.updateCommunitySettingsBySlug('gaming-hub', {} as AuthedRequest, payload)).toThrow(UnauthorizedException);
   });
 
   it('updates community icon for authenticated owner', async () => {

@@ -291,6 +291,66 @@ describe('CommunitiesService', () => {
     expect(result.nextCursor).toBeNull();
   });
 
+  it('returns community settings with canEditGeneral true for level 9+', async () => {
+    prismaMock.community.findUnique.mockResolvedValueOnce({
+      id: 'community-1',
+      slug: 'gaming-hub',
+      name: 'Gaming Hub',
+      description: 'desc',
+      joinMode: 'PUBLIC',
+      iconKey: null,
+      permissionConfig: { createChannel: 5, editChannelName: 6, deleteChannel: 6, editGeneral: 9 },
+    });
+    prismaMock.communityMember.findUnique.mockResolvedValueOnce({ permissionLevel: 9 });
+
+    const result = await service.getCommunitySettingsBySlug('gaming-hub', 'user-1');
+
+    expect(result.canEditGeneral).toBe(true);
+    expect(result.viewerPermissionLevel).toBe(9);
+  });
+
+  it('rejects community settings update for users below level 9', async () => {
+    prismaMock.community.findUnique.mockResolvedValueOnce({
+      id: 'community-1',
+      permissionConfig: { createChannel: 5, editChannelName: 6, deleteChannel: 6, editGeneral: 9 },
+    });
+    prismaMock.communityMember.findUnique.mockResolvedValueOnce({ permissionLevel: 5 });
+
+    await expect(
+      service.updateCommunitySettingsBySlug('user-1', 'gaming-hub', {
+        name: 'Gaming Hub',
+        description: 'desc',
+        joinMode: 'PUBLIC',
+      }),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it('updates community settings for level 9+ users', async () => {
+    prismaMock.community.findUnique.mockResolvedValueOnce({
+      id: 'community-1',
+      permissionConfig: { createChannel: 5, editChannelName: 6, deleteChannel: 6, editGeneral: 9 },
+    });
+    prismaMock.communityMember.findUnique.mockResolvedValueOnce({ permissionLevel: 9 });
+    prismaMock.community.update.mockResolvedValueOnce({
+      id: 'community-1',
+      slug: 'gaming-hub',
+      name: 'Gaming Hub 2',
+      description: 'new desc',
+      joinMode: 'PUBLIC',
+      iconKey: null,
+      permissionConfig: { createChannel: 5, editChannelName: 6, deleteChannel: 6, editGeneral: 9 },
+    });
+
+    const result = await service.updateCommunitySettingsBySlug('user-1', 'gaming-hub', {
+      name: 'Gaming Hub 2',
+      description: 'new desc',
+      joinMode: 'PUBLIC',
+    });
+
+    expect(result.name).toBe('Gaming Hub 2');
+    expect(result.canEditGeneral).toBe(true);
+  });
+
   it('joins a public community when user is not yet a member', async () => {
     prismaMock.community.findUnique.mockResolvedValue({ id: 'community-1', slug: 'gaming-hub', joinMode: 'PUBLIC' });
     prismaMock.communityMember.findUnique.mockResolvedValue(null);

@@ -131,6 +131,11 @@ export default function ChatPage() {
     setDeleteTarget(community);
   }, []);
 
+  const onOpenCommunitySettings = useCallback((slug: string) => {
+    const targetUrl = `/communities/${encodeURIComponent(slug)}/settings`;
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
+  }, []);
+
   const onCancelDeleteCommunity = useCallback(() => {
     if (isDeletingCommunity) {
       return;
@@ -241,6 +246,7 @@ export default function ChatPage() {
             onCreateCommunityClick={openCreateCommunityModal}
             onLeaveCommunity={onLeaveCommunity}
             onRequestDeleteCommunity={onRequestDeleteCommunity}
+            onOpenCommunitySettings={onOpenCommunitySettings}
             onNotice={setCommunityNotice}
           />
         </aside>

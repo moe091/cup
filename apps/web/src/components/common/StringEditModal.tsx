@@ -1,60 +1,54 @@
-import { useMemo, useState } from 'react';
+import { useState } from "react";
 
-type ConfirmTextModalProps = {
-  isOpen: boolean;
-  title: string;
-  message: string;
-  confirmLabel: string;
-  confirmationText: string;
-  isSubmitting?: boolean;
+
+type StringEditModalProps = {
+  onConfirm: (value: string) => Promise<void> | void;
   onCancel: () => void;
-  onConfirm: () => Promise<void> | void;
-};
-
-export default function ConfirmTextModal({
-  isOpen,
-  title,
-  message,
-  confirmLabel,
-  confirmationText,
-  isSubmitting = false,
+  title: string;
+  label: string;
+  initialValue: string; // empty string if creating new val
+  submitLabel: string; // e.g. 'Create' or 'Save' or 'Update Username'. Whatever we want the submit button to say
+  maxLength: number;
+  isSubmitting?: boolean;
+  isOpen: boolean;
+}
+export default function StringEditModal({
+  onConfirm,
   onCancel,
-  onConfirm, 
-}: ConfirmTextModalProps) {
-  const [currentVal, setCurrentVal] = useState('');
+  title,
+  label,
+  initialValue = "",
+  submitLabel = "Submit",
+  maxLength = 60,
+  isSubmitting = false,
+  isOpen = false,
+}: StringEditModalProps) {
+  const [currentVal, setCurrentVal] = useState(initialValue);
   const [error, setError] = useState<string | null>(null);
+  const canSubmit = currentVal.trim().length > 0 && !isSubmitting;
 
-  const canConfirm = useMemo(
-    () => currentVal.trim() === confirmationText && !isSubmitting,
-    [currentVal, confirmationText, isSubmitting],
-  );
+  function handleCancel() {
+    if (isSubmitting) return; //if we are already submitting then cancel shouldn't do anything, it's too late.
 
-  const handleCancel = () => {
-    if (isSubmitting) {
-      return;
-    }
     setCurrentVal('');
     setError(null);
     onCancel();
-  };
+  }
 
-  const handleConfirm = async () => {
-    if (!canConfirm) {
-      return;
-    }
-
+  async function handleSubmit() {
+    if (isSubmitting) return;
     setError(null);
+
     try {
-      await onConfirm();
+      await onConfirm(currentVal);
       setCurrentVal('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed.');
     }
-  };
-
-  if (!isOpen) {
-    return null;
   }
+
+  if (!isOpen)
+    return null;
 
   return (
     <div
@@ -68,16 +62,14 @@ export default function ConfirmTextModal({
     >
       <div className="w-full max-w-md rounded-2xl bg-[color:var(--panel)] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
         <h2 className="text-xl font-semibold text-[color:var(--text)]">{title}</h2>
-        <p className="mt-2 text-sm text-[color:var(--muted)]">{message}</p>
-        <p className="mt-4 text-xs text-[color:var(--muted)]">
-          Type <span className="font-semibold text-[color:var(--text)]">{confirmationText}</span> to confirm.
-        </p>
+        <p className="mt-2 text-sm text-[color:var(--muted)]">{label}</p>
         <input
           type="text"
+          maxLength={maxLength}
           value={currentVal}
           onChange={(event) => setCurrentVal(event.target.value)}
           className="mt-2 w-full rounded-lg bg-[color:var(--panel-strong)] px-3 py-2 text-sm text-[color:var(--text)] outline-none focus:ring-2 focus:ring-[color:var(--accent)]"
-          placeholder={confirmationText}
+          placeholder={initialValue}
           disabled={isSubmitting}
         />
         {error ? <p className="mt-2 text-sm text-red-300">{error}</p> : null}
@@ -92,11 +84,11 @@ export default function ConfirmTextModal({
           </button>
           <button
             type="button"
-            onClick={handleConfirm}
-            disabled={!canConfirm}
-            className="rounded-full bg-red-500/80 px-5 py-2 text-sm text-white transition enabled:cursor-pointer enabled:hover:bg-red-500 disabled:opacity-60"
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            className="rounded-full bg-green-500/70 px-5 py-2 text-sm text-white transition enabled:cursor-pointer enabled:hover:bg-green-500 disabled:opacity-60"
           >
-            {isSubmitting ? 'Working...' : confirmLabel}
+            {isSubmitting ? "Saving..." : submitLabel} 
           </button>
         </div>
       </div>

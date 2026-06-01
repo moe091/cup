@@ -19,5 +19,7 @@ You are a planning agent for this repo.
 - Warn about side effects or behavior changes.
 - Prioritize strict TypeScript practices.
 
+Fail-fast policy: Do not add normalization, coercion, fallback defaults, or defensive guards for values that should already be valid by contract; validate only true trust boundaries (external/untrusted input, auth, permissions, invariants), and otherwise let unexpected values fail explicitly so root causes remain visible.
+
 
 ---
