@@ -4,6 +4,7 @@ import ChannelChatView from "./ChannelChatView";
 import ChannelList from "./ChannelList";
 import { useChatConnection } from "./hooks/useChatConnection";
 import { useChannelRoom } from "./hooks/useChannelRoom";
+import type { UseCommunitySettingsResult } from "../communities/hooks/useCommunitySettings";
 
 export type MCCPChannel = {
   id: string;
@@ -19,6 +20,8 @@ export type MCCPProps = {
   communityName: string | null;
   channels: MCCPChannel[];
   isLoading?: boolean;
+  commSettings: UseCommunitySettingsResult;
+  onChannelsChanged: () => Promise<void>;
 };
 
 /**
@@ -45,6 +48,8 @@ export default function MultiChannelChatPanel({
   communityName,
   channels,
   isLoading = false,
+  commSettings,
+  onChannelsChanged,
 }: MCCPProps) {
   const hasChannels = channels.length > 0;
   const selectedChannel = useMemo(
@@ -81,6 +86,8 @@ export default function MultiChannelChatPanel({
           channels={channels}
           selectedChannelId={selectedChannel?.id ?? null}
           onSelectChannel={onSelectedChannelIdChange}
+          commSettings={commSettings}
+          onChannelsChanged={onChannelsChanged}
         />
       </div>
 

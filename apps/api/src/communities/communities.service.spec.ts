@@ -20,6 +20,12 @@ describe('CommunitiesService', () => {
       delete: jest.Mock;
       findMany: jest.Mock;
     };
+    channel: {
+      findUnique: jest.Mock;
+      create: jest.Mock;
+      update: jest.Mock;
+      delete: jest.Mock;
+    };
   };
   let storageServiceMock: {
     createCommunityIconUploadTarget: jest.Mock;
@@ -39,6 +45,12 @@ describe('CommunitiesService', () => {
         create: jest.fn(),
         delete: jest.fn(),
         findMany: jest.fn(),
+      },
+      channel: {
+        findUnique: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
       },
     };
 
@@ -459,5 +471,226 @@ describe('CommunitiesService', () => {
 
     await expect(service.deleteCommunityBySlug('user-1', 'gaming-hub')).rejects.toThrow(ForbiddenException);
     expect(prismaMock.community.delete).not.toHaveBeenCalled();
+  });
+
+  it('creates community channel for member at create channel permission threshold', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({
+      id: 'community-1',
+      permissionConfig: { createChannel: 5, editChannelName: 6, deleteChannel: 6, editGeneral: 9 },
+    });
+    prismaMock.communityMember.findUnique.mockResolvedValue({ permissionLevel: 5 });
+    prismaMock.channel.create.mockResolvedValue({
+      id: 'channel-1',
+      name: 'Raid Plans',
+      requiredPermissionLevel: 1,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    });
+
+    const result = await service.createCommunityChannel('user-1', 'gaming-hub', {
+      name: 'Raid Plans',
+      requiredPermissionLevel: 1,
+    });
+
+    expect(prismaMock.channel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          communityId: 'community-1',
+          name: 'Raid Plans',
+          requiredPermissionLevel: 1,
+          createdByUserId: 'user-1',
+        }),
+      }),
+    );
+    expect(result.name).toBe('Raid Plans');
+  });
+
+  it('rejects community channel create for member below create channel permission threshold', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({
+      id: 'community-1',
+      permissionConfig: { createChannel: 5, editChannelName: 6, deleteChannel: 6, editGeneral: 9 },
+    });
+    prismaMock.communityMember.findUnique.mockResolvedValue({ permissionLevel: 4 });
+
+    await expect(
+      service.createCommunityChannel('user-1', 'gaming-hub', {
+        name: 'Raid Plans',
+        requiredPermissionLevel: 1,
+      }),
+    ).rejects.toThrow(ForbiddenException);
+
+    expect(prismaMock.channel.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects community channel create for non-members', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({
+      id: 'community-1',
+      permissionConfig: { createChannel: 5, editChannelName: 6, deleteChannel: 6, editGeneral: 9 },
+    });
+    prismaMock.communityMember.findUnique.mockResolvedValue(null);
+
+    await expect(
+      service.createCommunityChannel('user-1', 'gaming-hub', {
+        name: 'Raid Plans',
+        requiredPermissionLevel: 1,
+      }),
+    ).rejects.toThrow(ForbiddenException);
+
+    expect(prismaMock.channel.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects community channel create with invalid name or required permission level', async () => {
+    await expect(
+      service.createCommunityChannel('user-1', 'gaming-hub', {
+        name: '   ',
+        requiredPermissionLevel: 1,
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    await expect(
+      service.createCommunityChannel('user-1', 'gaming-hub', {
+        name: 'Raid Plans',
+        requiredPermissionLevel: 11,
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(prismaMock.community.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('updates community channel name for member at edit channel permission threshold', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({
+      id: 'community-1',
+      permissionConfig: { createChannel: 5, editChannelName: 6, deleteChannel: 6, editGeneral: 9 },
+    });
+    prismaMock.channel.findUnique.mockResolvedValue({ communityId: 'community-1' });
+    prismaMock.communityMember.findUnique.mockResolvedValue({ permissionLevel: 6 });
+    prismaMock.channel.update.mockResolvedValue({
+      id: 'channel-1',
+      name: 'New Name',
+      requiredPermissionLevel: 1,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    });
+
+    const result = await service.updateCommunityChannel('user-1', 'gaming-hub', 'channel-1', { name: 'New Name' });
+
+    expect(prismaMock.channel.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'channel-1' },
+        data: { name: 'New Name' },
+      }),
+    );
+    expect(result.name).toBe('New Name');
+  });
+
+  it('rejects community channel update for member below edit channel permission threshold', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({
+      id: 'community-1',
+      permissionConfig: { createChannel: 5, editChannelName: 6, deleteChannel: 6, editGeneral: 9 },
+    });
+    prismaMock.channel.findUnique.mockResolvedValue({ communityId: 'community-1' });
+    prismaMock.communityMember.findUnique.mockResolvedValue({ permissionLevel: 5 });
+
+    await expect(
+      service.updateCommunityChannel('user-1', 'gaming-hub', 'channel-1', { name: 'New Name' }),
+    ).rejects.toThrow(ForbiddenException);
+
+    expect(prismaMock.channel.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects community channel update for non-members', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({
+      id: 'community-1',
+      permissionConfig: { createChannel: 5, editChannelName: 6, deleteChannel: 6, editGeneral: 9 },
+    });
+    prismaMock.channel.findUnique.mockResolvedValue({ communityId: 'community-1' });
+    prismaMock.communityMember.findUnique.mockResolvedValue(null);
+
+    await expect(
+      service.updateCommunityChannel('user-1', 'gaming-hub', 'channel-1', { name: 'New Name' }),
+    ).rejects.toThrow(ForbiddenException);
+
+    expect(prismaMock.channel.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects cross-community channel update as not found', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({
+      id: 'community-1',
+      permissionConfig: { createChannel: 5, editChannelName: 6, deleteChannel: 6, editGeneral: 9 },
+    });
+    prismaMock.channel.findUnique.mockResolvedValue({ communityId: 'community-2' });
+
+    await expect(
+      service.updateCommunityChannel('user-1', 'gaming-hub', 'channel-from-other-community', { name: 'New Name' }),
+    ).rejects.toThrow(NotFoundException);
+
+    expect(prismaMock.communityMember.findUnique).not.toHaveBeenCalled();
+    expect(prismaMock.channel.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects community channel update with invalid name', async () => {
+    await expect(
+      service.updateCommunityChannel('user-1', 'gaming-hub', 'channel-1', { name: '   ' }),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(prismaMock.community.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('deletes community channel for member at delete channel permission threshold', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({
+      id: 'community-1',
+      permissionConfig: { createChannel: 5, editChannelName: 6, deleteChannel: 6, editGeneral: 9 },
+    });
+    prismaMock.channel.findUnique.mockResolvedValue({ communityId: 'community-1' });
+    prismaMock.communityMember.findUnique.mockResolvedValue({ permissionLevel: 6 });
+    prismaMock.channel.delete.mockResolvedValue({ id: 'channel-1' });
+
+    const result = await service.deleteCommunityChannel('user-1', 'gaming-hub', 'channel-1');
+
+    expect(prismaMock.channel.delete).toHaveBeenCalledWith({ where: { id: 'channel-1' } });
+    expect(result).toEqual({ id: 'channel-1', deleted: true });
+  });
+
+  it('rejects community channel delete for member below delete channel permission threshold', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({
+      id: 'community-1',
+      permissionConfig: { createChannel: 5, editChannelName: 6, deleteChannel: 6, editGeneral: 9 },
+    });
+    prismaMock.channel.findUnique.mockResolvedValue({ communityId: 'community-1' });
+    prismaMock.communityMember.findUnique.mockResolvedValue({ permissionLevel: 5 });
+
+    await expect(
+      service.deleteCommunityChannel('user-1', 'gaming-hub', 'channel-1'),
+    ).rejects.toThrow(ForbiddenException);
+
+    expect(prismaMock.channel.delete).not.toHaveBeenCalled();
+  });
+
+  it('rejects community channel delete for non-members', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({
+      id: 'community-1',
+      permissionConfig: { createChannel: 5, editChannelName: 6, deleteChannel: 6, editGeneral: 9 },
+    });
+    prismaMock.channel.findUnique.mockResolvedValue({ communityId: 'community-1' });
+    prismaMock.communityMember.findUnique.mockResolvedValue(null);
+
+    await expect(
+      service.deleteCommunityChannel('user-1', 'gaming-hub', 'channel-1'),
+    ).rejects.toThrow(ForbiddenException);
+
+    expect(prismaMock.channel.delete).not.toHaveBeenCalled();
+  });
+
+  it('rejects cross-community channel delete as not found', async () => {
+    prismaMock.community.findUnique.mockResolvedValue({
+      id: 'community-1',
+      permissionConfig: { createChannel: 5, editChannelName: 6, deleteChannel: 6, editGeneral: 9 },
+    });
+    prismaMock.channel.findUnique.mockResolvedValue({ communityId: 'community-2' });
+
+    await expect(
+      service.deleteCommunityChannel('user-1', 'gaming-hub', 'channel-from-other-community'),
+    ).rejects.toThrow(NotFoundException);
+
+    expect(prismaMock.communityMember.findUnique).not.toHaveBeenCalled();
+    expect(prismaMock.channel.delete).not.toHaveBeenCalled();
   });
 });

@@ -16,6 +16,9 @@ import type {
   UpdateCommunitySettingsRequestDto,
   CreateChannelRequestDTO,
   CreateChannelResponseDTO,
+  UpdateChannelRequestDTO,
+  UpdateChannelResponseDTO,
+  DeleteChannelResponseDTO,
 } from "@cup/shared-types";
 import { buildCsrfHeaders } from "./csrf";
 
@@ -246,6 +249,38 @@ export async function createCommunityChannel(slug: string, payload: CreateChanne
     throw new Error(await readErrorMessage(response, "Failed to create channel."));
   }
   return (await response.json()) as CreateChannelResponseDTO;
+}
+
+export async function updateCommunityChannel(slug: string, channelId: string, payload: UpdateChannelRequestDTO): Promise<UpdateChannelResponseDTO> {
+  const csrfHeaders = await buildCsrfHeaders();
+  const response = await fetch(`/api/communities/${encodeURIComponent(slug)}/channels/${encodeURIComponent(channelId)}`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: {
+      ...csrfHeaders,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, "Failed to update channel."));
+  }
+  return (await response.json()) as UpdateChannelResponseDTO;
+}
+
+export async function deleteCommunityChannel(slug: string, channelId: string): Promise<DeleteChannelResponseDTO> {
+  const csrfHeaders = await buildCsrfHeaders();
+  const response = await fetch(`/api/communities/${encodeURIComponent(slug)}/channels/${encodeURIComponent(channelId)}`, {
+    method: "DELETE",
+    credentials: "include",
+    headers: {
+      ...csrfHeaders,
+    },
+  });
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, "Failed to delete channel."));
+  }
+  return (await response.json()) as DeleteChannelResponseDTO;
 }
 
 

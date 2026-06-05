@@ -18,6 +18,9 @@ describe('CommunitiesController', () => {
     deleteCommunityBySlug: jest.Mock;
     requestCommunityIconUploadTarget: jest.Mock;
     updateCommunityIcon: jest.Mock;
+    createCommunityChannel: jest.Mock;
+    updateCommunityChannel: jest.Mock;
+    deleteCommunityChannel: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -32,6 +35,9 @@ describe('CommunitiesController', () => {
       deleteCommunityBySlug: jest.fn(),
       requestCommunityIconUploadTarget: jest.fn(),
       updateCommunityIcon: jest.fn(),
+      createCommunityChannel: jest.fn(),
+      updateCommunityChannel: jest.fn(),
+      deleteCommunityChannel: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -167,5 +173,50 @@ describe('CommunitiesController', () => {
 
   it('rejects delete when unauthenticated', async () => {
     expect(() => controller.deleteCommunityBySlug('gaming-hub', {} as AuthedRequest)).toThrow(UnauthorizedException);
+  });
+
+  it('creates a channel for authenticated user', async () => {
+    const req = { user: { id: 'user-1' } } as AuthedRequest;
+    const payload = { name: 'Raid Plans', requiredPermissionLevel: 1 };
+    communitiesServiceMock.createCommunityChannel.mockResolvedValue({ id: 'channel-1' });
+
+    await controller.createChannel('gaming-hub', req, payload);
+
+    expect(communitiesServiceMock.createCommunityChannel).toHaveBeenCalledWith('user-1', 'gaming-hub', payload);
+  });
+
+  it('rejects channel create when unauthenticated', async () => {
+    const payload = { name: 'Raid Plans', requiredPermissionLevel: 1 };
+
+    expect(() => controller.createChannel('gaming-hub', {} as AuthedRequest, payload)).toThrow(UnauthorizedException);
+  });
+
+  it('updates a channel for authenticated user', async () => {
+    const req = { user: { id: 'user-1' } } as AuthedRequest;
+    const payload = { name: 'New Name' };
+    communitiesServiceMock.updateCommunityChannel.mockResolvedValue({ id: 'channel-1' });
+
+    await controller.updateChannel('gaming-hub', 'channel-1', req, payload);
+
+    expect(communitiesServiceMock.updateCommunityChannel).toHaveBeenCalledWith('user-1', 'gaming-hub', 'channel-1', payload);
+  });
+
+  it('rejects channel update when unauthenticated', async () => {
+    const payload = { name: 'New Name' };
+
+    expect(() => controller.updateChannel('gaming-hub', 'channel-1', {} as AuthedRequest, payload)).toThrow(UnauthorizedException);
+  });
+
+  it('deletes a channel for authenticated user', async () => {
+    const req = { user: { id: 'user-1' } } as AuthedRequest;
+    communitiesServiceMock.deleteCommunityChannel.mockResolvedValue({ id: 'channel-1', deleted: true });
+
+    await controller.deleteChannel('gaming-hub', 'channel-1', req);
+
+    expect(communitiesServiceMock.deleteCommunityChannel).toHaveBeenCalledWith('user-1', 'gaming-hub', 'channel-1');
+  });
+
+  it('rejects channel delete when unauthenticated', async () => {
+    expect(() => controller.deleteChannel('gaming-hub', 'channel-1', {} as AuthedRequest)).toThrow(UnauthorizedException);
   });
 });

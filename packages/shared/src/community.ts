@@ -141,3 +141,19 @@ export type CreateChannelResponseDTO = {
   requiredPermissionLevel: number;
   createdAt: string; // ISO
 }
+
+export type UpdateChannelRequestDTO = {
+  name: string;
+}
+
+export type UpdateChannelResponseDTO = {
+  id: string;
+  name: string;
+  requiredPermissionLevel: number;
+  createdAt: string; // ISO
+}
+
+export type DeleteChannelResponseDTO = {
+  id: string;
+  deleted: boolean;
+}

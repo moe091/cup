@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { fetchCommunityBySlug, fetchCommunityChannelsBySlug } from "../../api/communities";
 import MultiChannelChatPanel, { type MCCPChannel } from "./MultiChannelChatPanel";
+import { useCommunitySettings } from "../communities/hooks/useCommunitySettings";
 
 type CommunityChatContainerProps = {
   communitySlug: string | null;
@@ -15,9 +16,11 @@ export default function CommunityChatContainer({ communitySlug, embedded = false
   const [communityName, setCommunityName] = useState<string>("Unknown community");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const commSettings = useCommunitySettings(communitySlug);
 
   const requestedChannelId = searchParams.get("channel");
 
+  // uses requestedChannelId(channel ID pulled from URL) to get a useable selectedChannel var. Defaults to first channel, validates requested id exists.
   const selectedChannelId = useMemo(() => {
     if (!channels.length) {
       return null;
@@ -30,6 +33,8 @@ export default function CommunityChatContainer({ communitySlug, embedded = false
     return channels[0].id;
   }, [channels, requestedChannelId]);
 
+
+  //load community info and channel list when slug changes
   useEffect(() => {
     if (!communitySlug) {
       setChannels([]);
@@ -91,6 +96,7 @@ export default function CommunityChatContainer({ communitySlug, embedded = false
     };
   }, [communitySlug]);
 
+  // sync URL with selected channel ID when channel selection changes
   useEffect(() => {
     if (isLoading || errorMessage) {
       return;
@@ -111,6 +117,7 @@ export default function CommunityChatContainer({ communitySlug, embedded = false
     setSearchParams(nextParams, { replace: true });
   }, [errorMessage, isLoading, requestedChannelId, searchParams, selectedChannelId, setSearchParams]);
 
+  // callback passed into channelList panel, updates the URL with selected channel id when a channel is clicked. (the useEffect above responds to the URL param update)
   const handleSelectedChannelIdChange = useCallback(
     (channelId: string) => {
       if (channelId === requestedChannelId) {
@@ -124,6 +131,22 @@ export default function CommunityChatContainer({ communitySlug, embedded = false
     [requestedChannelId, searchParams, setSearchParams],
   );
 
+  const refreshChannels = useCallback(async () => {
+    if (!communitySlug) {
+      throw new Error("Cannot refresh channels without a community slug.");
+    }
+
+    const loadedChannels = await fetchCommunityChannelsBySlug(communitySlug);
+    const nextChannels: MCCPChannel[] = loadedChannels.map((channel) => ({
+      id: channel.id,
+      name: channel.name,
+      visibility: channel.visibility,
+    }));
+
+    setChannels(nextChannels);
+  }, [communitySlug]);
+
+  //simple wrapper for when embedded in another page. Eventually non-embedded layout can probably be deleted since we'll only use this
   if (embedded) {
     return (
       <div className="h-full min-h-0 text-[color:var(--text)]">
@@ -135,6 +158,8 @@ export default function CommunityChatContainer({ communitySlug, embedded = false
           communityName={communityName}
           channels={channels}
           isLoading={isLoading}
+          commSettings={commSettings}
+          onChannelsChanged={refreshChannels}
         />
       </div>
     );
@@ -165,6 +190,8 @@ export default function CommunityChatContainer({ communitySlug, embedded = false
           communityName={communityName}
           channels={channels}
           isLoading={isLoading}
+          commSettings={commSettings}
+          onChannelsChanged={refreshChannels}
         />
       </div>
     </main>

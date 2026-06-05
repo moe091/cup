@@ -17,6 +17,9 @@ import type {
   UpdateCommunitySettingsRequestDto,
   CreateChannelResponseDTO,
   CreateChannelRequestDTO,
+  UpdateChannelRequestDTO,
+  UpdateChannelResponseDTO,
+  DeleteChannelResponseDTO,
 } from '@cup/shared-types';
 import type { AuthedRequest } from 'src/auth/auth.types';
 import { CommunitiesService } from './communities.service';
@@ -133,5 +136,23 @@ export class CommunitiesController {
     }
 
     return this.communitiesService.createCommunityChannel(req.user.id, slug, body);
+  }
+
+  @Patch(':slug/channels/:channelId')
+  updateChannel(@Param('slug') slug: string, @Param('channelId') channelId: string, @Req() req: AuthedRequest, @Body() body: UpdateChannelRequestDTO): Promise<UpdateChannelResponseDTO> {
+    if (!req.user) { //non logged-in users can't edit channels ever
+      throw new UnauthorizedException();
+    }
+
+    return this.communitiesService.updateCommunityChannel(req.user.id, slug, channelId, body);
+  }
+
+  @Delete(':slug/channels/:channelId')
+  deleteChannel(@Param('slug') slug: string, @Param('channelId') channelId: string, @Req() req: AuthedRequest): Promise<DeleteChannelResponseDTO> {
+    if (!req.user) { //non logged-in users can't delete channels ever
+      throw new UnauthorizedException();
+    }
+
+    return this.communitiesService.deleteCommunityChannel(req.user.id, slug, channelId);
   }
 }

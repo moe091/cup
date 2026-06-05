@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import type { ContextMenuState } from "../../components/common/ContextMenu";
 import ContextMenu from "../../components/common/ContextMenu";
+import StringEditModal from "../../components/common/StringEditModal";
+import ConfirmTextModal from "../../components/ConfirmTextModal";
+import type { UseCommunitySettingsResult } from "../communities/hooks/useCommunitySettings";
+import { createCommunityChannel, deleteCommunityChannel, updateCommunityChannel } from "../../api/communities";
 
 export type ChatChannelListItem = {
   id: string;
@@ -14,24 +18,143 @@ type ChannelListProps = {
   channels: ChatChannelListItem[];
   selectedChannelId: string | null;
   onSelectChannel: (channelId: string) => void;
+  commSettings: UseCommunitySettingsResult;
+  onChannelsChanged: () => Promise<void>;
 };
 
-export default function ChannelList({ communityName, channels, selectedChannelId, onSelectChannel }: ChannelListProps) {
+type StringEditModalStatus = "create" | "edit" | "closed";
+
+
+export default function ChannelList({ communityName, communitySlug, channels, selectedChannelId, onSelectChannel, commSettings, onChannelsChanged }: ChannelListProps) {
   const [rightClickMenu, setRightClickMenu] = useState<ContextMenuState | null>(null);
   const closeContextMenu = () => setRightClickMenu(null); 
+  
+  const [editModalStatus, setEditModalStatus] = useState<StringEditModalStatus>("closed");
+  const [editingChannel, setEditingChannel] = useState<ChatChannelListItem | null>(null); // to keep track of the channel that is currently being edited, if any
+  const [deletingChannel, setDeletingChannel] = useState<ChatChannelListItem | null>(null);
+  const [isSubmittingChannelName, setIsSubmittingChannelName] = useState(false);
+  const [isDeletingChannel, setIsDeletingChannel] = useState(false);
+
+
+  const canCreateChannel = commSettings.viewerPermissionLevel >= commSettings.permissionConfig.createChannel;
+  const canEditChannelName = commSettings.viewerPermissionLevel >= commSettings.permissionConfig.editChannelName;
+  const canDeleteChannel = commSettings.viewerPermissionLevel >= commSettings.permissionConfig.deleteChannel;
+
+  async function handleCreateChannel(name: string) {
+    if (!communitySlug) {
+      throw new Error("Cannot create channel without a community slug.");
+    }
+  
+    setIsSubmittingChannelName(true);
+  
+    try {
+      await createCommunityChannel(communitySlug, {
+        name,
+        requiredPermissionLevel: 1, //this is the default permission level to access the newly created channel. TODO:: might add a UI to set permission level at creation, if not it can be edited afterwards
+      });
+      await onChannelsChanged();
+   
+      setEditModalStatus("closed");
+    } finally {
+      setIsSubmittingChannelName(false);
+    }
+  }
+  
+  async function handleEditChannel(name: string) {
+    if (!communitySlug) {
+      throw new Error("Cannot edit channel without a community slug.");
+    }
+  
+    if (!editingChannel) {
+      throw new Error("Cannot edit channel without a selected channel.");
+    }
+  
+    setIsSubmittingChannelName(true);
+  
+    try {
+      await updateCommunityChannel(communitySlug, editingChannel.id, {
+        name,
+      });
+      await onChannelsChanged();
+   
+      setEditingChannel(null);
+      setEditModalStatus("closed");
+    } finally {
+      setIsSubmittingChannelName(false);
+    }
+  }
+
+  async function handleDeleteChannel() {
+    if (!communitySlug) {
+      throw new Error("Cannot delete channel without a community slug.");
+    }
+
+    if (!deletingChannel) {
+      throw new Error("Cannot delete channel without a selected channel.");
+    }
+
+    setIsDeletingChannel(true);
+
+    try {
+      await deleteCommunityChannel(communitySlug, deletingChannel.id);
+      await onChannelsChanged();
+
+      setDeletingChannel(null);
+    } finally {
+      setIsDeletingChannel(false);
+    }
+  }
+  
+  const editModalOptions = {
+    create: { title: "Create Channel", submitLabel: "Create", handler: handleCreateChannel },
+    edit: { title: "Rename Channel", submitLabel: "Rename", handler: handleEditChannel },
+    closed: { title: "", submitLabel: "Submit", handler: () => {} },
+  };
+
+  const isEditModalOpen = editModalStatus != "closed";
+  const editModalTitle = editModalOptions[editModalStatus].title;
+  const editModalHandler = editModalOptions[editModalStatus].handler;
+  const editModalSubmitLabel = editModalOptions[editModalStatus].submitLabel;
+  
+
+  async function openCreateChannelModal() {
+    setEditModalStatus("create");
+  }
+
+  async function openEditChannelModal(channel: ChatChannelListItem) {
+    setEditingChannel(channel);
+    setEditModalStatus("edit");
+  }
+
+  async function openDeleteChannelModal(channel: ChatChannelListItem) {
+    setDeletingChannel(channel);
+  }
 
   //for when an actual existing channel is right clicked - display right click menu and include delete/edit options
-  function channelRightClick(event: React.MouseEvent<HTMLButtonElement>) {
+  function channelRightClick(event: React.MouseEvent<HTMLButtonElement>, channel: ChatChannelListItem) {
+    const items: ContextMenuState["items"] = [];
+
+    if (canCreateChannel) 
+      items.push({ id: "create_channel", label: "Create channel", clickHandler: openCreateChannelModal });
+    
+    if (canEditChannelName) 
+      items.push({ id: "edit_channel", label: "Edit channel name", clickHandler: () => openEditChannelModal(channel) });
+    
+    if (canDeleteChannel) 
+      items.push({ id: "delete_channel", label: "Delete channel", variant: "danger", clickHandler: () => openDeleteChannelModal(channel) });
+    
+    if (items.length == 0) { //if they don't have any right click options anyway then just show normal right click menu
+      setRightClickMenu(null);
+      return
+    }
+    
     event.preventDefault();
+
     setRightClickMenu({
       isOpen: true,
       x: event.clientX,
       y: event.clientY,
-      items: [
-        { id: "create_channel", label: "Create channel", clickHandler: async () => { console.log("create handler") } },
-        { id: "edit_channel", label: "Edit channel name", clickHandler: async () => { console.log("edit handler") } },
-        { id: "delete_channel", label: "Delete channel", clickHandler: async () => { console.log("dekete handler") } },
-      ]
+      items
     });
   }
 
@@ -42,13 +165,18 @@ export default function ChannelList({ communityName, channels, selectedChannelId
     if (target.closest('button[data-channel-item="true"]')) 
       return; 
 
+    if (!canCreateChannel) {
+      setRightClickMenu(null)
+      return;
+    }
+
     event.preventDefault();
     setRightClickMenu({
       isOpen: true,
       x: event.clientX,
       y: event.clientY,
       items: [
-        { id: "create_channel", label: "Create channel", clickHandler: async () => {console.log("blank create handler")} },
+        { id: "create_channel", label: "Create channel", clickHandler: openCreateChannelModal },
       ]
     });
   } 
@@ -65,7 +193,7 @@ export default function ChannelList({ communityName, channels, selectedChannelId
               data-channel-item="true"
               type="button"
               onClick={() => onSelectChannel(channel.id)}
-              onContextMenu={channelRightClick}
+              onContextMenu={(e) => channelRightClick(e, channel)}
               className={`flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-[13px] transition ${
                 isSelected
                   ? "border border-[color:var(--accent)] bg-[color:var(--panel)]"
@@ -102,6 +230,29 @@ export default function ChannelList({ communityName, channels, selectedChannelId
       { channels.length === 0 ? renderNoChannels() : renderChannels() }
       
       {rightClickMenu ? <ContextMenu {...rightClickMenu} onClose={closeContextMenu} /> : null}
+
+      <StringEditModal
+        isOpen={isEditModalOpen}
+        title={editModalTitle}
+        label="Enter Channel Name"
+        initialValue=""
+        submitLabel={editModalSubmitLabel}
+        isSubmitting={isSubmittingChannelName}
+        maxLength={60}
+        onCancel={() => setEditModalStatus("closed")}
+        onConfirm={editModalHandler}
+      />
+
+      <ConfirmTextModal
+        isOpen={deletingChannel !== null}
+        title="Delete channel"
+        message={deletingChannel ? `Delete #${deletingChannel.name}? This cannot be undone.` : "Delete this channel? This cannot be undone."}
+        confirmLabel="Delete channel"
+        confirmationText="DELETE"
+        isSubmitting={isDeletingChannel}
+        onCancel={() => setDeletingChannel(null)}
+        onConfirm={handleDeleteChannel}
+      />
     </aside>
   );
 }

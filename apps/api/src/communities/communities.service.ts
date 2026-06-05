@@ -18,6 +18,9 @@ import type {
   UpdateCommunitySettingsRequestDto,
   CreateChannelRequestDTO,
   CreateChannelResponseDTO,
+  UpdateChannelRequestDTO,
+  UpdateChannelResponseDTO,
+  DeleteChannelResponseDTO,
 } from '@cup/shared-types';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/storage/storage.service';
@@ -744,6 +747,120 @@ export class CommunitiesService {
       name: created.name,
       requiredPermissionLevel: created.requiredPermissionLevel,
       createdAt: created.createdAt.toISOString(),
+    };
+  }
+
+  async updateCommunityChannel(userId: string, slug: string, channelId: string, body: UpdateChannelRequestDTO): Promise<UpdateChannelResponseDTO> {
+    if (!slug)
+      throw new BadRequestException('valid community slug is required');
+
+    if (!channelId)
+      throw new BadRequestException('valid channel id is required');
+
+    const channelName = body.name.trim();
+
+    if (!channelName || channelName.length >= CHANNEL_NAME_MAX_LENGTH)
+      throw new BadRequestException(`must specify channel name that is ${CHANNEL_NAME_MAX_LENGTH} characters or less`);
+
+    const community = await this.prisma.community.findUnique({
+      where: { slug },
+      select: { id: true, permissionConfig: true }
+    });
+
+    if (!community)
+      throw new NotFoundException('Community not found');
+
+    const channel = await this.prisma.channel.findUnique({
+      where: { id: channelId },
+      select: { communityId: true },
+    });
+
+    if (!channel || channel.communityId !== community.id)
+      throw new NotFoundException('Channel not found');
+
+    const perms = readCommunityPermissionConfig(community.permissionConfig); //throws automatically if perm config is malformed
+
+    const member = await this.prisma.communityMember.findUnique({
+      where: { communityId_userId: {
+        communityId: community.id,
+        userId: userId,
+      }},
+      select: { permissionLevel: true },
+    });
+
+    if (!member) 
+      throw new ForbiddenException('non-community-members cannot edit channels in a community');
+
+    if (member.permissionLevel < perms.editChannelName)
+      throw new ForbiddenException("You don't have the required permission level to edit channels in this community");
+
+    const updated = await this.prisma.channel.update({
+      where: { id: channelId },
+      data: {
+        name: channelName,
+      },
+      select: {
+        id: true,
+        name: true,
+        requiredPermissionLevel: true,
+        createdAt: true,
+      },
+    });
+
+    return {
+      id: updated.id,
+      name: updated.name,
+      requiredPermissionLevel: updated.requiredPermissionLevel,
+      createdAt: updated.createdAt.toISOString(),
+    };
+  }
+
+  async deleteCommunityChannel(userId: string, slug: string, channelId: string): Promise<DeleteChannelResponseDTO> {
+    if (!slug)
+      throw new BadRequestException('valid community slug is required');
+
+    if (!channelId)
+      throw new BadRequestException('valid channel id is required');
+
+    const community = await this.prisma.community.findUnique({
+      where: { slug },
+      select: { id: true, permissionConfig: true }
+    });
+
+    if (!community)
+      throw new NotFoundException('Community not found');
+
+    const channel = await this.prisma.channel.findUnique({
+      where: { id: channelId },
+      select: { communityId: true },
+    });
+
+    if (!channel || channel.communityId !== community.id)
+      throw new NotFoundException('Channel not found');
+
+    const perms = readCommunityPermissionConfig(community.permissionConfig); //throws automatically if perm config is malformed
+
+    const member = await this.prisma.communityMember.findUnique({
+      where: { communityId_userId: {
+        communityId: community.id,
+        userId: userId,
+      }},
+      select: { permissionLevel: true },
+    });
+
+    if (!member) 
+      throw new ForbiddenException('non-community-members cannot delete channels in a community');
+
+    if (member.permissionLevel < perms.deleteChannel)
+      throw new ForbiddenException("You don't have the required permission level to delete channels in this community");
+
+    await this.prisma.channel.delete({
+      where: { id: channelId },
+    });
+
+    return {
+      id: channelId,
+      deleted: true,
     };
   }
 

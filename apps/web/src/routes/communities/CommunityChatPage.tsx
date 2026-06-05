@@ -5,5 +5,5 @@ type Params = { slug: string };
 
 export default function CommunityChatPage() {
   const { slug } = useParams<Params>();
-  return <CommunityChatContainer communitySlug={slug} />;
+  return <CommunityChatContainer communitySlug={slug ?? null} />;
 }
