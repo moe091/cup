@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { ContextMenuState } from "../../components/common/ContextMenu";
 import ContextMenu from "../../components/common/ContextMenu";
 import StringEditModal from "../../components/common/StringEditModal";
@@ -34,11 +34,26 @@ export default function ChannelList({ communityName, communitySlug, channels, se
   const [deletingChannel, setDeletingChannel] = useState<ChatChannelListItem | null>(null);
   const [isSubmittingChannelName, setIsSubmittingChannelName] = useState(false);
   const [isDeletingChannel, setIsDeletingChannel] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
 
-  const canCreateChannel = commSettings.viewerPermissionLevel >= commSettings.permissionConfig.createChannel;
-  const canEditChannelName = commSettings.viewerPermissionLevel >= commSettings.permissionConfig.editChannelName;
-  const canDeleteChannel = commSettings.viewerPermissionLevel >= commSettings.permissionConfig.deleteChannel;
+  const canCreateChannel = commSettings.permissionConfig !== null && commSettings.viewerPermissionLevel >= commSettings.permissionConfig.createChannel;
+  const canEditChannelName = commSettings.permissionConfig !== null && commSettings.viewerPermissionLevel >= commSettings.permissionConfig.editChannelName;
+  const canDeleteChannel = commSettings.permissionConfig !== null && commSettings.viewerPermissionLevel >= commSettings.permissionConfig.deleteChannel;
+
+  useEffect(() => {
+    if (!successMessage) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setSuccessMessage(null);
+    }, 2500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [successMessage]);
 
   async function handleCreateChannel(name: string) {
     if (!communitySlug) {
@@ -53,8 +68,9 @@ export default function ChannelList({ communityName, communitySlug, channels, se
         requiredPermissionLevel: 1, //this is the default permission level to access the newly created channel. TODO:: might add a UI to set permission level at creation, if not it can be edited afterwards
       });
       await onChannelsChanged();
-   
+    
       setEditModalStatus("closed");
+      setSuccessMessage("Channel created.");
     } finally {
       setIsSubmittingChannelName(false);
     }
@@ -79,6 +95,7 @@ export default function ChannelList({ communityName, communitySlug, channels, se
    
       setEditingChannel(null);
       setEditModalStatus("closed");
+      setSuccessMessage("Channel renamed.");
     } finally {
       setIsSubmittingChannelName(false);
     }
@@ -100,6 +117,7 @@ export default function ChannelList({ communityName, communitySlug, channels, se
       await onChannelsChanged();
 
       setDeletingChannel(null);
+      setSuccessMessage("Channel deleted.");
     } finally {
       setIsDeletingChannel(false);
     }
@@ -253,6 +271,13 @@ export default function ChannelList({ communityName, communitySlug, channels, se
         onCancel={() => setDeletingChannel(null)}
         onConfirm={handleDeleteChannel}
       />
+      {successMessage ? (
+        <div className="pointer-events-none fixed left-1/2 top-[calc(var(--topbar-h)+0.75rem)] z-[160] -translate-x-1/2">
+          <div className="rounded-xl border border-[color:var(--line)] bg-[color:var(--panel-lighter)]/95 px-6 py-3 text-center text-base font-medium text-[color:var(--text)] shadow-[0_10px_28px_rgba(0,0,0,0.35)]">
+            {successMessage}
+          </div>
+        </div>
+      ) : null}
     </aside>
   );
 }

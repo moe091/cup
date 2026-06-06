@@ -4,21 +4,14 @@ import { fetchCommunitySettingsBySlug } from "../../../api/communities";
 
 export type UseCommunitySettingsResult = {
   viewerPermissionLevel: number;
-  permissionConfig: CommunityPermissionConfig;
+  permissionConfig: CommunityPermissionConfig | null;
   isLoading: boolean;
   errorMessage: string | null;
 };
 
-const placeholderPermConfig = {
-    createChannel: 10,
-    editChannelName: 10,
-    deleteChannel: 10,
-    editGeneral: 10,
-  }
-
 export function useCommunitySettings(communitySlug: string | null): UseCommunitySettingsResult {
   const [viewerPermissionLevel, setViewerPermissionLevel] = useState(0);
-  const [permissionConfig, setPermissionConfig] = useState<CommunityPermissionConfig>(placeholderPermConfig);
+  const [permissionConfig, setPermissionConfig] = useState<CommunityPermissionConfig | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -26,7 +19,7 @@ export function useCommunitySettings(communitySlug: string | null): UseCommunity
   useEffect(() => {
     if (!communitySlug) {
       setViewerPermissionLevel(0);
-      setPermissionConfig(placeholderPermConfig);
+      setPermissionConfig(null);
       setIsLoading(false);
       setErrorMessage(null);
       return;
@@ -38,7 +31,7 @@ export function useCommunitySettings(communitySlug: string | null): UseCommunity
       setIsLoading(true);
       setErrorMessage(null);
       setViewerPermissionLevel(0);
-      setPermissionConfig(placeholderPermConfig);
+      setPermissionConfig(null);
 
       try {
         const settings = await fetchCommunitySettingsBySlug(communitySlug);
