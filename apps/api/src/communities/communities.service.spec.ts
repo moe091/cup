@@ -146,9 +146,7 @@ describe('CommunitiesService', () => {
 
     expect(txMock.channel.createMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.arrayContaining([
-          expect.objectContaining({ requiredPermissionLevel: 1 }),
-        ]),
+        data: expect.arrayContaining([expect.objectContaining({ requiredPermissionLevel: 1 })]),
       }),
     );
   });
@@ -627,9 +625,9 @@ describe('CommunitiesService', () => {
   });
 
   it('rejects community channel update with invalid name', async () => {
-    await expect(
-      service.updateCommunityChannel('user-1', 'gaming-hub', 'channel-1', { name: '   ' }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(service.updateCommunityChannel('user-1', 'gaming-hub', 'channel-1', { name: '   ' })).rejects.toThrow(
+      BadRequestException,
+    );
 
     expect(prismaMock.community.findUnique).not.toHaveBeenCalled();
   });
@@ -657,9 +655,9 @@ describe('CommunitiesService', () => {
     prismaMock.channel.findUnique.mockResolvedValue({ communityId: 'community-1' });
     prismaMock.communityMember.findUnique.mockResolvedValue({ permissionLevel: 5 });
 
-    await expect(
-      service.deleteCommunityChannel('user-1', 'gaming-hub', 'channel-1'),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(service.deleteCommunityChannel('user-1', 'gaming-hub', 'channel-1')).rejects.toThrow(
+      ForbiddenException,
+    );
 
     expect(prismaMock.channel.delete).not.toHaveBeenCalled();
   });
@@ -672,9 +670,9 @@ describe('CommunitiesService', () => {
     prismaMock.channel.findUnique.mockResolvedValue({ communityId: 'community-1' });
     prismaMock.communityMember.findUnique.mockResolvedValue(null);
 
-    await expect(
-      service.deleteCommunityChannel('user-1', 'gaming-hub', 'channel-1'),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(service.deleteCommunityChannel('user-1', 'gaming-hub', 'channel-1')).rejects.toThrow(
+      ForbiddenException,
+    );
 
     expect(prismaMock.channel.delete).not.toHaveBeenCalled();
   });

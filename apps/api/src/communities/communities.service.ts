@@ -38,7 +38,10 @@ const MAX_PERMISSION_LEVEL = 10;
 
 @Injectable()
 export class CommunitiesService {
-  constructor(private readonly prisma: PrismaService, private readonly storageService: StorageService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storageService: StorageService,
+  ) {}
 
   async createCommunity(userId: string, payload: CreateCommunityRequestDto): Promise<CreateCommunityResponseDto> {
     const parsed = this.parseCreateCommunityPayload(payload);
@@ -161,7 +164,7 @@ export class CommunitiesService {
       throw new BadRequestException('Community slug is required');
     }
 
-        const community = await this.prisma.community.findUnique({
+    const community = await this.prisma.community.findUnique({
       where: { slug: normalizedSlug },
       select: {
         id: true,
@@ -312,7 +315,7 @@ export class CommunitiesService {
           lte: viewerPermissionLevel,
         },
       },
-      orderBy: [{createdAt: 'asc'}, {id: 'asc'}],
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       select: {
         id: true,
         name: true,
@@ -331,7 +334,11 @@ export class CommunitiesService {
     }));
   }
 
-  async requestCommunityIconUploadTarget( requesterUserId: string, communityIdRaw: string, payload: CommunityIconUploadTargetRequestDto): Promise<CommunityIconUploadTargetResponseDto> {
+  async requestCommunityIconUploadTarget(
+    requesterUserId: string,
+    communityIdRaw: string,
+    payload: CommunityIconUploadTargetRequestDto,
+  ): Promise<CommunityIconUploadTargetResponseDto> {
     const communityId = communityIdRaw.trim();
     if (!communityId) {
       throw new BadRequestException('communityId is required');
@@ -445,30 +452,30 @@ export class CommunitiesService {
         joinMode: 'PUBLIC',
         ...(search
           ? {
-            OR: [
-              {
-                name: {
-                  contains: search,
-                  mode: 'insensitive',
+              OR: [
+                {
+                  name: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
                 },
-              },
-              {
-                description: {
-                  contains: search,
-                  mode: 'insensitive',
+                {
+                  description: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
                 },
-              },
-            ],
-          }
+              ],
+            }
           : {}),
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: limit + 1,
       ...(query.cursor
         ? {
-          cursor: { id: query.cursor },
-          skip: 1,
-        }
+            cursor: { id: query.cursor },
+            skip: 1,
+          }
         : {}),
       select: {
         id: true,
@@ -485,16 +492,16 @@ export class CommunitiesService {
         },
         ...(viewerUserId
           ? {
-            members: {
-              where: {
-                userId: viewerUserId,
+              members: {
+                where: {
+                  userId: viewerUserId,
+                },
+                select: {
+                  userId: true,
+                },
+                take: 1,
               },
-              select: {
-                userId: true,
-              },
-              take: 1,
-            },
-          }
+            }
           : {}),
       },
     });
@@ -512,10 +519,7 @@ export class CommunitiesService {
         iconKey: community.iconKey,
         createdAt: community.createdAt.toISOString(),
         memberCount: community._count.members,
-        joinedByMe:
-          viewerUserId && 'members' in community
-            ? community.members.length > 0
-            : false,
+        joinedByMe: viewerUserId && 'members' in community ? community.members.length > 0 : false,
       })),
       nextCursor: hasMore ? rows[limit].id : null,
     };
@@ -678,52 +682,61 @@ export class CommunitiesService {
     });
 
     return memberships.map((membership) => ({
-        id: membership.community.id,
-        slug: membership.community.slug,
-        name: membership.community.name,
-        iconKey: membership.community.iconKey,
-        permissionLevel: membership.permissionLevel,
-        joinedAt: membership.joinedAt.toISOString(),
-      }));
+      id: membership.community.id,
+      slug: membership.community.slug,
+      name: membership.community.name,
+      iconKey: membership.community.iconKey,
+      permissionLevel: membership.permissionLevel,
+      joinedAt: membership.joinedAt.toISOString(),
+    }));
   }
 
-  async createCommunityChannel(userId: string, slug: string, body: CreateChannelRequestDTO): Promise<CreateChannelResponseDTO> {
-    if (!slug)
-      throw new BadRequestException('valid community slug is required');
+  async createCommunityChannel(
+    userId: string,
+    slug: string,
+    body: CreateChannelRequestDTO,
+  ): Promise<CreateChannelResponseDTO> {
+    if (!slug) throw new BadRequestException('valid community slug is required');
 
-    if (!Number.isFinite(body.requiredPermissionLevel) || body.requiredPermissionLevel > MAX_PERMISSION_LEVEL || body.requiredPermissionLevel < MIN_PERMISSION_LEVEL)
-      throw new BadRequestException(`permission level must be a number from ${MIN_PERMISSION_LEVEL} to ${MAX_PERMISSION_LEVEL}`);
+    if (
+      !Number.isFinite(body.requiredPermissionLevel) ||
+      body.requiredPermissionLevel > MAX_PERMISSION_LEVEL ||
+      body.requiredPermissionLevel < MIN_PERMISSION_LEVEL
+    )
+      throw new BadRequestException(
+        `permission level must be a number from ${MIN_PERMISSION_LEVEL} to ${MAX_PERMISSION_LEVEL}`,
+      );
 
     const channelName = body.name.trim();
 
     if (!channelName || channelName.length >= CHANNEL_NAME_MAX_LENGTH)
       throw new BadRequestException(`must specify channel name that is ${CHANNEL_NAME_MAX_LENGTH} characters or less`);
 
-    
-
     const community = await this.prisma.community.findUnique({
       where: { slug },
-      select: { id: true, permissionConfig: true }
+      select: { id: true, permissionConfig: true },
     });
 
-    if (!community)
-      throw new NotFoundException('Community not found');
+    if (!community) throw new NotFoundException('Community not found');
 
     const perms = readCommunityPermissionConfig(community.permissionConfig); //throws automatically if perm config is malformed
 
     const member = await this.prisma.communityMember.findUnique({
-      where: { communityId_userId: {
-        communityId: community.id,
-        userId: userId,
-      }},
+      where: {
+        communityId_userId: {
+          communityId: community.id,
+          userId: userId,
+        },
+      },
       select: { permissionLevel: true },
     });
 
-    if (!member) 
-      throw new ForbiddenException('non-community-members cannot create channels in a community');
+    if (!member) throw new ForbiddenException('non-community-members cannot create channels in a community');
 
     if (member.permissionLevel < perms.createChannel)
-      throw new ForbiddenException("You don't have the required permission level to create a channel in this community");
+      throw new ForbiddenException(
+        "You don't have the required permission level to create a channel in this community",
+      );
 
     const created = await this.prisma.channel.create({
       data: {
@@ -750,12 +763,15 @@ export class CommunitiesService {
     };
   }
 
-  async updateCommunityChannel(userId: string, slug: string, channelId: string, body: UpdateChannelRequestDTO): Promise<UpdateChannelResponseDTO> {
-    if (!slug)
-      throw new BadRequestException('valid community slug is required');
+  async updateCommunityChannel(
+    userId: string,
+    slug: string,
+    channelId: string,
+    body: UpdateChannelRequestDTO,
+  ): Promise<UpdateChannelResponseDTO> {
+    if (!slug) throw new BadRequestException('valid community slug is required');
 
-    if (!channelId)
-      throw new BadRequestException('valid channel id is required');
+    if (!channelId) throw new BadRequestException('valid channel id is required');
 
     const channelName = body.name.trim();
 
@@ -764,32 +780,31 @@ export class CommunitiesService {
 
     const community = await this.prisma.community.findUnique({
       where: { slug },
-      select: { id: true, permissionConfig: true }
+      select: { id: true, permissionConfig: true },
     });
 
-    if (!community)
-      throw new NotFoundException('Community not found');
+    if (!community) throw new NotFoundException('Community not found');
 
     const channel = await this.prisma.channel.findUnique({
       where: { id: channelId },
       select: { communityId: true },
     });
 
-    if (!channel || channel.communityId !== community.id)
-      throw new NotFoundException('Channel not found');
+    if (!channel || channel.communityId !== community.id) throw new NotFoundException('Channel not found');
 
     const perms = readCommunityPermissionConfig(community.permissionConfig); //throws automatically if perm config is malformed
 
     const member = await this.prisma.communityMember.findUnique({
-      where: { communityId_userId: {
-        communityId: community.id,
-        userId: userId,
-      }},
+      where: {
+        communityId_userId: {
+          communityId: community.id,
+          userId: userId,
+        },
+      },
       select: { permissionLevel: true },
     });
 
-    if (!member) 
-      throw new ForbiddenException('non-community-members cannot edit channels in a community');
+    if (!member) throw new ForbiddenException('non-community-members cannot edit channels in a community');
 
     if (member.permissionLevel < perms.editChannelName)
       throw new ForbiddenException("You don't have the required permission level to edit channels in this community");
@@ -816,40 +831,37 @@ export class CommunitiesService {
   }
 
   async deleteCommunityChannel(userId: string, slug: string, channelId: string): Promise<DeleteChannelResponseDTO> {
-    if (!slug)
-      throw new BadRequestException('valid community slug is required');
+    if (!slug) throw new BadRequestException('valid community slug is required');
 
-    if (!channelId)
-      throw new BadRequestException('valid channel id is required');
+    if (!channelId) throw new BadRequestException('valid channel id is required');
 
     const community = await this.prisma.community.findUnique({
       where: { slug },
-      select: { id: true, permissionConfig: true }
+      select: { id: true, permissionConfig: true },
     });
 
-    if (!community)
-      throw new NotFoundException('Community not found');
+    if (!community) throw new NotFoundException('Community not found');
 
     const channel = await this.prisma.channel.findUnique({
       where: { id: channelId },
       select: { communityId: true },
     });
 
-    if (!channel || channel.communityId !== community.id)
-      throw new NotFoundException('Channel not found');
+    if (!channel || channel.communityId !== community.id) throw new NotFoundException('Channel not found');
 
     const perms = readCommunityPermissionConfig(community.permissionConfig); //throws automatically if perm config is malformed
 
     const member = await this.prisma.communityMember.findUnique({
-      where: { communityId_userId: {
-        communityId: community.id,
-        userId: userId,
-      }},
+      where: {
+        communityId_userId: {
+          communityId: community.id,
+          userId: userId,
+        },
+      },
       select: { permissionLevel: true },
     });
 
-    if (!member) 
-      throw new ForbiddenException('non-community-members cannot delete channels in a community');
+    if (!member) throw new ForbiddenException('non-community-members cannot delete channels in a community');
 
     if (member.permissionLevel < perms.deleteChannel)
       throw new ForbiddenException("You don't have the required permission level to delete channels in this community");
@@ -929,5 +941,4 @@ export class CommunitiesService {
 
     return slug;
   }
-
 }

@@ -48,7 +48,10 @@ export class StorageService {
     };
   }
 
-  async createCommunityIconUploadTarget(communityIdRaw: string, mimeType: string): Promise<CommunityIconUploadTargetResponseDto> {
+  async createCommunityIconUploadTarget(
+    communityIdRaw: string,
+    mimeType: string,
+  ): Promise<CommunityIconUploadTargetResponseDto> {
     const communityId = communityIdRaw.trim();
     if (!communityId) {
       throw new BadRequestException('communityId is required');

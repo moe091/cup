@@ -60,9 +60,7 @@ describe('CommunitiesController', () => {
 
   it('rejects create community when unauthenticated', async () => {
     const payload: CreateCommunityRequestDto = { name: 'x', joinMode: 'PUBLIC', description: null };
-    expect(() =>
-      controller.createCommunity({} as AuthedRequest, payload),
-    ).toThrow(UnauthorizedException);
+    expect(() => controller.createCommunity({} as AuthedRequest, payload)).toThrow(UnauthorizedException);
   });
 
   it('requests community icon upload target for authenticated owner', async () => {
@@ -78,7 +76,11 @@ describe('CommunitiesController', () => {
 
     await controller.requestCommunityIconUploadTarget('community-1', req, payload);
 
-    expect(communitiesServiceMock.requestCommunityIconUploadTarget).toHaveBeenCalledWith('user-1', 'community-1', payload);
+    expect(communitiesServiceMock.requestCommunityIconUploadTarget).toHaveBeenCalledWith(
+      'user-1',
+      'community-1',
+      payload,
+    );
   });
 
   it('returns public communities for unauthenticated viewer', async () => {
@@ -111,7 +113,9 @@ describe('CommunitiesController', () => {
 
   it('rejects settings update when unauthenticated', async () => {
     const payload = { name: 'Gaming Hub', description: 'desc', joinMode: 'PUBLIC' as const };
-    expect(() => controller.updateCommunitySettingsBySlug('gaming-hub', {} as AuthedRequest, payload)).toThrow(UnauthorizedException);
+    expect(() => controller.updateCommunitySettingsBySlug('gaming-hub', {} as AuthedRequest, payload)).toThrow(
+      UnauthorizedException,
+    );
   });
 
   it('updates community icon for authenticated owner', async () => {
@@ -198,13 +202,20 @@ describe('CommunitiesController', () => {
 
     await controller.updateChannel('gaming-hub', 'channel-1', req, payload);
 
-    expect(communitiesServiceMock.updateCommunityChannel).toHaveBeenCalledWith('user-1', 'gaming-hub', 'channel-1', payload);
+    expect(communitiesServiceMock.updateCommunityChannel).toHaveBeenCalledWith(
+      'user-1',
+      'gaming-hub',
+      'channel-1',
+      payload,
+    );
   });
 
   it('rejects channel update when unauthenticated', async () => {
     const payload = { name: 'New Name' };
 
-    expect(() => controller.updateChannel('gaming-hub', 'channel-1', {} as AuthedRequest, payload)).toThrow(UnauthorizedException);
+    expect(() => controller.updateChannel('gaming-hub', 'channel-1', {} as AuthedRequest, payload)).toThrow(
+      UnauthorizedException,
+    );
   });
 
   it('deletes a channel for authenticated user', async () => {
@@ -217,6 +228,8 @@ describe('CommunitiesController', () => {
   });
 
   it('rejects channel delete when unauthenticated', async () => {
-    expect(() => controller.deleteChannel('gaming-hub', 'channel-1', {} as AuthedRequest)).toThrow(UnauthorizedException);
+    expect(() => controller.deleteChannel('gaming-hub', 'channel-1', {} as AuthedRequest)).toThrow(
+      UnauthorizedException,
+    );
   });
 });

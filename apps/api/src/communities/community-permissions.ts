@@ -14,10 +14,10 @@ export function readCommunityPermissionConfig(raw: unknown): CommunityPermission
 
   const source = raw as Record<string, unknown>;
   if (
-    typeof source.createChannel !== 'number'
-    || typeof source.editChannelName !== 'number'
-    || typeof source.deleteChannel !== 'number'
-    || typeof source.editGeneral !== 'number'
+    typeof source.createChannel !== 'number' ||
+    typeof source.editChannelName !== 'number' ||
+    typeof source.deleteChannel !== 'number' ||
+    typeof source.editGeneral !== 'number'
   ) {
     throw new Error('Invalid community permissionConfig: expected numeric permission levels');
   }

@@ -29,7 +29,10 @@ export class CommunitiesController {
   constructor(private readonly communitiesService: CommunitiesService) {}
 
   @Post()
-  createCommunity(@Req() req: AuthedRequest, @Body() body: CreateCommunityRequestDto): Promise<CreateCommunityResponseDto> {
+  createCommunity(
+    @Req() req: AuthedRequest,
+    @Body() body: CreateCommunityRequestDto,
+  ): Promise<CreateCommunityResponseDto> {
     if (!req.user) {
       throw new UnauthorizedException();
     }
@@ -39,8 +42,7 @@ export class CommunitiesController {
 
   @Get('me')
   getMyCommunities(@Req() req: AuthedRequest): Promise<MyCommunitiesResponseDto> {
-    if (!req.user)
-      throw new UnauthorizedException();
+    if (!req.user) throw new UnauthorizedException();
 
     return this.communitiesService.getMyCommunities(req.user.id);
   }
@@ -109,19 +111,23 @@ export class CommunitiesController {
   }
 
   @Post(':communityId/icon/upload-target')
-  requestCommunityIconUploadTarget(@Param('communityId') communityId: string, @Req() req: AuthedRequest, @Body() body: CommunityIconUploadTargetRequestDto): Promise<CommunityIconUploadTargetResponseDto> {
+  requestCommunityIconUploadTarget(
+    @Param('communityId') communityId: string,
+    @Req() req: AuthedRequest,
+    @Body() body: CommunityIconUploadTargetRequestDto,
+  ): Promise<CommunityIconUploadTargetResponseDto> {
     if (!req.user) {
       throw new UnauthorizedException();
     }
-    return this.communitiesService.requestCommunityIconUploadTarget(
-      req.user.id,
-      communityId,
-      body,
-    );
+    return this.communitiesService.requestCommunityIconUploadTarget(req.user.id, communityId, body);
   }
 
   @Patch(':communityId/icon')
-  updateCommunityIcon(@Param('communityId') communityId: string, @Req() req: AuthedRequest, @Body() body: UpdateCommunityIconRequestDto): Promise<CreateCommunityResponseDto> {
+  updateCommunityIcon(
+    @Param('communityId') communityId: string,
+    @Req() req: AuthedRequest,
+    @Body() body: UpdateCommunityIconRequestDto,
+  ): Promise<CreateCommunityResponseDto> {
     if (!req.user) {
       throw new UnauthorizedException();
     }
@@ -130,8 +136,13 @@ export class CommunitiesController {
   }
 
   @Post(':slug/channels')
-  createChannel(@Param('slug') slug: string, @Req() req: AuthedRequest, @Body() body: CreateChannelRequestDTO): Promise<CreateChannelResponseDTO> {
-    if (!req.user) { //non logged-in users can't create channels ever
+  createChannel(
+    @Param('slug') slug: string,
+    @Req() req: AuthedRequest,
+    @Body() body: CreateChannelRequestDTO,
+  ): Promise<CreateChannelResponseDTO> {
+    if (!req.user) {
+      //non logged-in users can't create channels ever
       throw new UnauthorizedException();
     }
 
@@ -139,8 +150,14 @@ export class CommunitiesController {
   }
 
   @Patch(':slug/channels/:channelId')
-  updateChannel(@Param('slug') slug: string, @Param('channelId') channelId: string, @Req() req: AuthedRequest, @Body() body: UpdateChannelRequestDTO): Promise<UpdateChannelResponseDTO> {
-    if (!req.user) { //non logged-in users can't edit channels ever
+  updateChannel(
+    @Param('slug') slug: string,
+    @Param('channelId') channelId: string,
+    @Req() req: AuthedRequest,
+    @Body() body: UpdateChannelRequestDTO,
+  ): Promise<UpdateChannelResponseDTO> {
+    if (!req.user) {
+      //non logged-in users can't edit channels ever
       throw new UnauthorizedException();
     }
 
@@ -148,8 +165,13 @@ export class CommunitiesController {
   }
 
   @Delete(':slug/channels/:channelId')
-  deleteChannel(@Param('slug') slug: string, @Param('channelId') channelId: string, @Req() req: AuthedRequest): Promise<DeleteChannelResponseDTO> {
-    if (!req.user) { //non logged-in users can't delete channels ever
+  deleteChannel(
+    @Param('slug') slug: string,
+    @Param('channelId') channelId: string,
+    @Req() req: AuthedRequest,
+  ): Promise<DeleteChannelResponseDTO> {
+    if (!req.user) {
+      //non logged-in users can't delete channels ever
       throw new UnauthorizedException();
     }
 
