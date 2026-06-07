@@ -45,6 +45,7 @@
 - Image/video/link embedding: at first, just for embedding external links(e.g. YT or an image link). Uploading comes later
 - Add a theme picker and make 'custom-dark' the default theme
 - Don't re-render displayName/message time/PFP for messages sent by same user in quick succession.
+- Create reusable toast message component and replace existing toast messages
 
 
 ### Main line features to work on next:
