@@ -24,7 +24,30 @@ Scope:
   - `games/bouncer/*` (engine/server/client/shared)
   - `packages/shared` (cross-app TS types)
 - Local dev: root `pnpm run dev` runs API, web, bouncer projects, and shared type watch/build flows.
+- Profile avatar upload is implemented end-to-end (direct-to-S3 presigned upload target flow + persisted `avatarKey` on user).
 
+
+
+### React General Design Philosophy
+just copy & pasting this comment from the MultiChannelChatView.tsx component, since it represents the general design philosophy/experiment for this whole project:
+/**
+ * *** DESIGN NOTES ***
+ * 
+ * Going with a 'dumb container' design for Chat(and for all complicated UI and functionality in the app).
+ * 
+ * For MultiChannelChatPanel(MCCP), it is simply a bag of components placed into a layout.
+ * Each of the components(ChannelList, ChannelChatView, ChatComposer, anything else that may be added later) should be self-contained "drop-in" components that require minimal wiring.
+ * MCCP should have minimal logic needed to facilitate communication between these components for a cohesive chat experience, e.g.: syncing selectedChannel from channelList to channelChatView
+ * so that ChannelChatView displays messages for whatever channel the user clicks on on channelList.
+ * 
+ * Likewise, this means it's okay for atomic components like channelList to 'own' business logic like creating/deleting/editing channels completely on it's own(or at least in some hook that is
+ * owned by channelList rather than needing to be passed in). This couples business logic to atomic components but that is entirely okay, it may result in very minimal code duplication but that is
+ * honestly not a problem at all, any duplicated logic can be pulled into the /api helpers file so that only the function calls to the api helper is duplicated, and the logic still exists only in the 
+ * helper function and never needs to be changed in multiple places. The tradeoff is immensely simplified wiring and context management between components - which is a huge deal because that is usually
+ * the complexity bottleneck that makes react applications become difficult and cumbersome to work with as they grow.
+ */
+
+ 
 ## Decision log
 
 ### D-001 Monorepo structure
@@ -114,6 +137,44 @@ Scope:
 - Future options:
   - Redis-backed distributed rate limits
   - additional abuse protections (device fingerprinting/challenges if needed)
+
+### D-015 Storage strategy for user-uploaded avatars
+
+- Status: accepted and implemented (v1)
+- Decision:
+  - use S3-compatible object storage for profile avatars
+  - backend issues short-lived presigned `PUT` upload targets
+  - frontend uploads avatar bytes directly to S3
+  - database persists `avatarKey` (object key), not raw public URL
+  - avatar replacement attempts best-effort deletion of prior object
+- Why:
+  - avoids proxying file bytes through API app server
+  - cleaner long-term path toward CDN and shared media strategy
+  - keeps storage backend concerns localized in storage module/service
+- Current implementation notes:
+  - key format: `<envPrefix>/avatars/<userId>/<uuid>.<ext>`
+  - allowed mimes: png/jpeg/webp
+  - upload target endpoint: `POST /api/users/me/avatar/upload-target`
+  - profile avatar key update endpoint: `PATCH /api/users/me/avatar`
+  - frontend resolves persisted avatar URL via `VITE_S3_BASE_URL + avatarKey`
+- Active config values:
+  - API env (`apps/api/.env`):
+    - `S3_BUCKET_NAME`
+    - `AWS_REGION`
+    - `S3_ENV_PREFIX`
+  - Web env (`apps/web/.env.local` and build envs):
+    - `VITE_S3_BASE_URL`
+- Concrete current local values (as of this document update):
+  - bucket: `nitecrew-assets-755350934435-us-east-1-an`
+  - region: `us-east-1`
+  - env prefix: `dev`
+- Tradeoffs:
+  - direct browser image rendering currently assumes public-read path/policy for referenced keys
+  - stricter private-read patterns (signed GET/CDN/private origin) are deferred follow-up work
+- Future options:
+  - per-environment IAM prefix hardening and CI/CD env injection standardization
+  - optional migration to separate buckets per environment if operational needs warrant it
+  - CDN fronting for cache/perf and cleaner public URL strategy
 
 ### D-006 Frontend architecture: React SPA with route-level lazy loading
 
@@ -207,9 +268,9 @@ Scope:
   - richer editor affordances (undo/redo, validation overlays, version history)
   - publish workflows and moderation/review tools
 
-### D-011 Chat architecture (planned)
+### D-011 Chat architecture (In-progress)
 
-- Status: accepted (initial implementation path)
+- Status: core implemented, ongoing feature expansion
 - Decision:
   - one modular chat architecture with `Community` (optional container) and `Channel` (message surface)
   - one reusable React chat panel keyed by `channelId`
@@ -222,9 +283,12 @@ Scope:
   - text + image/gif embeds, emojis, reactions, custom emoji support model
   - durable history with cursor pagination
   - edit/delete markers and strict access checks
-- Initial implementation slice:
-  - text-only skeleton first to validate core contracts
-  - extensible message schema for future media/reaction features
+- Implemented to date:
+  - channel history + realtime messaging
+  - custom emoji catalog/resolve model in chat flows
+  - reactions (set/toggle + realtime updates)
+  - replies (compose, preview, jump-to-target)
+  - grouped message rendering rules in frontend chat UI
 - Realtime subscription model:
   - keep one socket connection per browser tab/session
   - switch channels by `chat:leave` old channel room and `chat:join` new channel room (no reconnect required)
@@ -304,16 +368,17 @@ Scope:
 
 ### API (`apps/api`)
 
-- Current module composition: auth, users, games, prisma, app core.
+- Current module composition: auth, users, storage, chat, communities, emojis, games, prisma, app core.
 - Security middleware applied globally: rate limiting + CSRF.
 - Current API responsibilities:
   - account auth/session lifecycle
-  - profile read/update
+  - profile read/update (field-specific mutation routes)
+  - avatar upload target issuance and avatar key persistence
   - bouncer lobby and level APIs
+  - community/channel/chat messaging and emoji/reaction/reply flows
 - Planned near-term additions:
-  - chat module
   - account linking strategy
-  - cleanup of temporary debug logs and UX polish
+  - profile name-color endpoints/validation
 
 ### Auth and identity
 
@@ -321,11 +386,13 @@ Scope:
 - OAuth account records keyed by (`provider`, `providerAccountId`).
 - Username auto-generation for OAuth-first accounts with collision handling.
 - Session serializer stores user id and loads session user shape on request.
+- Session user shape remains intentionally small (avatar data is loaded from profile/chat payloads, not session serializer).
 
 ### Data model and persistence
 
-- Current key entities: `User`, `OAuthAccount`, `Lobby`, `BouncerLevel`.
+- Current key entities include: `User`, `OAuthAccount`, `Lobby`, `BouncerLevel`, `Community`, `Channel`, `ChannelMember`, `Message`, `MessageReaction`, `CustomEmoji`.
 - User table is mapped to `account` db table (`@@map("account")`).
+- User includes `avatarKey` for persisted profile avatar object key.
 - Lobby includes metadata for game routing and lifecycle fields.
 - Bouncer levels store JSON level definition plus visibility and owner constraints.
 
@@ -333,6 +400,7 @@ Scope:
 
 - React SPA with central app routes and top navigation.
 - Session-aware auth context and profile workflows.
+- Profile page uses per-field save routes and direct-to-S3 avatar upload flow.
 - Game routes lazy-loaded to isolate heavy surfaces from core pages.
 - Bouncer integration via package import (`@cup/bouncer-client`) and API-driven lobby join/create.
 
@@ -361,8 +429,8 @@ Scope:
 
 ### Chat detailed schema and contracts (TBD)
 
-- Final Prisma schema fields/indexes for `Community`, `Channel`, `ChannelMember`, `Message`.
-- Final socket event payload contracts and ack/idempotency mechanics.
+- Core Prisma schema and socket contracts are implemented for baseline chat + emoji/reaction/reply features.
+- Remaining contract work is primarily additive (name color/avatar propagation into all relevant chat payloads, richer reactor lists, and follow-up UX).
 - Exact permission representation (`role` model vs resolved permission object) still open.
 
 ### Moderation and governance (TBD)

@@ -25,12 +25,12 @@ A social web platform for friends to hang out and play quick, casual multiplayer
 
 ### API (apps/api)
 
-- NestJS backend for users, lobbies, scores, level storage.
+- NestJS backend for auth/users, chat (history + realtime), communities/channels, emojis, lobbies, and level storage.
 - PostgreSQL + Prisma.
 
 ### Frontend (apps/web)
 
-- React SPA, minimal UI, game selector routing.
+- React SPA, profile customization, chat UI, and game selector routing.
 - Auth via Passport, sessions.
 
 ### Bouncer game (games/bouncer/)
@@ -93,8 +93,12 @@ A social web platform for friends to hang out and play quick, casual multiplayer
 - Add integration/e2e coverage for signup/login/logout, OAuth callbacks, and profile updates.
 - Improve unauthenticated `/profile` redirect/UX behavior.
 - Add email verification + password reset flows (post-v1 hardening).
+- Avatar upload/persist/display is implemented; next account customization milestone is name color.
 
 ### Chat Rooms
+
+- Status: core chat architecture is implemented (history + realtime + emoji/reactions/replies/grouping).
+- Focus now is on follow-up quality/scaling features rather than first-pass chat skeleton.
 
 - Use one modular chat system with a unified `Channel` model and `kind` (`dm`, `meeting`, `room`, `guild_channel`, `game_page`).
 - Build one reusable frontend chat component that takes `channelId` and can be embedded on profile rooms, guild halls, game pages, and DM views.
@@ -114,15 +118,15 @@ A social web platform for friends to hang out and play quick, casual multiplayer
 - Standalone surfaces (for example DMs and some game-page chat) can be single channels with no container.
 - UI labels can vary by context later; keep internal model naming stable as `Community` + `Channel`.
 
-#### Chat Rooms TODO (Phase 1)
+#### Chat Rooms TODO (Current follow-up)
 
-- Define Prisma schema for `Community`, `Channel`, `ChannelMember`, `Message`, and basic policy fields.
-- Implement chat backend REST + socket contract (join, leave, send, ack, fetch history).
-- Add server-side authorization checks for `canView` and `canPost` per channel kind.
-- Implement frontend chat component with message list, composer, optimistic send, and history pagination.
-- Embed the component first in one surface (recommended: user room chat) to validate contracts before rolling out everywhere.
-- Add moderation/event fields (`editedAt`, `deletedAt`, `system` messages) even if UI support is minimal at first.
-- Add integration tests for auth + permissions + realtime delivery + history consistency.
+- Add avatar + name-color support in chat payloads and message-row rendering.
+- Improve reaction UX hardening:
+  - user-visible error feedback for failed toggles
+  - optional in-flight guards to reduce racey rapid toggles
+- Implement "show more reactors" API + UI pagination.
+- Optional reply enhancement: lazy-load reply targets not present in current message window.
+- Add targeted integration coverage for key chat flows (permissions, realtime, pagination, reactions/replies).
 
 #### Chat Rooms Requirements (Locked for v1)
 
@@ -173,6 +177,9 @@ A social web platform for friends to hang out and play quick, casual multiplayer
   - attachment rendering and transport details will be finalized in the media feature phase
 
 #### Chat skeleton implementation plan (text-only first)
+
+- Historical note: this section documents the original implementation order.
+- Core skeleton and major follow-up features listed above are now implemented.
 
 - Goal: deliver one minimal end-to-end chat slice proving core architecture (persisted history + realtime send/receive + auth checks) before advanced features.
 - Data layer first:

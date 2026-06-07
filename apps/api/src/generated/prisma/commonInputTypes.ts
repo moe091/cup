@@ -311,6 +311,23 @@ export type EnumBouncerLevelVisibilityWithAggregatesFilter<$PrismaModel = never>
   _max?: Prisma.NestedEnumBouncerLevelVisibilityFilter<$PrismaModel>
 }
 
+export type EnumCommunityJoinModeFilter<$PrismaModel = never> = {
+  equals?: $Enums.CommunityJoinMode | Prisma.EnumCommunityJoinModeFieldRefInput<$PrismaModel>
+  in?: $Enums.CommunityJoinMode[] | Prisma.ListEnumCommunityJoinModeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.CommunityJoinMode[] | Prisma.ListEnumCommunityJoinModeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumCommunityJoinModeFilter<$PrismaModel> | $Enums.CommunityJoinMode
+}
+
+export type EnumCommunityJoinModeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.CommunityJoinMode | Prisma.EnumCommunityJoinModeFieldRefInput<$PrismaModel>
+  in?: $Enums.CommunityJoinMode[] | Prisma.ListEnumCommunityJoinModeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.CommunityJoinMode[] | Prisma.ListEnumCommunityJoinModeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumCommunityJoinModeWithAggregatesFilter<$PrismaModel> | $Enums.CommunityJoinMode
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumCommunityJoinModeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumCommunityJoinModeFilter<$PrismaModel>
+}
+
 export type EnumChannelKindFilter<$PrismaModel = never> = {
   equals?: $Enums.ChannelKind | Prisma.EnumChannelKindFieldRefInput<$PrismaModel>
   in?: $Enums.ChannelKind[] | Prisma.ListEnumChannelKindFieldRefInput<$PrismaModel>
@@ -650,6 +667,23 @@ export type NestedEnumBouncerLevelVisibilityWithAggregatesFilter<$PrismaModel = 
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumBouncerLevelVisibilityFilter<$PrismaModel>
   _max?: Prisma.NestedEnumBouncerLevelVisibilityFilter<$PrismaModel>
+}
+
+export type NestedEnumCommunityJoinModeFilter<$PrismaModel = never> = {
+  equals?: $Enums.CommunityJoinMode | Prisma.EnumCommunityJoinModeFieldRefInput<$PrismaModel>
+  in?: $Enums.CommunityJoinMode[] | Prisma.ListEnumCommunityJoinModeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.CommunityJoinMode[] | Prisma.ListEnumCommunityJoinModeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumCommunityJoinModeFilter<$PrismaModel> | $Enums.CommunityJoinMode
+}
+
+export type NestedEnumCommunityJoinModeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.CommunityJoinMode | Prisma.EnumCommunityJoinModeFieldRefInput<$PrismaModel>
+  in?: $Enums.CommunityJoinMode[] | Prisma.ListEnumCommunityJoinModeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.CommunityJoinMode[] | Prisma.ListEnumCommunityJoinModeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumCommunityJoinModeWithAggregatesFilter<$PrismaModel> | $Enums.CommunityJoinMode
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumCommunityJoinModeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumCommunityJoinModeFilter<$PrismaModel>
 }
 
 export type NestedEnumChannelKindFilter<$PrismaModel = never> = {

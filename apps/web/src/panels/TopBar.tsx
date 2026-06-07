@@ -94,8 +94,8 @@ export default function TopBar() {
   }, [isUserMenuOpen]);
 
   return (
-    <div className="fixed top-0 z-10 w-full border-b border-[color:var(--line)] bg-black backdrop-blur">
-      <div className="mx-auto max-w-6xl px-6 py-3 flex items-center justify-between">
+    <div className="fixed top-0 z-10 h-[var(--topbar-h)] w-full bg-black backdrop-blur">
+      <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-6">
         {/* Left: brand */}
         <Link
           to="/"
@@ -114,10 +114,10 @@ export default function TopBar() {
             Games
           </Link>
           <Link
-            to="/friends"
+            to="/chat"
             className="hover:text-[color:var(--text)] transition"
           >
-            Friends
+            Chat
           </Link>
           <Link
             to="/home"
@@ -133,7 +133,7 @@ export default function TopBar() {
             <div className="relative" ref={userMenuContainerRef}>
               <button
                 type="button"
-                className="hover:text-[color:var(--text)] transition"
+                className="cursor-pointer hover:text-[color:var(--text)] transition"
                 onClick={() => setIsUserMenuOpen((prev) => !prev)}
                 aria-haspopup="menu"
                 aria-expanded={isUserMenuOpen}

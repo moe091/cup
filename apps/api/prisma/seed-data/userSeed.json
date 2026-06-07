@@ -19,5 +19,47 @@
     "displayName": "Adler",
     "email": "adler3@seed.local",
     "password": "SeedPass!123"
+  },
+  {
+    "id": "seed-user-iris",
+    "username": "Iris4",
+    "displayName": "Iris",
+    "email": "iris4@seed.local",
+    "password": "SeedPass!123"
+  },
+  {
+    "id": "seed-user-luca",
+    "username": "Luca5",
+    "displayName": "Luca",
+    "email": "luca5@seed.local",
+    "password": "SeedPass!123"
+  },
+  {
+    "id": "seed-user-nina",
+    "username": "Nina6",
+    "displayName": "Nina",
+    "email": "nina6@seed.local",
+    "password": "SeedPass!123"
+  },
+  {
+    "id": "seed-user-omar",
+    "username": "Omar7",
+    "displayName": "Omar",
+    "email": "omar7@seed.local",
+    "password": "SeedPass!123"
+  },
+  {
+    "id": "seed-user-priya",
+    "username": "Priya8",
+    "displayName": "Priya",
+    "email": "priya8@seed.local",
+    "password": "SeedPass!123"
+  },
+  {
+    "id": "seed-user-quinn",
+    "username": "Quinn9",
+    "displayName": "Quinn",
+    "email": "quinn9@seed.local",
+    "password": "SeedPass!123"
   }
 ]

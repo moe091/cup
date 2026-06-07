@@ -4,10 +4,13 @@ import type { SessionUser } from "@cup/shared-types";
 import { useAuth } from "./auth";
 import TopBar from "./panels/TopBar";
 import ProfilePage from "./routes/profile/ProfilePage";
+import ChatPage from "./routes/chat/ChatPage";
 //import './assets/games.css';
 
 const CommunityPage = lazy(() => import("./routes/communities/CommunityPage"));
 const CommunityChatPage = lazy(() => import("./routes/communities/CommunityChatPage"));
+const CommunitiesDiscoverPage = lazy(() => import("./routes/communities/CommunitiesDiscoverPage"));
+const CommunitySettingsPage = lazy(() => import("./routes/communities/CommunitySettingsPage"));
 const GamesLayout = lazy(() => import("./routes/games/GamesLayout"));
 const Browse = lazy(() => import("./routes/games/Browse"));
 const BouncerLayout = lazy(() => import("./routes/games/bouncer/BouncerLayout"));
@@ -133,6 +136,22 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route
+          path="/communities/discover"
+          element={
+            <Suspense fallback={null}>
+              <CommunitiesDiscoverPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/communities/:slug/settings"
+          element={
+            <Suspense fallback={null}>
+              <CommunitySettingsPage />
+            </Suspense>
+          }
+        />
         <Route 
           path="/communities/:slug"
           element={
@@ -154,6 +173,14 @@ export default function App() {
           element={
             <Suspense fallback={null}>
               <ChatSocketTest />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            <Suspense fallback={null}>
+              <ChatPage />
             </Suspense>
           }
         />

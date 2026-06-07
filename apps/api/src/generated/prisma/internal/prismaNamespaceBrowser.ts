@@ -142,8 +142,11 @@ export const CommunityScalarFieldEnum = {
   description: 'description',
   slug: 'slug',
   ownerUserId: 'ownerUserId',
+  joinMode: 'joinMode',
+  permissionConfig: 'permissionConfig',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  iconKey: 'iconKey'
 } as const
 
 export type CommunityScalarFieldEnum = (typeof CommunityScalarFieldEnum)[keyof typeof CommunityScalarFieldEnum]
@@ -153,6 +156,7 @@ export const CommunityMemberScalarFieldEnum = {
   communityId: 'communityId',
   userId: 'userId',
   primaryRole: 'primaryRole',
+  permissionLevel: 'permissionLevel',
   joinedAt: 'joinedAt'
 } as const
 
@@ -165,6 +169,7 @@ export const ChannelScalarFieldEnum = {
   name: 'name',
   kind: 'kind',
   visibility: 'visibility',
+  requiredPermissionLevel: 'requiredPermissionLevel',
   createdByUserId: 'createdByUserId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

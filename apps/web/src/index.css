@@ -4,6 +4,7 @@
 
 :root {
   color-scheme: dark;
+  --topbar-h: 57px;
 
   /* Active/default theme (kept as current values): Ember Slate */
   --bg: #141518;

@@ -40,6 +40,17 @@ Creation behavior in local docker:
 
 ## Environment Strategy
 
+### Storage env prefix note (`S3_ENV_PREFIX`)
+
+- Purpose: prefixes object keys by environment (for example `dev/...` vs `prod/...`).
+- Current expected values:
+  - `dev` for local/development
+  - `prod` for production
+- Suggested local file location:
+  - set in `apps/api/.env` during local development.
+- Suggested deployed/prod location:
+  - set as deployment environment variable in your hosting/runtime config (not hardcoded in code).
+
 ### Dev (Implemented)
 
 - Purpose: active development with realistic seeded data.

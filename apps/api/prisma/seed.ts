@@ -25,8 +25,16 @@ type CommunitySeed = {
   id: string;
   name: string;
   description: string | null;
-  slug: string | null;
+  slug: string;
   ownerUserId: string | null;
+  iconKey: string | null;
+  joinMode: 'PUBLIC' | 'REQUEST' | 'INVITE_ONLY';
+  permissionConfig: {
+    createChannel: number;
+    editChannelName: number;
+    deleteChannel: number;
+    editGeneral: number;
+  };
   createdAt: string;
   updatedAt: string;
 };
@@ -37,6 +45,7 @@ type ChannelSeed = {
   name: string;
   kind: 'COMMUNITY' | 'DM' | 'GAME_PAGE' | 'ROOM';
   visibility: 'PUBLIC' | 'PRIVATE';
+  requiredPermissionLevel: number;
   createdByUserId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -46,13 +55,7 @@ type CommunityMemberSeed = {
   communityId: string;
   userId: string;
   primaryRole: string;
-  joinedAt: string;
-};
-
-type ChannelMemberSeed = {
-  channelId: string;
-  userId: string;
-  source: 'MANUAL' | 'DERIVED';
+  permissionLevel: number;
   joinedAt: string;
 };
 
@@ -105,11 +108,6 @@ function loadCommunityMemberSeed(): CommunityMemberSeed[] {
   return JSON.parse(data) as CommunityMemberSeed[];
 }
 
-function loadChannelMemberSeed(): ChannelMemberSeed[] {
-  const data = fs.readFileSync('prisma/seed-data/chat/channelMemberSeed.json', 'utf-8');
-  return JSON.parse(data) as ChannelMemberSeed[];
-}
-
 function loadMessageSeed(): MessageSeed[] {
   const data = fs.readFileSync('prisma/seed-data/chat/messageSeed.json', 'utf-8');
   return JSON.parse(data) as MessageSeed[];
@@ -148,13 +146,12 @@ async function main() {
   const communities = shouldSeedChat ? loadCommunitySeed() : [];
   const channels = shouldSeedChat ? loadChannelSeed() : [];
   const communityMembers = shouldSeedChat ? loadCommunityMemberSeed() : [];
-  const channelMembers = shouldSeedChat ? loadChannelMemberSeed() : [];
   const messages = shouldSeedChat ? loadMessageSeed() : [];
   const customEmojis = shouldSeedChat ? loadCustomEmojiSeed() : [];
   const levels = [loadBouncerLevel('level1'), loadBouncerLevel('level2')];
 
   console.log(
-    `[seed] mode=${mode} users=${users.length} communities=${communities.length} channels=${channels.length} communityMembers=${communityMembers.length} channelMembers=${channelMembers.length} messages=${messages.length} customEmojis=${customEmojis.length} levels=${levels.length}`,
+    `[seed] mode=${mode} users=${users.length} communities=${communities.length} channels=${channels.length} communityMembers=${communityMembers.length} messages=${messages.length} customEmojis=${customEmojis.length} levels=${levels.length}`,
   );
 
   for (const user of users) {
@@ -214,6 +211,9 @@ async function main() {
         description: community.description,
         slug: community.slug,
         ownerUserId: community.ownerUserId,
+        iconKey: community.iconKey,
+        joinMode: community.joinMode,
+        permissionConfig: community.permissionConfig,
         createdAt: new Date(community.createdAt),
         updatedAt: new Date(community.updatedAt),
       },
@@ -223,6 +223,9 @@ async function main() {
         description: community.description,
         slug: community.slug,
         ownerUserId: community.ownerUserId,
+        iconKey: community.iconKey,
+        joinMode: community.joinMode,
+        permissionConfig: community.permissionConfig,
         createdAt: new Date(community.createdAt),
         updatedAt: new Date(community.updatedAt),
       },
@@ -237,6 +240,7 @@ async function main() {
         name: channel.name,
         kind: channel.kind,
         visibility: channel.visibility,
+        requiredPermissionLevel: channel.requiredPermissionLevel,
         createdByUserId: channel.createdByUserId,
         createdAt: new Date(channel.createdAt),
         updatedAt: new Date(channel.updatedAt),
@@ -247,6 +251,7 @@ async function main() {
         name: channel.name,
         kind: channel.kind,
         visibility: channel.visibility,
+        requiredPermissionLevel: channel.requiredPermissionLevel,
         createdByUserId: channel.createdByUserId,
         createdAt: new Date(channel.createdAt),
         updatedAt: new Date(channel.updatedAt),
@@ -264,33 +269,14 @@ async function main() {
       },
       update: {
         primaryRole: membership.primaryRole,
+        permissionLevel: membership.permissionLevel,
         joinedAt: new Date(membership.joinedAt),
       },
       create: {
         communityId: membership.communityId,
         userId: membership.userId,
         primaryRole: membership.primaryRole,
-        joinedAt: new Date(membership.joinedAt),
-      },
-    });
-  }
-
-  for (const membership of channelMembers) {
-    await prisma.channelMember.upsert({
-      where: {
-        channelId_userId: {
-          channelId: membership.channelId,
-          userId: membership.userId,
-        },
-      },
-      update: {
-        source: membership.source,
-        joinedAt: new Date(membership.joinedAt),
-      },
-      create: {
-        channelId: membership.channelId,
-        userId: membership.userId,
-        source: membership.source,
+        permissionLevel: membership.permissionLevel,
         joinedAt: new Date(membership.joinedAt),
       },
     });

@@ -20,8 +20,18 @@ export type ChannelModel = runtime.Types.Result.DefaultSelection<Prisma.$Channel
 
 export type AggregateChannel = {
   _count: ChannelCountAggregateOutputType | null
+  _avg: ChannelAvgAggregateOutputType | null
+  _sum: ChannelSumAggregateOutputType | null
   _min: ChannelMinAggregateOutputType | null
   _max: ChannelMaxAggregateOutputType | null
+}
+
+export type ChannelAvgAggregateOutputType = {
+  requiredPermissionLevel: number | null
+}
+
+export type ChannelSumAggregateOutputType = {
+  requiredPermissionLevel: number | null
 }
 
 export type ChannelMinAggregateOutputType = {
@@ -30,6 +40,7 @@ export type ChannelMinAggregateOutputType = {
   name: string | null
   kind: $Enums.ChannelKind | null
   visibility: $Enums.ChannelVisibility | null
+  requiredPermissionLevel: number | null
   createdByUserId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -41,6 +52,7 @@ export type ChannelMaxAggregateOutputType = {
   name: string | null
   kind: $Enums.ChannelKind | null
   visibility: $Enums.ChannelVisibility | null
+  requiredPermissionLevel: number | null
   createdByUserId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -52,6 +64,7 @@ export type ChannelCountAggregateOutputType = {
   name: number
   kind: number
   visibility: number
+  requiredPermissionLevel: number
   createdByUserId: number
   createdAt: number
   updatedAt: number
@@ -59,12 +72,21 @@ export type ChannelCountAggregateOutputType = {
 }
 
 
+export type ChannelAvgAggregateInputType = {
+  requiredPermissionLevel?: true
+}
+
+export type ChannelSumAggregateInputType = {
+  requiredPermissionLevel?: true
+}
+
 export type ChannelMinAggregateInputType = {
   id?: true
   communityId?: true
   name?: true
   kind?: true
   visibility?: true
+  requiredPermissionLevel?: true
   createdByUserId?: true
   createdAt?: true
   updatedAt?: true
@@ -76,6 +98,7 @@ export type ChannelMaxAggregateInputType = {
   name?: true
   kind?: true
   visibility?: true
+  requiredPermissionLevel?: true
   createdByUserId?: true
   createdAt?: true
   updatedAt?: true
@@ -87,6 +110,7 @@ export type ChannelCountAggregateInputType = {
   name?: true
   kind?: true
   visibility?: true
+  requiredPermissionLevel?: true
   createdByUserId?: true
   createdAt?: true
   updatedAt?: true
@@ -131,6 +155,18 @@ export type ChannelAggregateArgs<ExtArgs extends runtime.Types.Extensions.Intern
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: ChannelAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: ChannelSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: ChannelMinAggregateInputType
@@ -161,6 +197,8 @@ export type ChannelGroupByArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   _count?: ChannelCountAggregateInputType | true
+  _avg?: ChannelAvgAggregateInputType
+  _sum?: ChannelSumAggregateInputType
   _min?: ChannelMinAggregateInputType
   _max?: ChannelMaxAggregateInputType
 }
@@ -171,10 +209,13 @@ export type ChannelGroupByOutputType = {
   name: string
   kind: $Enums.ChannelKind
   visibility: $Enums.ChannelVisibility
+  requiredPermissionLevel: number
   createdByUserId: string | null
   createdAt: Date
   updatedAt: Date
   _count: ChannelCountAggregateOutputType | null
+  _avg: ChannelAvgAggregateOutputType | null
+  _sum: ChannelSumAggregateOutputType | null
   _min: ChannelMinAggregateOutputType | null
   _max: ChannelMaxAggregateOutputType | null
 }
@@ -203,6 +244,7 @@ export type ChannelWhereInput = {
   name?: Prisma.StringFilter<"Channel"> | string
   kind?: Prisma.EnumChannelKindFilter<"Channel"> | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFilter<"Channel"> | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFilter<"Channel"> | number
   createdByUserId?: Prisma.StringNullableFilter<"Channel"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Channel"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Channel"> | Date | string
@@ -218,6 +260,7 @@ export type ChannelOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   kind?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
+  requiredPermissionLevel?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -236,6 +279,7 @@ export type ChannelWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"Channel"> | string
   kind?: Prisma.EnumChannelKindFilter<"Channel"> | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFilter<"Channel"> | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFilter<"Channel"> | number
   createdByUserId?: Prisma.StringNullableFilter<"Channel"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Channel"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Channel"> | Date | string
@@ -251,12 +295,15 @@ export type ChannelOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   kind?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
+  requiredPermissionLevel?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ChannelCountOrderByAggregateInput
+  _avg?: Prisma.ChannelAvgOrderByAggregateInput
   _max?: Prisma.ChannelMaxOrderByAggregateInput
   _min?: Prisma.ChannelMinOrderByAggregateInput
+  _sum?: Prisma.ChannelSumOrderByAggregateInput
 }
 
 export type ChannelScalarWhereWithAggregatesInput = {
@@ -268,6 +315,7 @@ export type ChannelScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"Channel"> | string
   kind?: Prisma.EnumChannelKindWithAggregatesFilter<"Channel"> | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityWithAggregatesFilter<"Channel"> | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntWithAggregatesFilter<"Channel"> | number
   createdByUserId?: Prisma.StringNullableWithAggregatesFilter<"Channel"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Channel"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Channel"> | Date | string
@@ -278,6 +326,7 @@ export type ChannelCreateInput = {
   name: string
   kind: $Enums.ChannelKind
   visibility?: $Enums.ChannelVisibility
+  requiredPermissionLevel?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   community?: Prisma.CommunityCreateNestedOneWithoutChannelsInput
@@ -292,6 +341,7 @@ export type ChannelUncheckedCreateInput = {
   name: string
   kind: $Enums.ChannelKind
   visibility?: $Enums.ChannelVisibility
+  requiredPermissionLevel?: number
   createdByUserId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -304,6 +354,7 @@ export type ChannelUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumChannelKindFieldUpdateOperationsInput | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFieldUpdateOperationsInput | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   community?: Prisma.CommunityUpdateOneWithoutChannelsNestedInput
@@ -318,6 +369,7 @@ export type ChannelUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumChannelKindFieldUpdateOperationsInput | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFieldUpdateOperationsInput | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFieldUpdateOperationsInput | number
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -331,6 +383,7 @@ export type ChannelCreateManyInput = {
   name: string
   kind: $Enums.ChannelKind
   visibility?: $Enums.ChannelVisibility
+  requiredPermissionLevel?: number
   createdByUserId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -341,6 +394,7 @@ export type ChannelUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumChannelKindFieldUpdateOperationsInput | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFieldUpdateOperationsInput | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -351,6 +405,7 @@ export type ChannelUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumChannelKindFieldUpdateOperationsInput | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFieldUpdateOperationsInput | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFieldUpdateOperationsInput | number
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -372,9 +427,14 @@ export type ChannelCountOrderByAggregateInput = {
   name?: Prisma.SortOrder
   kind?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
+  requiredPermissionLevel?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type ChannelAvgOrderByAggregateInput = {
+  requiredPermissionLevel?: Prisma.SortOrder
 }
 
 export type ChannelMaxOrderByAggregateInput = {
@@ -383,6 +443,7 @@ export type ChannelMaxOrderByAggregateInput = {
   name?: Prisma.SortOrder
   kind?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
+  requiredPermissionLevel?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -394,9 +455,14 @@ export type ChannelMinOrderByAggregateInput = {
   name?: Prisma.SortOrder
   kind?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
+  requiredPermissionLevel?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type ChannelSumOrderByAggregateInput = {
+  requiredPermissionLevel?: Prisma.SortOrder
 }
 
 export type ChannelScalarRelationFilter = {
@@ -529,6 +595,7 @@ export type ChannelCreateWithoutCreatedByInput = {
   name: string
   kind: $Enums.ChannelKind
   visibility?: $Enums.ChannelVisibility
+  requiredPermissionLevel?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   community?: Prisma.CommunityCreateNestedOneWithoutChannelsInput
@@ -542,6 +609,7 @@ export type ChannelUncheckedCreateWithoutCreatedByInput = {
   name: string
   kind: $Enums.ChannelKind
   visibility?: $Enums.ChannelVisibility
+  requiredPermissionLevel?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.ChannelMemberUncheckedCreateNestedManyWithoutChannelInput
@@ -583,6 +651,7 @@ export type ChannelScalarWhereInput = {
   name?: Prisma.StringFilter<"Channel"> | string
   kind?: Prisma.EnumChannelKindFilter<"Channel"> | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFilter<"Channel"> | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFilter<"Channel"> | number
   createdByUserId?: Prisma.StringNullableFilter<"Channel"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Channel"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Channel"> | Date | string
@@ -593,6 +662,7 @@ export type ChannelCreateWithoutCommunityInput = {
   name: string
   kind: $Enums.ChannelKind
   visibility?: $Enums.ChannelVisibility
+  requiredPermissionLevel?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   createdBy?: Prisma.UserCreateNestedOneWithoutChannelsCreatedInput
@@ -605,6 +675,7 @@ export type ChannelUncheckedCreateWithoutCommunityInput = {
   name: string
   kind: $Enums.ChannelKind
   visibility?: $Enums.ChannelVisibility
+  requiredPermissionLevel?: number
   createdByUserId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -643,6 +714,7 @@ export type ChannelCreateWithoutMembersInput = {
   name: string
   kind: $Enums.ChannelKind
   visibility?: $Enums.ChannelVisibility
+  requiredPermissionLevel?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   community?: Prisma.CommunityCreateNestedOneWithoutChannelsInput
@@ -656,6 +728,7 @@ export type ChannelUncheckedCreateWithoutMembersInput = {
   name: string
   kind: $Enums.ChannelKind
   visibility?: $Enums.ChannelVisibility
+  requiredPermissionLevel?: number
   createdByUserId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -683,6 +756,7 @@ export type ChannelUpdateWithoutMembersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumChannelKindFieldUpdateOperationsInput | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFieldUpdateOperationsInput | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   community?: Prisma.CommunityUpdateOneWithoutChannelsNestedInput
@@ -696,6 +770,7 @@ export type ChannelUncheckedUpdateWithoutMembersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumChannelKindFieldUpdateOperationsInput | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFieldUpdateOperationsInput | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFieldUpdateOperationsInput | number
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -707,6 +782,7 @@ export type ChannelCreateWithoutMessagesInput = {
   name: string
   kind: $Enums.ChannelKind
   visibility?: $Enums.ChannelVisibility
+  requiredPermissionLevel?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   community?: Prisma.CommunityCreateNestedOneWithoutChannelsInput
@@ -720,6 +796,7 @@ export type ChannelUncheckedCreateWithoutMessagesInput = {
   name: string
   kind: $Enums.ChannelKind
   visibility?: $Enums.ChannelVisibility
+  requiredPermissionLevel?: number
   createdByUserId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -747,6 +824,7 @@ export type ChannelUpdateWithoutMessagesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumChannelKindFieldUpdateOperationsInput | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFieldUpdateOperationsInput | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   community?: Prisma.CommunityUpdateOneWithoutChannelsNestedInput
@@ -760,6 +838,7 @@ export type ChannelUncheckedUpdateWithoutMessagesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumChannelKindFieldUpdateOperationsInput | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFieldUpdateOperationsInput | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFieldUpdateOperationsInput | number
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -772,6 +851,7 @@ export type ChannelCreateManyCreatedByInput = {
   name: string
   kind: $Enums.ChannelKind
   visibility?: $Enums.ChannelVisibility
+  requiredPermissionLevel?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -781,6 +861,7 @@ export type ChannelUpdateWithoutCreatedByInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumChannelKindFieldUpdateOperationsInput | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFieldUpdateOperationsInput | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   community?: Prisma.CommunityUpdateOneWithoutChannelsNestedInput
@@ -794,6 +875,7 @@ export type ChannelUncheckedUpdateWithoutCreatedByInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumChannelKindFieldUpdateOperationsInput | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFieldUpdateOperationsInput | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.ChannelMemberUncheckedUpdateManyWithoutChannelNestedInput
@@ -806,6 +888,7 @@ export type ChannelUncheckedUpdateManyWithoutCreatedByInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumChannelKindFieldUpdateOperationsInput | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFieldUpdateOperationsInput | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -815,6 +898,7 @@ export type ChannelCreateManyCommunityInput = {
   name: string
   kind: $Enums.ChannelKind
   visibility?: $Enums.ChannelVisibility
+  requiredPermissionLevel?: number
   createdByUserId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -825,6 +909,7 @@ export type ChannelUpdateWithoutCommunityInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumChannelKindFieldUpdateOperationsInput | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFieldUpdateOperationsInput | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.UserUpdateOneWithoutChannelsCreatedNestedInput
@@ -837,6 +922,7 @@ export type ChannelUncheckedUpdateWithoutCommunityInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumChannelKindFieldUpdateOperationsInput | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFieldUpdateOperationsInput | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFieldUpdateOperationsInput | number
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -849,6 +935,7 @@ export type ChannelUncheckedUpdateManyWithoutCommunityInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumChannelKindFieldUpdateOperationsInput | $Enums.ChannelKind
   visibility?: Prisma.EnumChannelVisibilityFieldUpdateOperationsInput | $Enums.ChannelVisibility
+  requiredPermissionLevel?: Prisma.IntFieldUpdateOperationsInput | number
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -900,6 +987,7 @@ export type ChannelSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   name?: boolean
   kind?: boolean
   visibility?: boolean
+  requiredPermissionLevel?: boolean
   createdByUserId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -916,6 +1004,7 @@ export type ChannelSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   name?: boolean
   kind?: boolean
   visibility?: boolean
+  requiredPermissionLevel?: boolean
   createdByUserId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -929,6 +1018,7 @@ export type ChannelSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   name?: boolean
   kind?: boolean
   visibility?: boolean
+  requiredPermissionLevel?: boolean
   createdByUserId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -942,12 +1032,13 @@ export type ChannelSelectScalar = {
   name?: boolean
   kind?: boolean
   visibility?: boolean
+  requiredPermissionLevel?: boolean
   createdByUserId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ChannelOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "communityId" | "name" | "kind" | "visibility" | "createdByUserId" | "createdAt" | "updatedAt", ExtArgs["result"]["channel"]>
+export type ChannelOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "communityId" | "name" | "kind" | "visibility" | "requiredPermissionLevel" | "createdByUserId" | "createdAt" | "updatedAt", ExtArgs["result"]["channel"]>
 export type ChannelInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   community?: boolean | Prisma.Channel$communityArgs<ExtArgs>
   createdBy?: boolean | Prisma.Channel$createdByArgs<ExtArgs>
@@ -978,6 +1069,7 @@ export type $ChannelPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     name: string
     kind: $Enums.ChannelKind
     visibility: $Enums.ChannelVisibility
+    requiredPermissionLevel: number
     createdByUserId: string | null
     createdAt: Date
     updatedAt: Date
@@ -1413,6 +1505,7 @@ export interface ChannelFieldRefs {
   readonly name: Prisma.FieldRef<"Channel", 'String'>
   readonly kind: Prisma.FieldRef<"Channel", 'ChannelKind'>
   readonly visibility: Prisma.FieldRef<"Channel", 'ChannelVisibility'>
+  readonly requiredPermissionLevel: Prisma.FieldRef<"Channel", 'Int'>
   readonly createdByUserId: Prisma.FieldRef<"Channel", 'String'>
   readonly createdAt: Prisma.FieldRef<"Channel", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Channel", 'DateTime'>

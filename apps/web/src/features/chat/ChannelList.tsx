@@ -1,3 +1,11 @@
+import React, { useEffect, useState } from "react";
+import type { ContextMenuState } from "../../components/common/ContextMenu";
+import ContextMenu from "../../components/common/ContextMenu";
+import StringEditModal from "../../components/common/StringEditModal";
+import ConfirmTextModal from "../../components/ConfirmTextModal";
+import type { UseCommunitySettingsResult } from "../communities/hooks/useCommunitySettings";
+import { createCommunityChannel, deleteCommunityChannel, updateCommunityChannel } from "../../api/communities";
+
 export type ChatChannelListItem = {
   id: string;
   name: string;
@@ -5,13 +13,191 @@ export type ChatChannelListItem = {
 };
 
 type ChannelListProps = {
-  communityName?: string;
+  communityName: string | null;
+  communitySlug: string | null;
   channels: ChatChannelListItem[];
   selectedChannelId: string | null;
   onSelectChannel: (channelId: string) => void;
+  commSettings: UseCommunitySettingsResult;
+  onChannelsChanged: () => Promise<void>;
 };
 
-export default function ChannelList({ communityName, channels, selectedChannelId, onSelectChannel }: ChannelListProps) {
+type StringEditModalStatus = "create" | "edit" | "closed";
+
+
+export default function ChannelList({ communityName, communitySlug, channels, selectedChannelId, onSelectChannel, commSettings, onChannelsChanged }: ChannelListProps) {
+  const [rightClickMenu, setRightClickMenu] = useState<ContextMenuState | null>(null);
+  const closeContextMenu = () => setRightClickMenu(null); 
+  
+  const [editModalStatus, setEditModalStatus] = useState<StringEditModalStatus>("closed");
+  const [editingChannel, setEditingChannel] = useState<ChatChannelListItem | null>(null); // to keep track of the channel that is currently being edited, if any
+  const [deletingChannel, setDeletingChannel] = useState<ChatChannelListItem | null>(null);
+  const [isSubmittingChannelName, setIsSubmittingChannelName] = useState(false);
+  const [isDeletingChannel, setIsDeletingChannel] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+
+  const canCreateChannel = commSettings.permissionConfig !== null && commSettings.viewerPermissionLevel >= commSettings.permissionConfig.createChannel;
+  const canEditChannelName = commSettings.permissionConfig !== null && commSettings.viewerPermissionLevel >= commSettings.permissionConfig.editChannelName;
+  const canDeleteChannel = commSettings.permissionConfig !== null && commSettings.viewerPermissionLevel >= commSettings.permissionConfig.deleteChannel;
+
+  useEffect(() => {
+    if (!successMessage) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setSuccessMessage(null);
+    }, 2500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [successMessage]);
+
+  async function handleCreateChannel(name: string) {
+    if (!communitySlug) {
+      throw new Error("Cannot create channel without a community slug.");
+    }
+  
+    setIsSubmittingChannelName(true);
+  
+    try {
+      await createCommunityChannel(communitySlug, {
+        name,
+        requiredPermissionLevel: 1, //this is the default permission level to access the newly created channel. TODO:: might add a UI to set permission level at creation, if not it can be edited afterwards
+      });
+      await onChannelsChanged();
+    
+      setEditModalStatus("closed");
+      setSuccessMessage("Channel created.");
+    } finally {
+      setIsSubmittingChannelName(false);
+    }
+  }
+  
+  async function handleEditChannel(name: string) {
+    if (!communitySlug) {
+      throw new Error("Cannot edit channel without a community slug.");
+    }
+  
+    if (!editingChannel) {
+      throw new Error("Cannot edit channel without a selected channel.");
+    }
+  
+    setIsSubmittingChannelName(true);
+  
+    try {
+      await updateCommunityChannel(communitySlug, editingChannel.id, {
+        name,
+      });
+      await onChannelsChanged();
+   
+      setEditingChannel(null);
+      setEditModalStatus("closed");
+      setSuccessMessage("Channel renamed.");
+    } finally {
+      setIsSubmittingChannelName(false);
+    }
+  }
+
+  async function handleDeleteChannel() {
+    if (!communitySlug) {
+      throw new Error("Cannot delete channel without a community slug.");
+    }
+
+    if (!deletingChannel) {
+      throw new Error("Cannot delete channel without a selected channel.");
+    }
+
+    setIsDeletingChannel(true);
+
+    try {
+      await deleteCommunityChannel(communitySlug, deletingChannel.id);
+      await onChannelsChanged();
+
+      setDeletingChannel(null);
+      setSuccessMessage("Channel deleted.");
+    } finally {
+      setIsDeletingChannel(false);
+    }
+  }
+  
+  const editModalOptions = {
+    create: { title: "Create Channel", submitLabel: "Create", handler: handleCreateChannel },
+    edit: { title: "Rename Channel", submitLabel: "Rename", handler: handleEditChannel },
+    closed: { title: "", submitLabel: "Submit", handler: () => {} },
+  };
+
+  const isEditModalOpen = editModalStatus != "closed";
+  const editModalTitle = editModalOptions[editModalStatus].title;
+  const editModalHandler = editModalOptions[editModalStatus].handler;
+  const editModalSubmitLabel = editModalOptions[editModalStatus].submitLabel;
+  
+
+  async function openCreateChannelModal() {
+    setEditModalStatus("create");
+  }
+
+  async function openEditChannelModal(channel: ChatChannelListItem) {
+    setEditingChannel(channel);
+    setEditModalStatus("edit");
+  }
+
+  async function openDeleteChannelModal(channel: ChatChannelListItem) {
+    setDeletingChannel(channel);
+  }
+
+  //for when an actual existing channel is right clicked - display right click menu and include delete/edit options
+  function channelRightClick(event: React.MouseEvent<HTMLButtonElement>, channel: ChatChannelListItem) {
+    const items: ContextMenuState["items"] = [];
+
+    if (canCreateChannel) 
+      items.push({ id: "create_channel", label: "Create channel", clickHandler: openCreateChannelModal });
+    
+    if (canEditChannelName) 
+      items.push({ id: "edit_channel", label: "Edit channel name", clickHandler: () => openEditChannelModal(channel) });
+    
+    if (canDeleteChannel) 
+      items.push({ id: "delete_channel", label: "Delete channel", variant: "danger", clickHandler: () => openDeleteChannelModal(channel) });
+    
+    if (items.length == 0) { //if they don't have any right click options anyway then just show normal right click menu
+      setRightClickMenu(null);
+      return
+    }
+    
+    event.preventDefault();
+
+    setRightClickMenu({
+      isOpen: true,
+      x: event.clientX,
+      y: event.clientY,
+      items
+    });
+  }
+
+  //for when empty/blank area on the channelList is right clicked, show right-click menu, only need the 'create' option
+  function emptyRightClick(event: React.MouseEvent<HTMLElement>) {
+    const target = event.target as HTMLElement;
+    //return if one of the channel buttons was right clicked since that will handle showing the right-click menu
+    if (target.closest('button[data-channel-item="true"]')) 
+      return; 
+
+    if (!canCreateChannel) {
+      setRightClickMenu(null)
+      return;
+    }
+
+    event.preventDefault();
+    setRightClickMenu({
+      isOpen: true,
+      x: event.clientX,
+      y: event.clientY,
+      items: [
+        { id: "create_channel", label: "Create channel", clickHandler: openCreateChannelModal },
+      ]
+    });
+  } 
 
   function renderChannels() {
     return (
@@ -22,8 +208,10 @@ export default function ChannelList({ communityName, channels, selectedChannelId
           return (
             <button
               key={channel.id}
+              data-channel-item="true"
               type="button"
               onClick={() => onSelectChannel(channel.id)}
+              onContextMenu={(e) => channelRightClick(e, channel)}
               className={`flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-[13px] transition ${
                 isSelected
                   ? "border border-[color:var(--accent)] bg-[color:var(--panel)]"
@@ -51,7 +239,7 @@ export default function ChannelList({ communityName, channels, selectedChannelId
 
 
   return (
-    <aside className="flex h-full flex-col border-r border-[color:var(--line)] bg-[color:var(--panel-strong)] p-2.5">
+    <aside className="flex h-full flex-col border-r border-[color:var(--line)] bg-[color:var(--panel-strong)] p-2.5" onContextMenu={emptyRightClick}>
       <div className="-mx-2.5 -mt-2.5 mb-2.5 px-2.5 py-2.5">
         {communityName ? <h1 className="text-lg font-semibold">{communityName}</h1> : null}
         <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[color:var(--muted)]">Channels</p>
@@ -59,6 +247,37 @@ export default function ChannelList({ communityName, channels, selectedChannelId
 
       { channels.length === 0 ? renderNoChannels() : renderChannels() }
       
+      {rightClickMenu ? <ContextMenu {...rightClickMenu} onClose={closeContextMenu} /> : null}
+
+      <StringEditModal
+        isOpen={isEditModalOpen}
+        title={editModalTitle}
+        label="Enter Channel Name"
+        initialValue=""
+        submitLabel={editModalSubmitLabel}
+        isSubmitting={isSubmittingChannelName}
+        maxLength={60}
+        onCancel={() => setEditModalStatus("closed")}
+        onConfirm={editModalHandler}
+      />
+
+      <ConfirmTextModal
+        isOpen={deletingChannel !== null}
+        title="Delete channel"
+        message={deletingChannel ? `Delete #${deletingChannel.name}? This cannot be undone.` : "Delete this channel? This cannot be undone."}
+        confirmLabel="Delete channel"
+        confirmationText="DELETE"
+        isSubmitting={isDeletingChannel}
+        onCancel={() => setDeletingChannel(null)}
+        onConfirm={handleDeleteChannel}
+      />
+      {successMessage ? (
+        <div className="pointer-events-none fixed left-1/2 top-[calc(var(--topbar-h)+0.75rem)] z-[160] -translate-x-1/2">
+          <div className="rounded-xl border border-[color:var(--line)] bg-[color:var(--panel-lighter)]/95 px-6 py-3 text-center text-base font-medium text-[color:var(--text)] shadow-[0_10px_28px_rgba(0,0,0,0.35)]">
+            {successMessage}
+          </div>
+        </div>
+      ) : null}
     </aside>
   );
 }
