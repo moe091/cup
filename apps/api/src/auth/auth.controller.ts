@@ -60,7 +60,7 @@ export class AuthController {
 
     await this.loginSession(req as LoginRequest, req.user);
 
-    res.redirect('http://localhost:5173/profile'); //TODO:: redirect to previous page
+    res.redirect('/');
   }
 
   @Get('discord')
@@ -78,7 +78,7 @@ export class AuthController {
     }
 
     await this.loginSession(req as LoginRequest, req.user);
-    res.redirect('http://localhost:5173/profile'); //TODO:: redirect to previous page
+    res.redirect('/');
   }
 
   @Post('local/signup')

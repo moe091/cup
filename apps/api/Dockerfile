@@ -56,6 +56,7 @@ COPY --from=builder --chown=app:app /deploy/package.json ./package.json
 # copy built api, prisma schema, and prisma client from last stage
 COPY --from=builder --chown=app:app /repo/apps/api/dist ./dist
 COPY --from=builder --chown=app:app /repo/apps/api/prisma ./prisma
+COPY --from=builder --chown=app:app /repo/apps/api/prisma.config.ts ./prisma.config.ts
 
 USER app
 

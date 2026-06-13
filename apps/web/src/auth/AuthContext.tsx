@@ -14,6 +14,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         cache: "no-store",
       });
       const data = res.ok ? await res.json() : null;
+
+      if (data) {
+        const returnUrl = sessionStorage.getItem('oauthReturnUrl');
+        if (returnUrl) {
+          sessionStorage.removeItem('oauthReturnUrl');
+          window.location.replace(returnUrl);
+          return;
+        }
+      }
+
       setUser(data);
     } finally {
       setIsLoading(false);

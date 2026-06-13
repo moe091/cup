@@ -316,12 +316,14 @@ export function LoginModal({ isOpen, onClose, initialMode }: LoginModalProps) {
         <div className="grid gap-2">
           <a
             href="/api/auth/google"
+            onClick={() => sessionStorage.setItem('oauthReturnUrl', window.location.pathname + window.location.search)}
             className="w-full rounded-lg border border-[color:var(--line)] px-4 py-2 text-center text-sm font-medium text-[color:var(--text)] transition hover:border-[color:var(--text)]"
           >
             Continue with Google
           </a>
           <a
             href="/api/auth/discord"
+            onClick={() => sessionStorage.setItem('oauthReturnUrl', window.location.pathname + window.location.search)}
             className="w-full rounded-lg border border-[color:var(--line)] px-4 py-2 text-center text-sm font-medium text-[color:var(--text)] transition hover:border-[color:var(--discord)]"
           >
             Continue with Discord

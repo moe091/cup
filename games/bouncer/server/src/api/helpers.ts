@@ -1,6 +1,6 @@
 import { LevelDefinition } from '@cup/bouncer-shared';
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = process.env.API_BASE_URL ?? 'http://localhost:3000';
 async function apiGet<T>(path: string): Promise<T> {
   console.log('FETCHING: ', `${API_BASE}${path}`);
   const res = await fetch(`${API_BASE}${path}`);

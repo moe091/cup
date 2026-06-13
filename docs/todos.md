@@ -5,6 +5,10 @@
 - Render pfps in chat
 - Setup CD and deploy to AWS!
 
+### Bugfixes:
+- Toast message after creating community pushes entire layout down, chat composer gets cut off bottom of screen
+- Ready button not rendering in bouncer
+
 ### Community/channel permission notes:
 - When channel create/edit endpoints are implemented, enforce rule: non-public communities (`REQUEST`, `INVITE_ONLY`) cannot have channels with `requiredPermissionLevel = 0`.
 

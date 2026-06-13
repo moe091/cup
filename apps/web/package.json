@@ -6,6 +6,7 @@
   "scripts": {
     "start:dev": "vite",
     "build": "tsc -b && vite build",
+    "deploy": "pnpm build && scp -i ~/.ssh/cup-ec2.pem -r dist/. ec2-user@54.227.64.244:~/cup/frontend/",
     "lint": "eslint .",
     "preview": "vite preview"
   },
