@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "deploy:api": "pnpm --filter @cup/api run deploy",
+    "deploy:bouncer": "pnpm --filter @cup/bouncer-server run deploy",
     "deploy:web": "pnpm --filter @cup/web run deploy",
-    "deploy": "pnpm run deploy:api && pnpm run deploy:web",
+    "deploy": "pnpm run deploy:api && pnpm run deploy:bouncer && pnpm run deploy:web",
     "dev": "pnpm -r --parallel --filter ./apps/api --filter ./apps/web --filter \"./games/bouncer/*\" --filter ./packages/shared run start:dev",
     "dev:api": "pnpm --filter ./apps/api start:dev",
     "test:api": "pnpm --filter ./apps/api test",

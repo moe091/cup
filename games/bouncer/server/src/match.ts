@@ -27,7 +27,7 @@ export class Match {
   private winsByPlayer = new Map<PlayerId, number>();
   private phase: MatchPhase = 'WAITING';
   private minPlayers = 1;
-  private countdownSeconds = 1;
+  private countdownSeconds = 3;
   private awaitingAcks = new Set<PlayerId>();
   private afterAcks: (() => void) | null = null;
   private levelDef: LevelDefinition | null = null;

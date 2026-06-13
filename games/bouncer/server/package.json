@@ -6,6 +6,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "deploy": "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 755350934435.dkr.ecr.us-east-1.amazonaws.com && docker build -f Dockerfile -t cup-bouncer:local ../../.. && docker tag cup-bouncer:local 755350934435.dkr.ecr.us-east-1.amazonaws.com/cup/bouncer-server:latest && docker push 755350934435.dkr.ecr.us-east-1.amazonaws.com/cup/bouncer-server:latest",
     "build:watch": "tsc -p tsconfig.json -w",
     "start:watch": "node --watch dist/main.js",
     "start:dev": "pnpm run build:watch & pnpm run start:watch",

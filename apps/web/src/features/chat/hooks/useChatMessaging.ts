@@ -12,6 +12,15 @@ import type {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchChannelHistory, type ChatConnection } from "../../../api/chat";
 
+function generateId(): string {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const h = Array.from(bytes, (b) => b.toString(16).padStart(2, "0"));
+  return `${h.slice(0,4).join("")}-${h.slice(4,6).join("")}-${h.slice(6,8).join("")}-${h.slice(8,10).join("")}-${h.slice(10).join("")}`;
+}
+
 
 /**
  * responsible for keeping message state up to date, including loading message history from API and handling realtime socket message updates
@@ -112,7 +121,7 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
 
       const payload: ChatSendPayload = {
         channelId,
-        clientMessageId: crypto.randomUUID(),
+        clientMessageId: generateId(),
         body,
         replyMessageId,
       }
@@ -171,7 +180,7 @@ export function useChatMessaging({channelId, connection}: ChatMessagingArgs): Us
         emojiKind: args.emojiKind,
         emojiValue,
         active: args.active,
-        clientMutationId: crypto.randomUUID(),
+        clientMutationId: generateId(),
       };
 
       return new Promise((resolve, reject) => {
