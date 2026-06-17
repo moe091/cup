@@ -22,12 +22,22 @@ const LOCAL_SIM_HZ = 30;
 const LOCAL_STEP_MS = 1000 / LOCAL_SIM_HZ;
 const ACTIVE_SEND_MS = 1000 / 30;
 const IDLE_SEND_MS = 1000 / 10;
-const INTERPOLATION_DELAY_MS = 120;
+const INTERPOLATION_DELAY_MS = 80;
+// Renders the local player's own ball this many ms in the past (interpolated from
+// a short history buffer), to reduce how far ahead it appears versus opponents
+// (which lag by INTERPOLATION_DELAY_MS + network latency). Only the *visual* is
+// delayed — input still hits the engine immediately. Set to 0 to disable.
+const OWN_RENDER_DELAY_MS = 60;
 const EXTRAPOLATION_CAP_MS = 50;
 const HARD_SNAP_X_PX = 140;
 const HARD_SNAP_Y_PX = 28;
 const POSITION_DEADZONE_X_PX = 0.8;
 const POSITION_DEADZONE_Y_PX = 0.6;
+// When true, remote balls are eased toward the interpolated sample (smoother, but
+// adds a velocity-dependent trailing lag on top of INTERPOLATION_DELAY_MS). When
+// false, the sprite is snapped to the already-interpolated sample for minimal lag.
+// Toggle this to A/B the feel.
+const ENABLE_EXPONENTIAL_SMOOTHING = false;
 const ENABLE_SHADOWS = false;
 const PLAYER_BALL_DIAMETER_PX = 52;
 
@@ -67,6 +77,10 @@ export class GameplayScene extends Phaser.Scene {
   private jumpPressedQueued = false;
   private inputState: InputState = { move: 0, jumpHeld: false, jumpPressed: false };
   private remoteSmoother = new RemoteSmoother();
+  // History of the local player's own positions, sampled at OWN_RENDER_DELAY_MS in
+  // the past so our ball is rendered on the same kind of delayed timeline as opponents.
+  private localSmoother = new RemoteSmoother();
+  private localRenderSeq = 0;
   // Single source of truth for whether the round is live. Written ONLY by
   // setRunning() (called by ClientMatchFlow on the IN_PROGRESS phase). The
   // physics loop steps iff this is true, so the countdown can never be skipped.
@@ -224,7 +238,27 @@ export class GameplayScene extends Phaser.Scene {
       this.stepLocalSimulation();
     }
 
+    if (OWN_RENDER_DELAY_MS > 0) {
+      this.renderLocalPlayer();
+    }
     this.renderRemotePlayers();
+  }
+
+  // Renders the local ball at OWN_RENDER_DELAY_MS in the past, interpolated from
+  // the local history buffer (same approach as opponents, smaller delay). Runs
+  // every frame so motion is smooth at full framerate.
+  private renderLocalPlayer() {
+    const mySprite = this.balls.get(this.playerId);
+    if (!mySprite) {
+      return;
+    }
+    const sample = this.localSmoother.sample(this.playerId, performance.now() - OWN_RENDER_DELAY_MS, EXTRAPOLATION_CAP_MS);
+    if (!sample) {
+      return;
+    }
+    mySprite.setPosition(sample.x, sample.y);
+    mySprite.shadow?.setPosition(sample.x + 8, sample.y - 10);
+    mySprite.setRotation(sample.angle);
   }
 
   handleInput(input: InputState) {
@@ -390,11 +424,27 @@ export class GameplayScene extends Phaser.Scene {
       return;
     }
 
-    const mySprite = this.balls.get(this.playerId);
-    if (mySprite) {
-      mySprite.setPosition(me.x, me.y);
-      mySprite.shadow?.setPosition(me.x + 8, me.y - 10);
-      mySprite.setRotation(me.angle);
+    // Feed the local render buffer every step (used when OWN_RENDER_DELAY_MS > 0).
+    this.localSmoother.addSnapshot({
+      playerId: this.playerId,
+      serverTimeMs: 0,
+      seq: this.localRenderSeq++,
+      x: me.x,
+      y: me.y,
+      angle: me.angle,
+      xVel: me.xVel,
+      yVel: me.yVel,
+    });
+
+    // When delay is disabled, render the own ball directly at the latest position
+    // (original behavior). When enabled, renderLocalPlayer() drives it instead.
+    if (OWN_RENDER_DELAY_MS <= 0) {
+      const mySprite = this.balls.get(this.playerId);
+      if (mySprite) {
+        mySprite.setPosition(me.x, me.y);
+        mySprite.shadow?.setPosition(me.x + 8, me.y - 10);
+        mySprite.setRotation(me.angle);
+      }
     }
 
     this.sendAccumulatorMs += LOCAL_STEP_MS;
@@ -434,24 +484,31 @@ export class GameplayScene extends Phaser.Scene {
         this.balls.set(playerId, sprite);
       }
 
-      const errorX = sample.x - sprite.x;
-      const errorY = sample.y - sprite.y;
-      const absErrorX = Math.abs(errorX);
-      const absErrorY = Math.abs(errorY);
-
-      if (absErrorX > HARD_SNAP_X_PX || absErrorY > HARD_SNAP_Y_PX) {
+      if (!ENABLE_EXPONENTIAL_SMOOTHING) {
+        // Snap directly to the interpolated sample — no second smoothing pass, so
+        // the only remote lag is INTERPOLATION_DELAY_MS (+ network latency).
         sprite.setPosition(sample.x, sample.y);
+        sprite.setRotation(sample.angle);
       } else {
-        const xLerp = Phaser.Math.Clamp(0.18 + absErrorX / 42, 0.18, 0.55);
-        const yLerp = Phaser.Math.Clamp(0.14 + absErrorY / 36, 0.14, 0.42);
+        const errorX = sample.x - sprite.x;
+        const errorY = sample.y - sprite.y;
+        const absErrorX = Math.abs(errorX);
+        const absErrorY = Math.abs(errorY);
 
-        const nextX = absErrorX <= POSITION_DEADZONE_X_PX ? sprite.x : Phaser.Math.Linear(sprite.x, sample.x, xLerp);
-        const nextY = absErrorY <= POSITION_DEADZONE_Y_PX ? sprite.y : Phaser.Math.Linear(sprite.y, sample.y, yLerp);
+        if (absErrorX > HARD_SNAP_X_PX || absErrorY > HARD_SNAP_Y_PX) {
+          sprite.setPosition(sample.x, sample.y);
+        } else {
+          const xLerp = Phaser.Math.Clamp(0.18 + absErrorX / 42, 0.18, 0.55);
+          const yLerp = Phaser.Math.Clamp(0.14 + absErrorY / 36, 0.14, 0.42);
 
-        sprite.setPosition(nextX, nextY);
+          const nextX = absErrorX <= POSITION_DEADZONE_X_PX ? sprite.x : Phaser.Math.Linear(sprite.x, sample.x, xLerp);
+          const nextY = absErrorY <= POSITION_DEADZONE_Y_PX ? sprite.y : Phaser.Math.Linear(sprite.y, sample.y, yLerp);
+
+          sprite.setPosition(nextX, nextY);
+        }
+        sprite.setRotation(Phaser.Math.Angle.RotateTo(sprite.rotation, sample.angle, 0.35));
       }
       sprite.shadow?.setPosition(sprite.x + 8, sprite.y - 10);
-      sprite.setRotation(Phaser.Math.Angle.RotateTo(sprite.rotation, sample.angle, 0.35));
     }
   }
 
@@ -470,6 +527,8 @@ export class GameplayScene extends Phaser.Scene {
     }
     this.balls.clear();
     this.remoteSmoother.clearAll();
+    this.localSmoother.clearAll();
+    this.localRenderSeq = 0;
 
     const meSprite = this.createBallSprite(this.playerId, this.mySpawn.x, this.mySpawn.y);
     this.balls.set(this.playerId, meSprite);
@@ -1079,5 +1138,6 @@ export class GameplayScene extends Phaser.Scene {
     this.matchResultsModal = null;
     this.clearCountdown();
     this.remoteSmoother.clearAll();
+    this.localSmoother.clearAll();
   }
 }
