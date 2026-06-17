@@ -289,8 +289,9 @@ export class WaitingRoomUI {
     const element = this.container.node as HTMLElement;
     const readyBtn = element.querySelector('[data-ready-btn]') as HTMLButtonElement;
     readyBtn?.addEventListener('click', () => {
+      // Visibility is driven by the server's ready state via setReadyButtonVisible,
+      // so we don't hide locally here — that would fight the status-driven update.
       this.onReady();
-      this.hideButton();
     });
 
     const changeBtn = element.querySelector('[data-score-goal-change]') as HTMLButtonElement | null;
@@ -322,17 +323,6 @@ export class WaitingRoomUI {
   private scoreGoalLabel(goal: ScoreGoal): string {
     if (goal === 'NEVER') return 'Neverending';
     return `First to ${goal} points`;
-  }
-
-  private hideButton() {
-    if (!this.container) return;
-
-    const element = this.container.node as HTMLElement;
-    const readyBtn = element.querySelector('[data-ready-btn]') as HTMLButtonElement;
-
-    if (readyBtn) {
-      readyBtn.style.display = 'none';
-    }
   }
 
   updatePlayers(players: PlayerInfo[]) {

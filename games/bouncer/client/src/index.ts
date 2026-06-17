@@ -3,12 +3,12 @@ import { BouncerClient } from './BouncerClient';
 import { BouncerEditorClient } from './BouncerEditorClient';
 import {
   FinishOrderUpdate,
-  InitializePlayersPayload,
   type LevelDefinition,
   type MatchStatus,
   type MatchCountdown,
   type RemotePlayerStateUpdate,
   type RoundResultsUpdate,
+  type RoundStartingPayload,
   type MatchResultsUpdate,
   MatchJoinInfo,
   LevelListItem,
@@ -49,26 +49,28 @@ export function connectBouncer(url: string, ticket: string, containerEl: HTMLEle
     bouncerClient?.onMatchStatusUpdate(data);
   });
 
-  //this event is called when the match leader updates the level selection for next round, but it's not time to load it yet
+  //this event is called when the match leader updates the level selection in the lobby
   socket.on('set_level', (data: LevelListItem) => {
     bouncerClient?.onSetLevel(data);
   });
 
-  //this event actually loads a levelDefinition
-  socket.on('load_level', (data: LevelDefinition) => {
-    bouncerClient?.onLoadLevel(data);
+  //sent once on COUNTDOWN entry: bundles the level definition + per-player spawns
+  socket.on('round_starting', (data: RoundStartingPayload) => {
+    bouncerClient?.onRoundStarting(data);
   });
 
   socket.on('countdown', (data: MatchCountdown) => {
     bouncerClient?.onMatchCountdownUpdate(data);
   });
 
-  socket.on('initialize_players', (data: InitializePlayersPayload) => {
-    bouncerClient?.onInitializePlayers(data);
+  socket.on('host_left', () => {
+    bouncerClient?.onHostLeft();
   });
 
-  socket.on('start_match', () => {
-    bouncerClient?.onMatchStart();
+  // Server rejects joins outside the lobby (e.g. match already in progress), then
+  // disconnects. Show the reason before the socket drops.
+  socket.on('join_error', (data: { reason?: string }) => {
+    bouncerClient?.onJoinError(data?.reason);
   });
 
   socket.on('remote_player_state', (data: RemotePlayerStateUpdate) => {

@@ -1,11 +1,10 @@
 import { Engine } from '@cup/bouncer-engine';
 import type {
   FinishOrderUpdate,
-  InitializePlayersPayload,
   InputState,
   LevelDefinition,
-  MatchStatus,
   PlayerInputState,
+  PlayerSpawn,
   PlayerStateUpdate,
   RemotePlayerStateUpdate,
   RoundResultsUpdate,
@@ -52,8 +51,6 @@ type PlatformRect = {
 type PolygonVerts = Array<{ x: number; y: number }>;
 
 export class GameplayScene extends Phaser.Scene {
-  private readyText: Phaser.GameObjects.Text | undefined;
-  private readyBg: Phaser.GameObjects.Rectangle | undefined;
   private balls = new Map<string, ShadowSprite>();
   private me: ShadowSprite | undefined;
   private inputController: InputController = new InputController();
@@ -70,11 +67,23 @@ export class GameplayScene extends Phaser.Scene {
   private jumpPressedQueued = false;
   private inputState: InputState = { move: 0, jumpHeld: false, jumpPressed: false };
   private remoteSmoother = new RemoteSmoother();
-  private hasStartedMatch = false;
+  // Single source of truth for whether the round is live. Written ONLY by
+  // setRunning() (called by ClientMatchFlow on the IN_PROGRESS phase). The
+  // physics loop steps iff this is true, so the countdown can never be skipped.
+  private running = false;
   private hasReportedFinish = false;
   private finishedOrder: string[] = [];
   private roundResultsModal: Phaser.GameObjects.Container | null = null;
   private matchResultsModal: Phaser.GameObjects.Container | null = null;
+
+  // Round data passed in via scene-init data on first start (no async race).
+  private initLevel: LevelDefinition | null = null;
+  private initSpawns: PlayerSpawn[] | null = null;
+
+  // Countdown overlay state (countdown ticks can arrive before create() runs).
+  private sceneReady = false;
+  private countdownText: Phaser.GameObjects.Text | undefined;
+  private pendingCountdown: number | null = null;
 
   constructor(
     private playerId: string,
@@ -92,7 +101,18 @@ export class GameplayScene extends Phaser.Scene {
     });
   }
 
+  // Round data for the first round is handed in via scene-init data, so create()
+  // can build the level synchronously with no buffer-and-apply-later race.
+  init(data?: { level?: LevelDefinition; spawns?: PlayerSpawn[] }) {
+    this.initLevel = data?.level ?? null;
+    this.initSpawns = data?.spawns ?? null;
+    this.running = false;
+    this.sceneReady = false;
+  }
+
   create() {
+    const createStart = performance.now();
+    console.log(`[bouncer-timing] gameplay create() start t=${createStart.toFixed(0)}ms`);
     this.fullscreenListener();
 
     this.cameras.main.setZoom(0.33);
@@ -112,17 +132,89 @@ export class GameplayScene extends Phaser.Scene {
     this.inputController.onInput(this, this.handleInput.bind(this));
 
     this.events.once('destroy', this.onDestroy, this);
+
+    if (this.initLevel && this.initSpawns) {
+      this.applyRoundData(this.initLevel, this.initSpawns);
+      this.initLevel = null;
+      this.initSpawns = null;
+    }
+
+    this.sceneReady = true;
+    if (this.pendingCountdown !== null) {
+      this.renderCountdown(this.pendingCountdown);
+    }
+    console.log(`[bouncer-timing] gameplay create() end, took ${(performance.now() - createStart).toFixed(0)}ms`);
   }
 
-  statusUpdate(status: MatchStatus) {
-    if (status.phase === 'IN_PROGRESS') {
-      this.hasStartedMatch = true;
-      return;
+  /** Enables/disables the physics loop. Called only by ClientMatchFlow on IN_PROGRESS. */
+  setRunning(running: boolean) {
+    this.running = running;
+    if (running) {
+      this.clearCountdown();
     }
+  }
 
-    if (status.phase === 'ROUND_END' || status.phase === 'WAITING') {
-      this.hasStartedMatch = false;
+  /** Loads a fresh level + spawns for a subsequent round (scene already created). */
+  startRound(level: LevelDefinition, spawns: PlayerSpawn[]) {
+    this.roundResultsModal?.destroy(true);
+    this.roundResultsModal = null;
+    this.matchResultsModal?.destroy(true);
+    this.matchResultsModal = null;
+    this.applyRoundData(level, spawns);
+  }
+
+  private applyRoundData(level: LevelDefinition, spawns: PlayerSpawn[]) {
+    const t0 = performance.now();
+    this.loadLevel(level);
+    console.log(`[bouncer-timing] loadLevel() took ${(performance.now() - t0).toFixed(0)}ms`);
+    const mySpawn = spawns.find((spawn) => spawn.playerId === this.playerId);
+    if (mySpawn) {
+      this.mySpawn = { x: mySpawn.x, y: mySpawn.y };
+    } else {
+      console.warn('[Gameplay.applyRoundData] Missing spawn for local player', this.playerId);
     }
+    this.initializeLocalEngineIfReady();
+
+    // Announce our spawned position through the normal player_state path so other
+    // clients render our ball during the countdown (and so future per-ball details
+    // ride the same pathway). The server relays this during COUNTDOWN.
+    this.emitLocalPlayerState();
+
+    // Tell the server our level is built; it starts the countdown once everyone
+    // is ready, so the 3-2-1 isn't eaten by this (heavy) scene-build work.
+    console.log(
+      `[bouncer-timing] applyRoundData done in ${(performance.now() - t0).toFixed(0)}ms, emitting round_ready t=${performance.now().toFixed(0)}ms`,
+    );
+    this.emit('round_ready', {});
+  }
+
+  showCountdown(secondsLeft: number) {
+    this.pendingCountdown = secondsLeft;
+    if (this.sceneReady) {
+      this.renderCountdown(secondsLeft);
+    }
+  }
+
+  private renderCountdown(secondsLeft: number) {
+    if (!this.countdownText) {
+      this.countdownText = this.add
+        .text(this.scale.width / 2, this.scale.height / 2, '', {
+          fontFamily: 'Arial',
+          fontSize: '160px',
+          color: '#ffffff',
+          fontStyle: 'bold',
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(9_000);
+    }
+    this.countdownText.setText(secondsLeft > 0 ? String(secondsLeft) : 'GO!');
+  }
+
+  private clearCountdown() {
+    this.pendingCountdown = null;
+    this.countdownText?.destroy();
+    this.countdownText = undefined;
   }
 
   update(_time: number, delta: number) {
@@ -143,32 +235,16 @@ export class GameplayScene extends Phaser.Scene {
     }
   }
 
-  hideReadyButton() {
-    this.readyText?.destroy();
-    this.readyText = undefined;
-
-    this.readyBg?.destroy();
-    this.readyBg = undefined;
-  }
-
-  onInitializePlayers(payload: InitializePlayersPayload) {
-    const mySpawn = payload.spawns.find((spawn) => spawn.playerId === this.playerId);
-    if (!mySpawn) {
-      console.warn('[Gameplay.onInitializePlayers] Missing spawn for local player', this.playerId);
-      return;
-    }
-
-    this.mySpawn = { x: mySpawn.x, y: mySpawn.y };
-    this.initializeLocalEngineIfReady();
-  }
-
   onRemotePlayerState(update: RemotePlayerStateUpdate) {
     if (update.playerId === this.playerId) {
       return;
     }
 
+    // Always buffer the snapshot (safe before the scene boots). Only create the
+    // sprite once the scene is live; otherwise renderRemotePlayers creates it
+    // lazily on the next update tick.
     this.remoteSmoother.addSnapshot(update);
-    if (!this.balls.has(update.playerId)) {
+    if (this.sceneReady && !this.balls.has(update.playerId)) {
       const sprite = this.createBallSprite(update.playerId, update.x, update.y);
       this.balls.set(update.playerId, sprite);
     }
@@ -176,10 +252,6 @@ export class GameplayScene extends Phaser.Scene {
 
   onFinishOrderUpdate(update: FinishOrderUpdate) {
     this.finishedOrder = update.finishedPlayerIds;
-  }
-
-  onMatchStart() {
-    this.hasStartedMatch = true;
   }
 
   loadLevel(level: LevelDefinition) {
@@ -191,7 +263,7 @@ export class GameplayScene extends Phaser.Scene {
     this.parallaxBg = null;
 
     this.levelDef = level;
-    this.hasStartedMatch = false;
+    this.running = false;
 
     let minX = 0;
     let minY = 0;
@@ -297,7 +369,7 @@ export class GameplayScene extends Phaser.Scene {
   }
 
   private stepLocalSimulation() {
-    if (!this.engine || !this.hasStartedMatch) {
+    if (!this.engine || !this.running) {
       this.jumpPressedQueued = false;
       return;
     }
@@ -416,12 +488,35 @@ export class GameplayScene extends Phaser.Scene {
     particles.startFollow(meSprite);
 
     this.hasReportedFinish = false;
-    this.hasStartedMatch = false;
+    this.running = false;
     this.finishedOrder = [];
     this.localAccumulatorMs = 0;
     this.sendAccumulatorMs = 0;
     this.jumpPressedQueued = false;
     this.localSeq = 0;
+  }
+
+  // Emits the local player's current engine state via the normal player_state
+  // path. Used for the one-shot spawn announce (so others see us during the
+  // countdown); the live stream in stepLocalSimulation takes over once running.
+  private emitLocalPlayerState() {
+    if (!this.engine) {
+      return;
+    }
+    const snapshot = this.engine.getSnapshot();
+    const me = snapshot.balls.find((ball) => ball.id === this.playerId);
+    if (!me) {
+      return;
+    }
+    const update: PlayerStateUpdate = {
+      seq: this.localSeq++,
+      x: me.x,
+      y: me.y,
+      angle: me.angle,
+      xVel: me.xVel,
+      yVel: me.yVel,
+    };
+    this.emit('player_state', update);
   }
 
   private onLocalPlayerFinished(playerId: string) {
@@ -436,7 +531,7 @@ export class GameplayScene extends Phaser.Scene {
     this.emit('player_finished', {});
   }
 
-  showRoundResultsModal(results: RoundResultsUpdate, onContinue: () => void) {
+  showRoundResultsModal(results: RoundResultsUpdate, isLeader: boolean) {
     this.roundResultsModal?.destroy(true);
     this.roundResultsModal = null;
     this.matchResultsModal?.destroy(true);
@@ -609,48 +704,51 @@ export class GameplayScene extends Phaser.Scene {
       root.add([placeText, orb, name, timeText, deltaText, pointsText, totalText]);
     });
 
+    const footerText = isLeader
+      ? 'Start the next round when everyone is ready'
+      : 'Waiting for the host to start the next round...';
     const footer = this.add
-      .text(cx, cy + modalHeight / 2 - 64, 'Press Continue when you are ready for the next round', {
+      .text(cx, cy + modalHeight / 2 - 64, footerText, {
         fontFamily: 'Arial',
         fontSize: '16px',
         color: '#a9bddf',
       })
       .setOrigin(0.5)
       .setScrollFactor(0);
+    root.add(footer);
 
-    const continueBtnY = cy + modalHeight / 2 - 26;
-    const continueBtnBg = this.add
-      .rectangle(cx, continueBtnY, 196, 42, 0x2d6a4f, 1)
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setInteractive({ useHandCursor: true });
-    continueBtnBg.setStrokeStyle(2, 0x6fc79a, 1);
-    const continueBtnText = this.add
-      .text(cx, continueBtnY, 'Continue', {
-        fontFamily: 'Arial',
-        fontSize: '20px',
-        color: '#f4fff7',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0);
+    if (isLeader) {
+      const button = this.createModalButton(cx, cy + modalHeight / 2 - 26, 'Next Round', () => {
+        console.log(`[bouncer-timing] leader clicked Next Round, emitting next_round t=${performance.now().toFixed(0)}ms`);
+        this.emit('next_round', {});
+      });
+      root.add(button);
+    }
 
-    continueBtnBg.on('pointerover', () => continueBtnBg.setFillStyle(0x3d8a6f, 1));
-    continueBtnBg.on('pointerout', () => continueBtnBg.setFillStyle(0x2d6a4f, 1));
-    continueBtnBg.on('pointerdown', () => {
-      if (!this.roundResultsModal) {
-        return;
-      }
-      this.roundResultsModal.destroy(true);
-      this.roundResultsModal = null;
-      onContinue();
-    });
-
-    root.add([footer, continueBtnBg, continueBtnText]);
     this.roundResultsModal = root;
   }
 
-  showMatchResultsModal(results: MatchResultsUpdate, onContinue: () => void) {
+  /** Builds a standard green action button; returns the objects to add to a modal root. */
+  private createModalButton(cx: number, y: number, label: string, onClick: () => void): Phaser.GameObjects.GameObject[] {
+    const bg = this.add
+      .rectangle(cx, y, 196, 42, 0x2d6a4f, 1)
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setInteractive({ useHandCursor: true });
+    bg.setStrokeStyle(2, 0x6fc79a, 1);
+    const text = this.add
+      .text(cx, y, label, { fontFamily: 'Arial', fontSize: '20px', color: '#f4fff7', fontStyle: 'bold' })
+      .setOrigin(0.5)
+      .setScrollFactor(0);
+
+    bg.on('pointerover', () => bg.setFillStyle(0x3d8a6f, 1));
+    bg.on('pointerout', () => bg.setFillStyle(0x2d6a4f, 1));
+    bg.on('pointerdown', onClick);
+
+    return [bg, text];
+  }
+
+  showMatchResultsModal(results: MatchResultsUpdate, isLeader: boolean) {
     this.matchResultsModal?.destroy(true);
     this.matchResultsModal = null;
     this.roundResultsModal?.destroy(true);
@@ -760,44 +858,23 @@ export class GameplayScene extends Phaser.Scene {
       root.add([rank, orb, name, total]);
     });
 
+    const footerText = isLeader ? 'Start a new match back in the lobby' : 'Waiting for the host to start a new match...';
     const footer = this.add
-      .text(cx, cy + modalHeight / 2 - 64, 'Press Continue to return to lobby', {
+      .text(cx, cy + modalHeight / 2 - 64, footerText, {
         fontFamily: 'Arial',
         fontSize: '16px',
         color: '#a9bddf',
       })
       .setOrigin(0.5)
       .setScrollFactor(0);
+    root.add(footer);
 
-    const continueBtnY = cy + modalHeight / 2 - 26;
-    const continueBtnBg = this.add
-      .rectangle(cx, continueBtnY, 196, 42, 0x2d6a4f, 1)
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setInteractive({ useHandCursor: true });
-    continueBtnBg.setStrokeStyle(2, 0x6fc79a, 1);
-    const continueBtnText = this.add
-      .text(cx, continueBtnY, 'Continue', {
-        fontFamily: 'Arial',
-        fontSize: '20px',
-        color: '#f4fff7',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0);
-
-    continueBtnBg.on('pointerover', () => continueBtnBg.setFillStyle(0x3d8a6f, 1));
-    continueBtnBg.on('pointerout', () => continueBtnBg.setFillStyle(0x2d6a4f, 1));
-    continueBtnBg.on('pointerdown', () => {
-      if (!this.matchResultsModal) {
-        return;
-      }
-      this.matchResultsModal.destroy(true);
-      this.matchResultsModal = null;
-      onContinue();
-    });
-
-    root.add([footer, continueBtnBg, continueBtnText]);
+    if (isLeader) {
+      const button = this.createModalButton(cx, cy + modalHeight / 2 - 26, 'New Match', () => {
+        this.emit('new_match', {});
+      });
+      root.add(button);
+    }
 
     this.matchResultsModal = root;
   }
@@ -1000,6 +1077,7 @@ export class GameplayScene extends Phaser.Scene {
     this.roundResultsModal = null;
     this.matchResultsModal?.destroy(true);
     this.matchResultsModal = null;
+    this.clearCountdown();
     this.remoteSmoother.clearAll();
   }
 }

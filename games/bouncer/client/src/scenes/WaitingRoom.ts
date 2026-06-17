@@ -5,8 +5,9 @@ import WaitingRoomUI from '../misc/WaitingRoomUI';
 
 export class WaitingRoomScene extends Phaser.Scene {
   private role = '';
-  private isReady = false;
-  private pendingStatus: MatchStatus | null = null;
+  private sceneActive = false;
+  private levelsLoaded = false;
+  private latestStatus: MatchStatus | null = null;
   private levelSelector: LevelSelectorSidebar | null = null;
   private waitingRoomUI: WaitingRoomUI | null = null;
   private selectedLevel: LevelListItem | null = null;
@@ -39,32 +40,36 @@ export class WaitingRoomScene extends Phaser.Scene {
   async create() {
     this.isShuttingDown = false;
     this.events.once('shutdown', this.onShutdown, this);
-    this.isReady = false;
+    this.sceneActive = true;
 
     this.fullscreenListener();
 
-    // Load available levels (only for creators)
-    if (this.role === 'creator') {
-      const levels = await listLevels();
-      if (this.isShuttingDown || !this.sys.isActive()) {
-        return;
-      }
-      this.levelList = levels;
-      console.log('GOT LEVEL LIST: ', this.levelList);
-    }
-
-    // Try to create UI components now that we're ready
+    // Build whatever UI we can with what we already know (role may or may not be
+    // set yet — match_joined can arrive before or after this lifecycle hook).
     this.createUIComponents();
 
-    this.isReady = true;
-    if (this.pendingStatus) {
-      this.statusUpdate(this.pendingStatus);
-      this.pendingStatus = null;
+    // For creators, fetch the level list (idempotent; safe to call again once the
+    // role becomes known via onMatchJoin).
+    void this.ensureLevelsLoaded();
+  }
+
+  // Fetches the level list for creators and (re)builds the level selector. Idempotent:
+  // callable from both create() and onMatchJoin regardless of which fires first.
+  private async ensureLevelsLoaded() {
+    if (this.levelsLoaded || this.role !== 'creator') return;
+
+    const levels = await listLevels();
+    if (this.isShuttingDown || !this.sys.isActive()) {
+      return;
     }
+    this.levelList = levels;
+    this.levelsLoaded = true;
+    this.createUIComponents();
   }
 
   private createUIComponents() {
-    if (!this.role) return;
+    // Need both a known role and a live scene (add.dom requires booted systems).
+    if (!this.role || !this.sceneActive) return;
 
     const isCreator = this.role === 'creator';
 
@@ -78,11 +83,6 @@ export class WaitingRoomScene extends Phaser.Scene {
       );
       this.waitingRoomUI.setScoreGoal(this.scoreGoal, this.scoreGoalLocked);
       this.waitingRoomUI.setReadyButtonVisible(true);
-
-      // Update with any pending player status
-      if (this.pendingStatus) {
-        this.updatePlayerList(this.pendingStatus);
-      }
     }
 
     // Create level selector sidebar
@@ -98,29 +98,24 @@ export class WaitingRoomScene extends Phaser.Scene {
       // Non-creators get empty level list
       this.levelSelector = new LevelSelectorSidebar(this, [], false, this.selectedLevel, undefined);
     }
+
+    // Re-apply the last known status so a freshly (re)built UI is populated
+    // regardless of whether the status arrived before or after this ran.
+    this.applyStatus();
   }
 
   private onReadyClicked() {
-    this.emit('set_ready', { ready: true });
+    // The leader's button starts the match; everyone else's marks themselves ready.
+    if (this.role === 'creator') {
+      console.log(`[bouncer-timing] leader clicked Start Match, emitting start_match t=${performance.now().toFixed(0)}ms`);
+      this.emit('start_match', {});
+    } else {
+      this.emit('set_ready', { ready: true });
+    }
   }
 
   private onScoreGoalSelected(scoreGoal: ScoreGoal) {
     this.emit('update_score_goal', { scoreGoal });
-  }
-
-  private createLevelSelector() {
-    if (this.levelSelector || this.levelList.length === 0 || !this.role) return;
-
-    const isCreator = this.role === 'creator';
-
-    // Create level selector sidebar for everyone
-    this.levelSelector = new LevelSelectorSidebar(
-      this,
-      this.levelList,
-      isCreator,
-      this.selectedLevel,
-      isCreator ? this.onLevelSelected.bind(this) : undefined,
-    );
   }
 
   // Callback from levelSelect sidebar. Broadcasts message to update level selection
@@ -141,8 +136,10 @@ export class WaitingRoomScene extends Phaser.Scene {
   onMatchJoin(info: MatchJoinInfo) {
     this.role = info.role;
 
-    // Create the UI components now that we know the role
+    // Now that we know the role, build the UI and (for creators) load levels.
+    // Either of create()/onMatchJoin may run first; both paths are idempotent.
     this.createUIComponents();
+    void this.ensureLevelsLoaded();
   }
 
   private updatePlayerList(status: MatchStatus) {
@@ -159,41 +156,37 @@ export class WaitingRoomScene extends Phaser.Scene {
     this.waitingRoomUI?.updatePlayers(players);
   }
 
+  // The waiting room is only shown in PRE_MATCH. Button visibility is derived
+  // purely from the server's ready state (single source of truth): the leader
+  // always sees "Start Match"; everyone else sees "Ready?" until they are ready.
   statusUpdate(status: MatchStatus) {
-    if (!this.isReady) {
-      this.pendingStatus = status;
-      return;
-    }
+    // Always remember the latest status; apply it if the UI exists yet, otherwise
+    // it's re-applied automatically once createUIComponents builds the UI.
+    this.latestStatus = status;
+    this.applyStatus();
+  }
+
+  private applyStatus() {
+    const status = this.latestStatus;
+    if (!status || !this.waitingRoomUI) return;
 
     this.scoreGoal = status.scoreGoal;
     this.scoreGoalLocked = status.scoreGoalLocked;
-    this.waitingRoomUI?.setScoreGoal(this.scoreGoal, this.scoreGoalLocked);
+    this.waitingRoomUI.setScoreGoal(this.scoreGoal, this.scoreGoalLocked);
 
-    if (status.phase === 'ROUND_END') {
-      const nonLeaders = status.players.filter((p) => p.role !== 'creator');
-      const readyCount = nonLeaders.filter((p) => p.ready).length;
-      const total = nonLeaders.length;
-      const info = total > 0 ? `Waiting for players: ${readyCount}/${total}` : 'Waiting for players: 0/0';
-      this.waitingRoomUI?.setRoundEndInfo(info, total === 0 || readyCount >= total);
-      this.waitingRoomUI?.setReadyButtonVisible(this.role === 'creator');
-    } else {
-      this.waitingRoomUI?.setRoundEndInfo(null, false);
-      this.waitingRoomUI?.setReadyButtonVisible(true);
-    }
+    const localPlayer = status.players.find((p) => p.playerId === this.playerId);
+    const showButton = this.role === 'creator' || !(localPlayer?.ready ?? false);
+    this.waitingRoomUI.setReadyButtonVisible(showButton);
 
     this.updatePlayerList(status);
   }
 
   private onShutdown() {
     this.isShuttingDown = true;
+    this.sceneActive = false;
     this.levelSelector?.destroy();
     this.levelSelector = null;
     this.waitingRoomUI?.destroy();
     this.waitingRoomUI = null;
-  }
-
-  startMatch() {
-    this.game.scene.stop('waitingRoom');
-    this.game.scene.start('gameplay', { level: this.selectedLevel });
   }
 }

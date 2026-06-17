@@ -1,3 +1,5 @@
+import type { LevelDefinition } from './level.js';
+
 export type MatchJoinInfo = {
   role: 'creator' | 'player';
   displayName: string;
@@ -5,14 +7,7 @@ export type MatchJoinInfo = {
 
 export type ScoreGoal = 20 | 30 | 50 | 100 | 'NEVER';
 
-export type MatchPhase =
-  | 'WAITING'
-  | 'IN_PROGRESS_QUEUED'
-  | 'COUNTDOWN'
-  | 'IN_PROGRESS'
-  | 'ROUND_END'
-  | 'MATCH_END'
-  | 'PAUSED';
+export type MatchPhase = 'PRE_MATCH' | 'COUNTDOWN' | 'IN_PROGRESS' | 'POST_ROUND' | 'POST_MATCH';
 
 export type MatchStatus = {
   matchId: string;
@@ -60,6 +55,12 @@ export type PlayerSpawn = {
 };
 
 export type InitializePlayersPayload = {
+  spawns: PlayerSpawn[];
+};
+
+// Sent once on COUNTDOWN entry: bundles the level + per-player spawns atomically.
+export type RoundStartingPayload = {
+  level: LevelDefinition;
   spawns: PlayerSpawn[];
 };
 
