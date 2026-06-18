@@ -15,6 +15,10 @@ import { GameplayScene } from './scenes/Gameplay';
 import { WaitingRoomScene } from './scenes/WaitingRoom';
 import { BootScene } from './scenes/Boot';
 import { ClientMatchFlow } from './clientMatchFlow';
+import { netDebug } from './misc/NetDebug';
+
+const PING_INTERVAL_MS = 2000;
+type PongPayload = { t0: number; ts: number };
 
 /**
  * Thin shell: owns the Phaser game + scenes + socket, and instantiates the
@@ -25,6 +29,7 @@ export class BouncerClient {
   private game: Phaser.Game;
   private socket: Socket;
   private flow: ClientMatchFlow;
+  private pingTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(socket: Socket, containerEl: HTMLElement) {
     this.socket = socket;
@@ -51,11 +56,32 @@ export class BouncerClient {
 
     this.game = new Phaser.Game(config);
     this.flow = new ClientMatchFlow(this.game, waitingRoomScene, gameplayScene, playerId, containerEl);
+
+    this.startPingLoop();
   }
 
   destroy() {
+    if (this.pingTimer !== null) {
+      clearInterval(this.pingTimer);
+      this.pingTimer = null;
+    }
+    this.socket.off('cs_pong');
     this.flow.destroy();
     this.game.destroy(true);
+  }
+
+  /** App-level RTT + NTP-style clock-offset probe, fed to the netcode HUD. */
+  private startPingLoop() {
+    this.socket.on('cs_pong', (data: PongPayload) => {
+      const t3 = Date.now();
+      const rtt = t3 - data.t0;
+      // offset ≈ how far server clock leads ours, assuming symmetric latency.
+      const offset = (data.ts - data.t0 + (data.ts - t3)) / 2;
+      netDebug.recordPing(rtt, offset);
+    });
+    this.pingTimer = setInterval(() => {
+      this.socket.emit('cs_ping', { t0: Date.now() });
+    }, PING_INTERVAL_MS);
   }
 
   emitMessage(name: string, data: unknown) {

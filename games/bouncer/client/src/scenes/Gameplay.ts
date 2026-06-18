@@ -13,6 +13,7 @@ import type {
 import { InputController } from '../misc/InputController';
 import { ParallaxBackground } from '../misc/ParallaxBackground';
 import { RemoteSmoother } from '../misc/RemoteSmoother';
+import { netDebug } from '../misc/NetDebug';
 
 type ShadowSprite = Phaser.GameObjects.Sprite & {
   shadow?: Phaser.GameObjects.Arc;
@@ -85,6 +86,9 @@ export class GameplayScene extends Phaser.Scene {
   private countdownText: Phaser.GameObjects.Text | undefined;
   private pendingCountdown: number | null = null;
 
+  // Toggleable netcode-debug HUD (backtick). Console gets the detailed summary.
+  private debugText: Phaser.GameObjects.Text | undefined;
+
   constructor(
     private playerId: string,
     private readonly emit: (name: string, data: unknown) => void,
@@ -130,6 +134,7 @@ export class GameplayScene extends Phaser.Scene {
       .setScrollFactor(0);
 
     this.inputController.onInput(this, this.handleInput.bind(this));
+    this.setupDebugHud();
 
     this.events.once('destroy', this.onDestroy, this);
 
@@ -218,6 +223,8 @@ export class GameplayScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number) {
+    netDebug.recordFrame(delta);
+
     this.localAccumulatorMs += delta;
     while (this.localAccumulatorMs >= LOCAL_STEP_MS) {
       this.localAccumulatorMs -= LOCAL_STEP_MS;
@@ -225,6 +232,42 @@ export class GameplayScene extends Phaser.Scene {
     }
 
     this.renderRemotePlayers();
+
+    netDebug.maybeFlush(performance.now());
+    this.updateDebugHud();
+  }
+
+  /** Creates the debug HUD text + binds the backtick toggle. Cheap when off. */
+  private setupDebugHud() {
+    this.debugText = this.add
+      .text(0, 0, '', {
+        fontFamily: 'monospace',
+        fontSize: '16px',
+        color: '#9effa0',
+        backgroundColor: 'rgba(0,0,0,0.6)',
+      })
+      .setOrigin(0, 0)
+      .setDepth(12_000);
+    this.debugText.setVisible(false);
+
+    const tilde = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.BACKTICK);
+    tilde?.on('down', () => netDebug.toggle());
+  }
+
+  /** Pins the HUD to the camera's top-left, scale-compensated so it stays a
+   * constant on-screen size regardless of the zoomed-out camera. */
+  private updateDebugHud() {
+    if (!this.debugText) return;
+    if (!netDebug.enabled) {
+      if (this.debugText.visible) this.debugText.setVisible(false);
+      return;
+    }
+    const cam = this.cameras.main;
+    const margin = 10 / cam.zoom;
+    this.debugText.setVisible(true);
+    this.debugText.setScale(1 / cam.zoom);
+    this.debugText.setPosition(cam.worldView.x + margin, cam.worldView.y + margin);
+    this.debugText.setText(netDebug.getHudText());
   }
 
   handleInput(input: InputState) {
@@ -239,6 +282,8 @@ export class GameplayScene extends Phaser.Scene {
     if (update.playerId === this.playerId) {
       return;
     }
+
+    netDebug.recordArrival(update.playerId, update.seq, performance.now());
 
     // Always buffer the snapshot (safe before the scene boots). Only create the
     // sprite once the scene is live; otherwise renderRemotePlayers creates it
@@ -397,6 +442,10 @@ export class GameplayScene extends Phaser.Scene {
       mySprite.setRotation(me.angle);
     }
 
+    // Baseline: the local ball's true (sim) horizontal speed. At max speed on a
+    // flat line this is ~constant, so remote vx stats can be compared against it.
+    netDebug.recordSelf(me.xVel);
+
     this.sendAccumulatorMs += LOCAL_STEP_MS;
     const isActive =
       this.inputState.move !== 0 || this.inputState.jumpHeld || Math.abs(me.xVel) > 1 || Math.abs(me.yVel) > 1;
@@ -416,7 +465,8 @@ export class GameplayScene extends Phaser.Scene {
   }
 
   private renderRemotePlayers() {
-    const renderTimeMs = performance.now() - INTERPOLATION_DELAY_MS;
+    const now = performance.now();
+    const renderTimeMs = now - INTERPOLATION_DELAY_MS;
 
     for (const playerId of this.remoteSmoother.getPlayerIds()) {
       if (playerId === this.playerId) {
@@ -452,6 +502,19 @@ export class GameplayScene extends Phaser.Scene {
       }
       sprite.shadow?.setPosition(sprite.x + 8, sprite.y - 10);
       sprite.setRotation(Phaser.Math.Angle.RotateTo(sprite.rotation, sample.angle, 0.35));
+
+      // sample.* = interpolator output (pre this lerp); sprite.* = what's drawn.
+      // Comparing the two isolates jitter added by the secondary smoothing pass.
+      netDebug.recordRemoteRender(
+        playerId,
+        sample.x,
+        sample.y,
+        sprite.x,
+        sprite.y,
+        sample.mode,
+        sample.bufferDepth,
+        now,
+      );
     }
   }
 
@@ -1079,5 +1142,8 @@ export class GameplayScene extends Phaser.Scene {
     this.matchResultsModal = null;
     this.clearCountdown();
     this.remoteSmoother.clearAll();
+    this.debugText?.destroy();
+    this.debugText = undefined;
+    netDebug.clear();
   }
 }

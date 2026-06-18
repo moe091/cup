@@ -1,10 +1,16 @@
 import Phaser from 'phaser';
 import type { RemotePlayerStateUpdate } from '@cup/bouncer-shared';
 
+export type SampleMode = 'interp' | 'extrap' | 'single';
+
 export type SmoothedState = {
   x: number;
   y: number;
   angle: number;
+  // Which branch produced this sample + how many snapshots were buffered, for
+  // diagnostics. 'extrap'/'single' indicate the interpolation buffer underran.
+  mode: SampleMode;
+  bufferDepth: number;
 };
 
 const MAX_SNAPSHOTS_PER_PLAYER = 64;
@@ -47,7 +53,7 @@ export class RemoteSmoother {
 
     if (snapshots.length === 1) {
       const only = snapshots[0];
-      return { x: only.x, y: only.y, angle: only.angle };
+      return { x: only.x, y: only.y, angle: only.angle, mode: 'single', bufferDepth: 1 };
     }
 
     const olderIdx = this.findSnapshotIndexAtOrBefore(snapshots, renderTimeMs);
@@ -60,6 +66,8 @@ export class RemoteSmoother {
         x: Phaser.Math.Linear(a.x, b.x, t),
         y: Phaser.Math.Linear(a.y, b.y, t),
         angle: Phaser.Math.Linear(a.angle, b.angle, t),
+        mode: 'interp',
+        bufferDepth: snapshots.length,
       };
     }
 
@@ -70,6 +78,8 @@ export class RemoteSmoother {
       x: latest.x + latest.xVel * dtSeconds,
       y: latest.y,
       angle: latest.angle,
+      mode: 'extrap',
+      bufferDepth: snapshots.length,
     };
   }
 

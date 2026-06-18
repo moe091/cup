@@ -75,6 +75,8 @@ ioServer.on('connection', (socket) => {
   socket.on('update_level_selection', (data) => match.onUpdateLevelSelection(socket, data));
   socket.on('update_score_goal', (data) => match.onUpdateScoreGoal(socket, data));
   socket.on('player_state', (data) => match.onPlayerState(socket, data));
+  // Debug RTT/clock-offset probe: echo the client's timestamp + our server time.
+  socket.on('cs_ping', (data) => socket.emit('cs_pong', { t0: data?.t0, ts: Date.now() }));
   socket.on('player_finished', () => match.onPlayerFinished(socket));
   socket.on('set_ready', (data) => match.onSetReady(socket, data));
   socket.on('round_ready', () => match.onRoundReady(socket));
