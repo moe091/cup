@@ -12,7 +12,7 @@ import type {
 } from '@cup/bouncer-shared';
 import { InputController } from '../misc/InputController';
 import { ParallaxBackground } from '../misc/ParallaxBackground';
-import { RemoteSmoother } from '../misc/RemoteSmoother';
+import { RemoteSmoother, type SampleMode } from '../misc/RemoteSmoother';
 import { netDebug } from '../misc/NetDebug';
 
 type ShadowSprite = Phaser.GameObjects.Sprite & {
@@ -23,8 +23,15 @@ const LOCAL_SIM_HZ = 30;
 const LOCAL_STEP_MS = 1000 / LOCAL_SIM_HZ;
 const ACTIVE_SEND_MS = 1000 / 30;
 const IDLE_SEND_MS = 1000 / 10;
-const INTERPOLATION_DELAY_MS = 120;
+const INTERPOLATION_DELAY_MS = 60;
 const EXTRAPOLATION_CAP_MS = 50;
+// Renders the LOCAL ball from a short delayed history buffer so it sits closer
+// in time to the (interpolated, latency-delayed) remote balls — making
+// neck-and-neck races actually look neck-and-neck. The simulation itself stays
+// real-time/authoritative; only the visual sprite + camera lag by this much.
+// Costs this many ms of perceived input latency. 0 = legacy instant rendering.
+const LOCAL_RENDER_DELAY_MS = 60;
+const OWN_HISTORY_MAX = 64;
 const HARD_SNAP_X_PX = 140;
 const HARD_SNAP_Y_PX = 28;
 const POSITION_DEADZONE_X_PX = 0.8;
@@ -66,8 +73,13 @@ export class GameplayScene extends Phaser.Scene {
   private sendAccumulatorMs = 0;
   private localSeq = 0;
   private jumpPressedQueued = false;
+  // Recent local-ball states (own clock) for delayed self-rendering.
+  private ownHistory: Array<{ tMs: number; x: number; y: number; angle: number }> = [];
   private inputState: InputState = { move: 0, jumpHeld: false, jumpPressed: false };
   private remoteSmoother = new RemoteSmoother();
+  // playerId -> performance.now() when its current extrapolation episode began,
+  // for edge-triggered "buffer underran" logging (always on, not debug-gated).
+  private extrapStartByPlayer = new Map<string, number>();
   // Single source of truth for whether the round is live. Written ONLY by
   // setRunning() (called by ClientMatchFlow on the IN_PROGRESS phase). The
   // physics loop steps iff this is true, so the countdown can never be skipped.
@@ -231,10 +243,51 @@ export class GameplayScene extends Phaser.Scene {
       this.stepLocalSimulation();
     }
 
+    this.renderLocalPlayer();
     this.renderRemotePlayers();
 
     netDebug.maybeFlush(performance.now());
     this.updateDebugHud();
+  }
+
+  /** Draws the local ball from its delayed history buffer (LOCAL_RENDER_DELAY_MS
+   * in the past), interpolating between the two straddling sim states. The
+   * camera follows this sprite, so the whole view lags by the same amount. */
+  private renderLocalPlayer() {
+    const sprite = this.me ?? this.balls.get(this.playerId);
+    if (!sprite || this.ownHistory.length === 0) {
+      return;
+    }
+    const target = performance.now() - LOCAL_RENDER_DELAY_MS;
+    const s = this.sampleOwnHistory(target);
+    sprite.setPosition(s.x, s.y);
+    sprite.shadow?.setPosition(s.x + 8, s.y - 10);
+    sprite.setRotation(s.angle);
+  }
+
+  private sampleOwnHistory(targetTms: number): { x: number; y: number; angle: number } {
+    const h = this.ownHistory;
+    const latest = h[h.length - 1];
+    if (h.length === 1 || targetTms >= latest.tMs) {
+      return { x: latest.x, y: latest.y, angle: latest.angle };
+    }
+    if (targetTms <= h[0].tMs) {
+      return { x: h[0].x, y: h[0].y, angle: h[0].angle };
+    }
+    for (let i = h.length - 1; i > 0; i--) {
+      const a = h[i - 1];
+      const b = h[i];
+      if (a.tMs <= targetTms && targetTms <= b.tMs) {
+        const span = Math.max(1, b.tMs - a.tMs);
+        const t = (targetTms - a.tMs) / span;
+        return {
+          x: Phaser.Math.Linear(a.x, b.x, t),
+          y: Phaser.Math.Linear(a.y, b.y, t),
+          angle: Phaser.Math.Linear(a.angle, b.angle, t),
+        };
+      }
+    }
+    return { x: latest.x, y: latest.y, angle: latest.angle };
   }
 
   /** Creates the debug HUD text + binds the backtick toggle. Cheap when off. */
@@ -435,11 +488,12 @@ export class GameplayScene extends Phaser.Scene {
       return;
     }
 
-    const mySprite = this.balls.get(this.playerId);
-    if (mySprite) {
-      mySprite.setPosition(me.x, me.y);
-      mySprite.shadow?.setPosition(me.x + 8, me.y - 10);
-      mySprite.setRotation(me.angle);
+    // Buffer this state instead of drawing it immediately; renderLocalPlayer()
+    // draws the sprite from `now - LOCAL_RENDER_DELAY_MS` so the local ball sits
+    // closer in time to the remote balls.
+    this.ownHistory.push({ tMs: performance.now(), x: me.x, y: me.y, angle: me.angle });
+    if (this.ownHistory.length > OWN_HISTORY_MAX) {
+      this.ownHistory.splice(0, this.ownHistory.length - OWN_HISTORY_MAX);
     }
 
     // Baseline: the local ball's true (sim) horizontal speed. At max speed on a
@@ -454,6 +508,7 @@ export class GameplayScene extends Phaser.Scene {
       this.sendAccumulatorMs = 0;
       const update: PlayerStateUpdate = {
         seq: this.localSeq++,
+        tMs: performance.now(),
         x: me.x,
         y: me.y,
         angle: me.angle,
@@ -477,6 +532,8 @@ export class GameplayScene extends Phaser.Scene {
       if (!sample) {
         continue;
       }
+
+      this.logExtrapolationEdges(playerId, sample.mode, now);
 
       let sprite = this.balls.get(playerId);
       if (!sprite) {
@@ -518,6 +575,26 @@ export class GameplayScene extends Phaser.Scene {
     }
   }
 
+  /** Edge-triggered, always-on log for how often the interpolation buffer
+   * underruns (forcing velocity extrapolation). Logs once when an episode
+   * starts and once when it recovers, with the duration — never per frame. */
+  private logExtrapolationEdges(playerId: string, mode: SampleMode, nowMs: number) {
+    const startedAt = this.extrapStartByPlayer.get(playerId);
+    const id = playerId.slice(-4);
+    if (mode === 'extrap') {
+      if (startedAt === undefined) {
+        this.extrapStartByPlayer.set(playerId, nowMs);
+        console.warn(`%c⚠ EXTRAP ${id} — interp buffer underran`, 'background:#a30;color:#fff;font-size:14px;padding:2px 6px;');
+      }
+    } else if (startedAt !== undefined) {
+      console.warn(
+        `%c⚠ EXTRAP ${id} — recovered after ${(nowMs - startedAt).toFixed(0)}ms`,
+        'background:#360;color:#fff;font-size:14px;padding:2px 6px;',
+      );
+      this.extrapStartByPlayer.delete(playerId);
+    }
+  }
+
   private initializeLocalEngineIfReady() {
     if (!this.levelDef || !this.mySpawn) {
       return;
@@ -533,6 +610,7 @@ export class GameplayScene extends Phaser.Scene {
     }
     this.balls.clear();
     this.remoteSmoother.clearAll();
+    this.extrapStartByPlayer.clear();
 
     const meSprite = this.createBallSprite(this.playerId, this.mySpawn.x, this.mySpawn.y);
     this.balls.set(this.playerId, meSprite);
@@ -557,6 +635,7 @@ export class GameplayScene extends Phaser.Scene {
     this.sendAccumulatorMs = 0;
     this.jumpPressedQueued = false;
     this.localSeq = 0;
+    this.ownHistory = [];
   }
 
   // Emits the local player's current engine state via the normal player_state
@@ -573,6 +652,7 @@ export class GameplayScene extends Phaser.Scene {
     }
     const update: PlayerStateUpdate = {
       seq: this.localSeq++,
+      tMs: performance.now(),
       x: me.x,
       y: me.y,
       angle: me.angle,
@@ -1142,6 +1222,7 @@ export class GameplayScene extends Phaser.Scene {
     this.matchResultsModal = null;
     this.clearCountdown();
     this.remoteSmoother.clearAll();
+    this.extrapStartByPlayer.clear();
     this.debugText?.destroy();
     this.debugText = undefined;
     netDebug.clear();

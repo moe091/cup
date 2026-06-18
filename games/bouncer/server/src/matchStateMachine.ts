@@ -449,6 +449,7 @@ export class MatchStateMachine {
     const c = data as Partial<PlayerStateUpdate>;
     if (
       !this.isFiniteNumber(c.seq) ||
+      !this.isFiniteNumber(c.tMs) ||
       !this.isFiniteNumber(c.x) ||
       !this.isFiniteNumber(c.y) ||
       !this.isFiniteNumber(c.angle) ||
@@ -457,7 +458,7 @@ export class MatchStateMachine {
     ) {
       return null;
     }
-    return { seq: c.seq, x: c.x, y: c.y, angle: c.angle, xVel: c.xVel, yVel: c.yVel };
+    return { seq: c.seq, tMs: c.tMs, x: c.x, y: c.y, angle: c.angle, xVel: c.xVel, yVel: c.yVel };
   }
 
   private isFiniteNumber(value: unknown): value is number {

@@ -36,6 +36,11 @@ export type TickSnapshot = {
 
 export type PlayerStateUpdate = {
   seq: number;
+  // Sender's own performance.now() at sample time. Used by remote clients to
+  // interpolate on a jitter-free source timeline (the *spacing* between a
+  // sender's tMs values is its true snapshot cadence). Cross-machine clock
+  // skew is irrelevant — only the relative spacing is used. See RemoteSmoother.
+  tMs: number;
   x: number;
   y: number;
   angle: number;
