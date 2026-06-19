@@ -24,7 +24,7 @@ const LOCAL_STEP_MS = 1000 / LOCAL_SIM_HZ;
 const ACTIVE_SEND_MS = 1000 / 30;
 const IDLE_SEND_MS = 1000 / 10;
 const INTERPOLATION_DELAY_MS = 60;
-const EXTRAPOLATION_CAP_MS = 50;
+const EXTRAPOLATION_CAP_MS = 120;
 // Renders the LOCAL ball from a short delayed history buffer so it sits closer
 // in time to the (interpolated, latency-delayed) remote balls — making
 // neck-and-neck races actually look neck-and-neck. The simulation itself stays
