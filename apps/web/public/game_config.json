@@ -1,0 +1,15 @@
+{
+  "bouncer": {
+    "netcode": {
+      "interpolationDelayMs": 60,
+      "extrapolationCapMs": 120,
+      "latencyExtrapolationMs": 33,
+      "localRenderDelayMs": 60
+    },
+    "physics": {
+      "jumpPower": 1.1,
+      "moveAcceleration": 0.025,
+      "dashPower": 2.5
+    }
+  }
+}

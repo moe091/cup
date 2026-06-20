@@ -4,6 +4,7 @@ import planck from 'planck';
 import type { Body } from 'planck';
 import type { LevelDefinition } from '@cup/bouncer-shared';
 import { createPolygonBody } from './helpers/PhysicsHelpers.js';
+import { DEFAULT_PHYSICS_CONFIG, type BouncerPhysicsConfig } from './config.js';
 
 let gravity = { x: 0, y: 10 };
 
@@ -27,15 +28,22 @@ export class World {
   private groundSensorRadius = 0.08;
   private groundSensorOffset = this.ballRadius + 0.04;
   private moveTorque = 0.6;
-  private moveImpulse = 0.025;
-  private jumpImpulse = 1.1;
+  // Tunable via physics config (see config.ts); initialized to defaults.
+  private moveImpulse = DEFAULT_PHYSICS_CONFIG.moveAcceleration;
+  private jumpImpulse = DEFAULT_PHYSICS_CONFIG.jumpPower;
+  private dashImpulse = DEFAULT_PHYSICS_CONFIG.dashPower;
   private jumpHoldImpulse = 0.5;
   private jumpHoldMs = 750;
   private coyoteMs = 200;
   private finishListener: FinishListener | null = null;
   private finishedPlayers = new Set<string>();
 
-  constructor() {
+  constructor(physics?: Partial<BouncerPhysicsConfig>) {
+    if (physics) {
+      if (Number.isFinite(physics.jumpPower)) this.jumpImpulse = physics.jumpPower as number;
+      if (Number.isFinite(physics.moveAcceleration)) this.moveImpulse = physics.moveAcceleration as number;
+      if (Number.isFinite(physics.dashPower)) this.dashImpulse = physics.dashPower as number;
+    }
     this.setupContactListeners();
   }
 

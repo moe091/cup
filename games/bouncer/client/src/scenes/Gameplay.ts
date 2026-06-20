@@ -14,6 +14,13 @@ import { InputController } from '../misc/InputController';
 import { ParallaxBackground } from '../misc/ParallaxBackground';
 import { RemoteSmoother, type SampleMode } from '../misc/RemoteSmoother';
 import { netDebug } from '../misc/NetDebug';
+import {
+  resolveNetConfig,
+  resolvePhysicsConfig,
+  type BouncerNetConfig,
+  type BouncerPhysicsConfig,
+  type BouncerConfigInput,
+} from '../config';
 
 type ShadowSprite = Phaser.GameObjects.Sprite & {
   shadow?: Phaser.GameObjects.Arc;
@@ -23,15 +30,10 @@ const LOCAL_SIM_HZ = 30;
 const LOCAL_STEP_MS = 1000 / LOCAL_SIM_HZ;
 const ACTIVE_SEND_MS = 1000 / 30;
 const IDLE_SEND_MS = 1000 / 10;
-const INTERPOLATION_DELAY_MS = 60;
-const EXTRAPOLATION_CAP_MS = 120;
-// Renders the LOCAL ball from a short delayed history buffer so it sits closer
-// in time to the (interpolated, latency-delayed) remote balls — making
-// neck-and-neck races actually look neck-and-neck. The simulation itself stays
-// real-time/authoritative; only the visual sprite + camera lag by this much.
-// Costs this many ms of perceived input latency. 0 = legacy instant rendering.
-const LOCAL_RENDER_DELAY_MS = 60;
 const OWN_HISTORY_MAX = 64;
+// Netcode timing knobs (INTERPOLATION_DELAY / EXTRAPOLATION_CAP / LATENCY_EXTRAP
+// / LOCAL_RENDER_DELAY) are runtime-configurable per game; see config.ts. They
+// live on the scene as `this.net` rather than module constants.
 const HARD_SNAP_X_PX = 140;
 const HARD_SNAP_Y_PX = 28;
 const POSITION_DEADZONE_X_PX = 0.8;
@@ -101,12 +103,20 @@ export class GameplayScene extends Phaser.Scene {
   // Toggleable netcode-debug HUD (backtick). Console gets the detailed summary.
   private debugText: Phaser.GameObjects.Text | undefined;
 
+  // Resolved config (runtime-provided, defaults applied). `net` drives rendering
+  // timing; `physics` is handed to the Engine.
+  private readonly net: BouncerNetConfig;
+  private readonly physicsConfig: BouncerPhysicsConfig;
+
   constructor(
     private playerId: string,
     private readonly emit: (name: string, data: unknown) => void,
     private containerEl: HTMLElement,
+    config?: BouncerConfigInput,
   ) {
     super('gameplay');
+    this.net = resolveNetConfig(config?.netcode);
+    this.physicsConfig = resolvePhysicsConfig(config?.physics);
   }
 
   fullscreenListener() {
@@ -250,7 +260,7 @@ export class GameplayScene extends Phaser.Scene {
     this.updateDebugHud();
   }
 
-  /** Draws the local ball from its delayed history buffer (LOCAL_RENDER_DELAY_MS
+  /** Draws the local ball from its delayed history buffer (net.localRenderDelayMs
    * in the past), interpolating between the two straddling sim states. The
    * camera follows this sprite, so the whole view lags by the same amount. */
   private renderLocalPlayer() {
@@ -258,7 +268,7 @@ export class GameplayScene extends Phaser.Scene {
     if (!sprite || this.ownHistory.length === 0) {
       return;
     }
-    const target = performance.now() - LOCAL_RENDER_DELAY_MS;
+    const target = performance.now() - this.net.localRenderDelayMs;
     const s = this.sampleOwnHistory(target);
     sprite.setPosition(s.x, s.y);
     sprite.shadow?.setPosition(s.x + 8, s.y - 10);
@@ -489,7 +499,7 @@ export class GameplayScene extends Phaser.Scene {
     }
 
     // Buffer this state instead of drawing it immediately; renderLocalPlayer()
-    // draws the sprite from `now - LOCAL_RENDER_DELAY_MS` so the local ball sits
+    // draws the sprite from `now - net.localRenderDelayMs` so the local ball sits
     // closer in time to the remote balls.
     this.ownHistory.push({ tMs: performance.now(), x: me.x, y: me.y, angle: me.angle });
     if (this.ownHistory.length > OWN_HISTORY_MAX) {
@@ -521,14 +531,16 @@ export class GameplayScene extends Phaser.Scene {
 
   private renderRemotePlayers() {
     const now = performance.now();
-    const renderTimeMs = now - INTERPOLATION_DELAY_MS;
+    // Subtract interp delay (render in the past for jitter smoothing), then add
+    // latency compensation back to pull remote balls toward their true "now".
+    const renderTimeMs = now - this.net.interpolationDelayMs + this.net.latencyExtrapolationMs;
 
     for (const playerId of this.remoteSmoother.getPlayerIds()) {
       if (playerId === this.playerId) {
         continue;
       }
 
-      const sample = this.remoteSmoother.sample(playerId, renderTimeMs, EXTRAPOLATION_CAP_MS);
+      const sample = this.remoteSmoother.sample(playerId, renderTimeMs, this.net.extrapolationCapMs);
       if (!sample) {
         continue;
       }
@@ -600,7 +612,7 @@ export class GameplayScene extends Phaser.Scene {
       return;
     }
 
-    this.engine = new Engine(1 / LOCAL_SIM_HZ, this.onLocalPlayerFinished.bind(this));
+    this.engine = new Engine(1 / LOCAL_SIM_HZ, this.onLocalPlayerFinished.bind(this), this.physicsConfig);
     this.engine.loadLevel(this.levelDef);
     this.engine.spawnPlayerAt(this.playerId, this.mySpawn.x, this.mySpawn.y);
 

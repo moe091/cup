@@ -1,8 +1,13 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useRef } from "react";
-import { connectBouncer, type BouncerConnection } from "@cup/bouncer-client";
+import {
+  connectBouncer,
+  type BouncerConnection,
+  type BouncerConfigInput,
+} from "@cup/bouncer-client";
 import type { LobbyJoinResponse } from "@cup/shared-types";
 import { buildCsrfHeaders } from "../../../api/csrf";
+import { loadGameConfig } from "../../../config/gameConfig";
 
 type Params = { matchId: string };
 
@@ -20,11 +25,13 @@ export function BouncerGame() {
     function connectToLobby(
       lobbyInfo: LobbyJoinResponse,
       gameContainerEl: HTMLElement,
+      config?: BouncerConfigInput,
     ): BouncerConnection {
       const bouncerConnection = connectBouncer(
         lobbyInfo.socketUrl,
         lobbyInfo.ticket,
         gameContainerEl,
+        config,
       );
       console.log("Got bouncerConnection:", bouncerConnection);
 
@@ -52,9 +59,10 @@ export function BouncerGame() {
     };
 
     joinLobby()
-      .then((res) => {
+      .then(async (res) => {
         console.log("Joining lobby with data:", res);
-        conn = connectToLobby(res, gameEl);
+        const gameConfig = await loadGameConfig();
+        conn = connectToLobby(res, gameEl, gameConfig.bouncer);
       })
       .catch((err) => {
         if (err?.name === "AbortError") return;

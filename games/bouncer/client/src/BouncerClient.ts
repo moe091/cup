@@ -16,6 +16,7 @@ import { WaitingRoomScene } from './scenes/WaitingRoom';
 import { BootScene } from './scenes/Boot';
 import { ClientMatchFlow } from './clientMatchFlow';
 import { netDebug } from './misc/NetDebug';
+import type { BouncerConfigInput } from './config';
 
 const PING_INTERVAL_MS = 2000;
 type PongPayload = { t0: number; ts: number };
@@ -31,11 +32,11 @@ export class BouncerClient {
   private flow: ClientMatchFlow;
   private pingTimer: ReturnType<typeof setInterval> | null = null;
 
-  constructor(socket: Socket, containerEl: HTMLElement) {
+  constructor(socket: Socket, containerEl: HTMLElement, bouncerConfig?: BouncerConfigInput) {
     this.socket = socket;
     const playerId = socket.id || '';
 
-    const gameplayScene = new GameplayScene(playerId, this.emitMessage.bind(this), containerEl);
+    const gameplayScene = new GameplayScene(playerId, this.emitMessage.bind(this), containerEl, bouncerConfig);
     const waitingRoomScene = new WaitingRoomScene(playerId, this.emitMessage.bind(this), containerEl);
     const boot = new BootScene();
 

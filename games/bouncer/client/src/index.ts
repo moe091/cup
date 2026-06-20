@@ -16,6 +16,9 @@ import {
 import { LevelEditorScene } from './scenes/LevelEditor/LevelEditor';
 import { loadLevelDef } from './api/levels';
 
+export type { BouncerNetConfig, BouncerPhysicsConfig, BouncerConfigInput } from './config';
+import type { BouncerConfigInput } from './config';
+
 /*
  * Entry point for Bouncer client. Will be imported in react frontend.
  * React passes in the server url and matchId needed to connect to a lobby, as well
@@ -25,7 +28,12 @@ import { loadLevelDef } from './api/levels';
  * returns a clean 'disconnect' function that cleans everything up, so react(or whoever
  * imports this) can handle disconnecting smoothly before leaving the page or rerendering or anything
  */
-export function connectBouncer(url: string, ticket: string, containerEl: HTMLElement): BouncerConnection {
+export function connectBouncer(
+  url: string,
+  ticket: string,
+  containerEl: HTMLElement,
+  config?: BouncerConfigInput,
+): BouncerConnection {
   let bouncerClient: BouncerClient | null = null;
 
   const socket = io(url, {
@@ -37,7 +45,7 @@ export function connectBouncer(url: string, ticket: string, containerEl: HTMLEle
   socket.on('connect', () => {
     console.log('Connected to server with socket id:', socket.id);
 
-    if (!bouncerClient) bouncerClient = new BouncerClient(socket, containerEl);
+    if (!bouncerClient) bouncerClient = new BouncerClient(socket, containerEl, config);
     else console.warn("connectBouncer() - socket.on('connect') :: bouncerClient already exists! Keeping old client.");
   });
 

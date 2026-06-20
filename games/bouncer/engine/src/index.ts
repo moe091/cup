@@ -1,16 +1,19 @@
 import { FinishListener } from './types.js';
 import { World } from './world.js';
+import type { BouncerPhysicsConfig } from './config.js';
 import type { LevelDefinition, PlayerInputState, TickSnapshot } from '@cup/bouncer-shared';
 
 export class Engine {
-  private world = new World();
+  private world: World;
   private tick: number = 0;
   private onPlayerFinish: FinishListener;
 
   constructor(
     private timestep: number,
     onPlayerFinish: FinishListener,
+    physics?: Partial<BouncerPhysicsConfig>,
   ) {
+    this.world = new World(physics);
     this.world.setTimestep(timestep);
     this.onPlayerFinish = onPlayerFinish;
     this.world.setFinishListener(onPlayerFinish);
@@ -58,3 +61,4 @@ export class Engine {
 }
 
 export type { Ball, Point } from './types.js';
+export { DEFAULT_PHYSICS_CONFIG, type BouncerPhysicsConfig } from './config.js';
