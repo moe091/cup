@@ -72,21 +72,18 @@ export function BouncerLanding() {
             <h2 className="text-3xl sm:text-4xl mb-4">Bouncer</h2>
             <p className="mt-3 text-[color:var(--muted)] mb-5">
               <b className="text-[color:var(--text)]">
-                If miniature golf was a multiplayer platformer game.
+                Orb Racing
               </b>{" "}
-              Traverse each level by flicking your ball through obstacles and
-              hazards to reach the goal before your opponents.
+              Race your friends by rolling, jumping, and dashing through a physics-based platformer world with your handy-dandy wizard orb.
             </p>
 
             <ul className="leading-relaxed mt-3 text-sm text-[color:var(--muted)] list-disc list-inside space-y-2">
               <li>
-                <b className="text-[color:var(--text)]">Controls:</b> Click +
-                drag to aim, release to launch.
-              </li>
-              <li>Each player gets 1 launch per 2 seconds, make them count!</li>
-              <li>
-                Dozens of levels full of unique physics-bending obstacles and
-                powerups
+                <b className="text-[color:var(--text)]">Controls:</b>  <br />
+                <b>A and D: </b>move left and right(WASD controls) <br />
+                <b>Space: </b>Jump. If already in the air, doublejump(1 use, resets when you touch the ground) <br />
+                <b>Shift: </b>Dash. Only works in the air(1 use, resets when you touch the ground) <br />
+                <b>R: </b>Restart level(only works in solo play, does nothing if 2 or more players are in the match)
               </li>
               <li>
                 <b className="text-[color:var(--text)]">Custom Level Editor!</b>{" "}

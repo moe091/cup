@@ -85,6 +85,7 @@ ioServer.on('connection', (socket) => {
   socket.on('start_match', () => match.onStartMatch(socket));
   socket.on('next_round', () => match.onNextRound(socket));
   socket.on('new_match', () => match.onNewMatch(socket));
+  socket.on('restart_match', () => match.onRestartMatch(socket));
 
   console.log('New client connected, socket id:', socket.id);
 

@@ -43,6 +43,11 @@ const POSITION_DEADZONE_X_PX = 0.8;
 const POSITION_DEADZONE_Y_PX = 0.6;
 const ENABLE_SHADOWS = false;
 const PLAYER_BALL_DIAMETER_PX = 52;
+// Nameplate + self-marker placement (world px above the ball center).
+const LABEL_Y_OFFSET = 54;
+const CHEVRON_Y_OFFSET = 92;
+const SELF_COLOR = '#ffd54a'; // gold, for "YOU" label / chevron / trail
+const SELF_TINT = 0xffd54a;
 
 const PLATFORM_GLOW_COLOR = 0xa7d6ff;
 const PLATFORM_BASE_COLOR = 0xcfe9ff;
@@ -108,6 +113,12 @@ export class GameplayScene extends Phaser.Scene {
   // death (applied just after the physics step — never inside the contact callback).
   private hazardSprites: Array<{ sprite: Phaser.GameObjects.Image; rotationSpeed: number }> = [];
   private pendingRespawn: { x: number; y: number } | null = null;
+
+  // Nameplates over each ball + a self-only chevron marker. playerNames is fed
+  // from match_status (the scene only knows ids otherwise).
+  private playerNames = new Map<string, string>();
+  private ballLabels = new Map<string, Phaser.GameObjects.Text>();
+  private selfChevron: Phaser.GameObjects.Text | undefined;
   private roundResultsModal: Phaser.GameObjects.Container | null = null;
   private matchResultsModal: Phaser.GameObjects.Container | null = null;
 
@@ -179,6 +190,8 @@ export class GameplayScene extends Phaser.Scene {
     this.inputController.onInput(this, this.handleInput.bind(this));
     this.setupDebugHud();
     this.createCheckpointToast();
+    this.createSelfChevron();
+    this.setupRestartKey();
 
     this.events.once('destroy', this.onDestroy, this);
 
@@ -294,14 +307,23 @@ export class GameplayScene extends Phaser.Scene {
    * camera follows this sprite, so the whole view lags by the same amount. */
   private renderLocalPlayer() {
     const sprite = this.me ?? this.balls.get(this.playerId);
-    if (!sprite || this.ownHistory.length === 0) {
+    if (!sprite) {
       return;
     }
-    const target = performance.now() - this.net.localRenderDelayMs;
-    const s = this.sampleOwnHistory(target);
-    sprite.setPosition(s.x, s.y);
-    sprite.shadow?.setPosition(s.x + 8, s.y - 10);
-    sprite.setRotation(s.angle);
+    if (this.ownHistory.length > 0) {
+      const target = performance.now() - this.net.localRenderDelayMs;
+      const s = this.sampleOwnHistory(target);
+      sprite.setPosition(s.x, s.y);
+      sprite.shadow?.setPosition(s.x + 8, s.y - 10);
+      sprite.setRotation(s.angle);
+    }
+
+    // Nameplate + bobbing chevron track the (possibly delayed) local ball.
+    this.ballLabels.get(this.playerId)?.setPosition(sprite.x, sprite.y - LABEL_Y_OFFSET);
+    if (this.selfChevron) {
+      const bob = Math.sin(this.time.now / 300) * 6;
+      this.selfChevron.setPosition(sprite.x, sprite.y - CHEVRON_Y_OFFSET + bob).setVisible(true);
+    }
   }
 
   private sampleOwnHistory(targetTms: number): { x: number; y: number; angle: number } {
@@ -327,6 +349,35 @@ export class GameplayScene extends Phaser.Scene {
       }
     }
     return { x: latest.x, y: latest.y, angle: latest.angle };
+  }
+
+  /** Single gold ▼ that marks the local player's ball (positioned each frame). */
+  private createSelfChevron() {
+    this.selfChevron = this.add
+      .text(0, 0, '▼', {
+        fontFamily: 'Arial',
+        fontSize: '46px',
+        color: SELF_COLOR,
+        stroke: '#101418',
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5)
+      .setDepth(6)
+      .setVisible(false);
+  }
+
+  /** Display names by playerId (from match_status), used for opponent nameplates. */
+  setPlayerNames(names: Map<string, string>) {
+    this.playerNames = names;
+    for (const [pid, label] of this.ballLabels) {
+      if (pid !== this.playerId) label.setText(names.get(pid) ?? '');
+    }
+  }
+
+  /** Press R to instantly restart (solo only — the server ignores it otherwise). */
+  private setupRestartKey() {
+    const rKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+    rKey?.on('down', () => this.emit('restart_match', {}));
   }
 
   /** Creates the debug HUD text + binds the backtick toggle. Cheap when off. */
@@ -635,6 +686,7 @@ export class GameplayScene extends Phaser.Scene {
       }
       sprite.shadow?.setPosition(sprite.x + 8, sprite.y - 10);
       sprite.setRotation(Phaser.Math.Angle.RotateTo(sprite.rotation, sample.angle, 0.35));
+      this.ballLabels.get(playerId)?.setPosition(sprite.x, sprite.y - LABEL_Y_OFFSET);
 
       // sample.* = interpolator output (pre this lerp); sprite.* = what's drawn.
       // Comparing the two isolates jitter added by the secondary smoothing pass.
@@ -691,6 +743,8 @@ export class GameplayScene extends Phaser.Scene {
       sprite.shadow?.destroy();
     }
     this.balls.clear();
+    for (const label of this.ballLabels.values()) label.destroy();
+    this.ballLabels.clear();
     this.remoteSmoother.clearAll();
     this.extrapStartByPlayer.clear();
 
@@ -706,6 +760,7 @@ export class GameplayScene extends Phaser.Scene {
         scale: { start: 4, end: 0 },
         alpha: { start: 0.8, end: 0 },
         frequency: 20,
+        tint: SELF_TINT,
       })
       .setDepth(-1);
     particles.startFollow(meSprite);
@@ -1223,6 +1278,21 @@ export class GameplayScene extends Phaser.Scene {
     if (ENABLE_SHADOWS) {
       sprite.shadow = this.add.circle(x + 8, y - 10, 26, 0x000000, 0.4).setDepth(-2);
     }
+
+    const isMe = playerId === this.playerId;
+    const label = this.add
+      .text(x, y - LABEL_Y_OFFSET, isMe ? 'YOU' : (this.playerNames.get(playerId) ?? ''), {
+        fontFamily: 'Arial',
+        fontSize: '44px',
+        fontStyle: 'bold',
+        color: isMe ? SELF_COLOR : '#ffffff',
+        stroke: '#101418',
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5)
+      .setDepth(6);
+    this.ballLabels.set(playerId, label);
+
     return sprite;
   }
 
@@ -1378,6 +1448,10 @@ export class GameplayScene extends Phaser.Scene {
     this.clearCountdown();
     this.remoteSmoother.clearAll();
     this.extrapStartByPlayer.clear();
+    for (const label of this.ballLabels.values()) label.destroy();
+    this.ballLabels.clear();
+    this.selfChevron?.destroy();
+    this.selfChevron = undefined;
     this.debugText?.destroy();
     this.debugText = undefined;
     netDebug.clear();

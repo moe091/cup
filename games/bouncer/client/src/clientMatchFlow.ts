@@ -56,6 +56,7 @@ export class ClientMatchFlow {
     this.phase = status.phase;
     const me = status.players.find((p) => p.playerId === this.playerId);
     this.isLeader = me?.role === 'creator';
+    this.gameplay.setPlayerNames(new Map(status.players.map((p) => [p.playerId, p.displayName])));
 
     switch (status.phase) {
       case 'PRE_MATCH':

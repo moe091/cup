@@ -175,6 +175,26 @@ export class MatchStateMachine {
     this.toPreMatch();
   }
 
+  /**
+   * Instant solo restart (press R): wipes match/round state and drops straight
+   * back into the countdown for the same level — reloading it so future timed
+   * elements (moving platforms, etc.) restart from a fresh round clock. Only
+   * allowed in a 1-player match and while a round is active/finished (not the
+   * pre-match lobby).
+   */
+  onRestartMatch(socket: Socket) {
+    const playerId = socket.data.playerId as PlayerId;
+    if (!this.match.getPlayer(playerId)) {
+      return;
+    }
+    if (this.match.size() !== 1 || this.phase === 'PRE_MATCH') {
+      return;
+    }
+    console.log('[restart] solo restart requested');
+    this.match.resetForNewMatch();
+    void this.toCountdown();
+  }
+
   /** A client reports its level is built and it's ready for the countdown. */
   onRoundReady(socket: Socket) {
     if (this.phase !== 'COUNTDOWN') {
