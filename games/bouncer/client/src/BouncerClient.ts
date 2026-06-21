@@ -17,6 +17,7 @@ import { BootScene } from './scenes/Boot';
 import { ClientMatchFlow } from './clientMatchFlow';
 import { netDebug } from './misc/NetDebug';
 import type { BouncerConfigInput } from './config';
+import type { HazardCatalog } from '@cup/bouncer-shared';
 
 const PING_INTERVAL_MS = 2000;
 type PongPayload = { t0: number; ts: number };
@@ -32,13 +33,24 @@ export class BouncerClient {
   private flow: ClientMatchFlow;
   private pingTimer: ReturnType<typeof setInterval> | null = null;
 
-  constructor(socket: Socket, containerEl: HTMLElement, bouncerConfig?: BouncerConfigInput) {
+  constructor(
+    socket: Socket,
+    containerEl: HTMLElement,
+    bouncerConfig?: BouncerConfigInput,
+    hazardCatalog: HazardCatalog = {},
+  ) {
     this.socket = socket;
     const playerId = socket.id || '';
 
-    const gameplayScene = new GameplayScene(playerId, this.emitMessage.bind(this), containerEl, bouncerConfig);
+    const gameplayScene = new GameplayScene(
+      playerId,
+      this.emitMessage.bind(this),
+      containerEl,
+      bouncerConfig,
+      hazardCatalog,
+    );
     const waitingRoomScene = new WaitingRoomScene(playerId, this.emitMessage.bind(this), containerEl);
-    const boot = new BootScene();
+    const boot = new BootScene(hazardCatalog);
 
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,

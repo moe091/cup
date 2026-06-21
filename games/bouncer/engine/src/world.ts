@@ -1,12 +1,16 @@
-import { TickSnapshot, toPixels, toWorld } from '@cup/bouncer-shared';
-import type { Ball, FinishListener, Point } from './types.js';
+import { TickSnapshot, toPixels, toWorld, resolveHazardBody } from '@cup/bouncer-shared';
+import type { Ball, CheckpointListener, FinishListener, HazardListener, Point } from './types.js';
 import planck from 'planck';
 import type { Body } from 'planck';
-import type { LevelDefinition } from '@cup/bouncer-shared';
+import type { LevelDefinition, HazardCatalog } from '@cup/bouncer-shared';
 import { createPolygonBody } from './helpers/PhysicsHelpers.js';
 import { DEFAULT_PHYSICS_CONFIG, type BouncerPhysicsConfig } from './config.js';
 
 let gravity = { x: 0, y: 10 };
+
+// How long gravity is disabled on the dashing ball so the dash travels flat
+// before dropping. Kept as a constant (not config) to limit config surface.
+const DASH_GRAVITY_DISABLE_MS = 500;
 
 type BallState = {
   body: Body;
@@ -17,6 +21,11 @@ type BallState = {
   jumpActive: boolean;
   jumpStartedAtMs: number;
   jumpHoldRemainingMs: number;
+  // Air-action availability: true at spawn, consumed on use, re-armed on landing.
+  canDash: boolean;
+  canDoubleJump: boolean;
+  // When > 0, gravity is disabled on this ball until this timestamp (dash float).
+  dashGravityUntilMs: number;
 };
 
 export class World {
@@ -31,18 +40,22 @@ export class World {
   // Tunable via physics config (see config.ts); initialized to defaults.
   private moveImpulse = DEFAULT_PHYSICS_CONFIG.moveAcceleration;
   private jumpImpulse = DEFAULT_PHYSICS_CONFIG.jumpPower;
-  private dashImpulse = DEFAULT_PHYSICS_CONFIG.dashPower;
+  private doubleJumpForce = DEFAULT_PHYSICS_CONFIG.doubleJumpForce;
+  private dashXForce = DEFAULT_PHYSICS_CONFIG.dashXForce;
   private jumpHoldImpulse = 0.5;
   private jumpHoldMs = 750;
   private coyoteMs = 200;
   private finishListener: FinishListener | null = null;
+  private checkpointListener: CheckpointListener | null = null;
+  private hazardListener: HazardListener | null = null;
   private finishedPlayers = new Set<string>();
 
   constructor(physics?: Partial<BouncerPhysicsConfig>) {
     if (physics) {
       if (Number.isFinite(physics.jumpPower)) this.jumpImpulse = physics.jumpPower as number;
       if (Number.isFinite(physics.moveAcceleration)) this.moveImpulse = physics.moveAcceleration as number;
-      if (Number.isFinite(physics.dashPower)) this.dashImpulse = physics.dashPower as number;
+      if (Number.isFinite(physics.doubleJumpForce)) this.doubleJumpForce = physics.doubleJumpForce as number;
+      if (Number.isFinite(physics.dashXForce)) this.dashXForce = physics.dashXForce as number;
     }
     this.setupContactListeners();
   }
@@ -71,6 +84,26 @@ export class World {
         const ballUser = isBallA ? (aUser as string) : (bUser as string);
         const playerId = ballUser.replace('Ball-', '');
         this.onFinish(playerId);
+      }
+
+      const isCheckpointA = typeof aUser === 'string' && aUser.startsWith('Checkpoint-');
+      const isCheckpointB = typeof bUser === 'string' && bUser.startsWith('Checkpoint-');
+      if ((isBallA && isCheckpointB) || (isBallB && isCheckpointA)) {
+        const ballUser = isBallA ? (aUser as string) : (bUser as string);
+        const cpUser = isCheckpointA ? (aUser as string) : (bUser as string);
+        const playerId = ballUser.replace('Ball-', '');
+        const index = Number.parseInt(cpUser.replace('Checkpoint-', ''), 10);
+        if (this.checkpointListener && Number.isFinite(index)) {
+          this.checkpointListener(playerId, index);
+        }
+      }
+
+      const isHazardA = aUser === 'Hazard';
+      const isHazardB = bUser === 'Hazard';
+      if ((isBallA && isHazardB) || (isBallB && isHazardA)) {
+        const ballUser = isBallA ? (aUser as string) : (bUser as string);
+        const playerId = ballUser.replace('Ball-', '');
+        this.hazardListener?.(playerId);
       }
 
       if (groundSensorA && !fixtureBIsSensor && !this.isBallUser(bUser, groundSensorA)) {
@@ -120,20 +153,21 @@ export class World {
     body.applyLinearImpulse(new planck.Vec2(move * this.moveImpulse, 0), body.getWorldCenter(), true);
   }
 
-  applyJump(ballId: string) {
-    if (this.finishedPlayers.has(ballId)) return;
+  /** Returns true iff a jump was actually applied (grounded or within coyote
+   * time). Lets the caller fall back to a dash when the jump didn't fire. */
+  applyJump(ballId: string): boolean {
+    if (this.finishedPlayers.has(ballId)) return false;
 
     const ballState = this.balls.get(ballId);
     if (!ballState) {
       console.error("[Engine.World.applyJump] Tried jumping with ball that doesn't exist: ", ballId);
-      return;
+      return false;
     }
 
     const now = this.nowMs();
     const groundedOrCoyote = ballState.grounded || now - ballState.lastGroundedAtMs <= this.coyoteMs;
     if (!groundedOrCoyote) {
-      console.log(`[Engine.World.applyJump] Not grounded: ${ballId}`);
-      return;
+      return false;
     }
 
     const body = ballState.body;
@@ -142,7 +176,11 @@ export class World {
     ballState.jumpActive = true;
     ballState.jumpStartedAtMs = now;
     ballState.jumpHoldRemainingMs = this.jumpHoldMs;
+    // Consume coyote so a follow-up Space goes to the double jump (not another
+    // coyote jump) — keeps it to exactly one ground jump + one double jump.
+    ballState.lastGroundedAtMs = 0;
     console.log(`[Engine.World.applyJump] Jumped: ${ballId} grounded=${ballState.grounded}`);
+    return true;
   }
 
   applyJumpHold(ballId: string, jumpHeld: boolean) {
@@ -163,6 +201,65 @@ export class World {
     const impulseScale = dtMs / this.jumpHoldMs;
     body.applyLinearImpulse(new planck.Vec2(0, -this.jumpHoldImpulse * impulseScale), body.getWorldCenter(), true);
     ballState.jumpHoldRemainingMs = Math.max(0, ballState.jumpHoldRemainingMs - dtMs);
+  }
+
+  /**
+   * Mid-air double jump: a single upward impulse (no hold-to-go-higher). Cancels
+   * any downward momentum first so a fast fall still launches upward. Allowed
+   * only in the air, once per airtime (re-armed on landing).
+   */
+  applyDoubleJump(ballId: string) {
+    if (this.finishedPlayers.has(ballId)) return;
+
+    const ballState = this.balls.get(ballId);
+    if (!ballState) return;
+
+    if (ballState.grounded) return; // air-only (grounded jumps go through applyJump)
+    if (!ballState.canDoubleJump) return; // one per airtime
+
+    const body = ballState.body;
+    body.setAwake(true);
+    const vel = body.getLinearVelocity();
+    if (vel.y > 0) {
+      body.setLinearVelocity(new planck.Vec2(vel.x, 0)); // cancel downward fall
+    }
+    body.applyLinearImpulse(new planck.Vec2(0, -this.doubleJumpForce), body.getWorldCenter(), true);
+
+    ballState.canDoubleJump = false;
+  }
+
+  /**
+   * Mid-air dash: horizontal impulse in the A/D direction (dirX in {-1,0,1}),
+   * cancelling all vertical momentum and disabling gravity briefly for a flat
+   * dash. dirX === 0 = stall (zero all velocity, keep spin). Allowed only in the
+   * air, once per airtime (re-armed on landing).
+   */
+  applyDash(ballId: string, dirX: number) {
+    if (this.finishedPlayers.has(ballId)) return;
+
+    const ballState = this.balls.get(ballId);
+    if (!ballState) {
+      console.error("[Engine.World.applyDash] Tried dashing with ball that doesn't exist: ", ballId);
+      return;
+    }
+
+    if (ballState.grounded) return; // can't dash on the ground
+    if (!ballState.canDash) return; // one dash per airtime
+
+    const body = ballState.body;
+    body.setAwake(true);
+    const vel = body.getLinearVelocity();
+
+    if (dirX === 0) {
+      body.setLinearVelocity(new planck.Vec2(0, 0)); // stall (angular velocity preserved)
+    } else {
+      body.setLinearVelocity(new planck.Vec2(vel.x, 0)); // cancel vertical momentum
+      body.applyLinearImpulse(new planck.Vec2(dirX * this.dashXForce, 0), body.getWorldCenter(), true);
+      body.setGravityScale(0); // flat dash...
+      ballState.dashGravityUntilMs = this.nowMs() + DASH_GRAVITY_DISABLE_MS; // ...restored by updateDashGravity / on landing
+    }
+
+    ballState.canDash = false;
   }
 
   spawnPlayer(playerId: string): boolean {
@@ -219,6 +316,9 @@ export class World {
         jumpActive: false,
         jumpStartedAtMs: 0,
         jumpHoldRemainingMs: 0,
+        canDash: true,
+        canDoubleJump: true,
+        dashGravityUntilMs: 0,
       });
       return true;
     }
@@ -247,6 +347,10 @@ export class World {
     ballState.lastGroundedAtMs = 0;
     ballState.jumpActive = false;
     ballState.jumpHoldRemainingMs = 0;
+    ballState.canDash = true;
+    ballState.canDoubleJump = true;
+    ballState.dashGravityUntilMs = 0;
+    ballState.body.setGravityScale(1);
 
     return true;
   }
@@ -273,17 +377,63 @@ export class World {
 
   step() {
     this.updateGroundSensors();
+    this.updateDashGravity();
     this.physics.step(this.timestep);
+  }
+
+  /** Restores gravity on any ball whose dash-float window has elapsed. */
+  private updateDashGravity() {
+    const now = this.nowMs();
+    this.balls.forEach((ballState) => {
+      if (ballState.dashGravityUntilMs > 0 && now >= ballState.dashGravityUntilMs) {
+        ballState.body.setGravityScale(1);
+        ballState.dashGravityUntilMs = 0;
+      }
+    });
   }
 
   setTimestep(val: number) {
     this.timestep = val;
   }
 
-  loadLevel(level: LevelDefinition) {
+  loadLevel(level: LevelDefinition, hazardCatalog?: HazardCatalog) {
     this.spawnPoints = [];
+    let checkpointIndex = 0;
 
     level.objects.forEach((obj) => {
+      if (obj.type === 'hazard') {
+        const entry = hazardCatalog?.[obj.hazardKey];
+        if (!entry) return;
+        const body = resolveHazardBody(entry);
+        const cx = obj.x + body.offsetX;
+        const cy = obj.y + body.offsetY;
+        const hazardBody = this.physics.createBody({
+          type: 'static',
+          position: new planck.Vec2(toWorld(cx), toWorld(cy)),
+        });
+        hazardBody.setUserData('Hazard');
+        const shape =
+          body.shape === 'circle'
+            ? new planck.Circle(toWorld(body.radius))
+            : new planck.Box(toWorld(body.width / 2), toWorld(body.height / 2));
+        hazardBody.createFixture({ shape, isSensor: entry.isSensor ?? true });
+        return;
+      }
+
+      if (obj.type === 'checkpoint') {
+        const body = this.physics.createBody({
+          type: 'static',
+          position: new planck.Vec2(toWorld(obj.rect.x), toWorld(obj.rect.y)),
+        });
+        body.setUserData('Checkpoint-' + checkpointIndex);
+        body.createFixture({
+          shape: new planck.Box(toWorld(obj.rect.width / 2), toWorld(obj.rect.height / 2)),
+          isSensor: true,
+        });
+        checkpointIndex++;
+        return;
+      }
+
       if (obj.type === 'platform') {
         const body = this.physics.createBody({
           type: 'static',
@@ -358,6 +508,14 @@ export class World {
     this.finishListener = listener;
   }
 
+  setCheckpointListener(listener: CheckpointListener) {
+    this.checkpointListener = listener;
+  }
+
+  setHazardListener(listener: HazardListener) {
+    this.hazardListener = listener;
+  }
+
   dumpBodies() {
     let body = this.physics.getBodyList();
 
@@ -392,6 +550,8 @@ export class World {
     this.spawnPoints = [];
     this.physics = new planck.World(gravity);
     this.finishListener = null;
+    this.checkpointListener = null;
+    this.hazardListener = null;
 
     this.setupContactListeners();
   }
@@ -424,6 +584,14 @@ export class World {
       ballState.lastGroundedAtMs = this.nowMs();
       ballState.jumpActive = false;
       ballState.jumpHoldRemainingMs = 0;
+      // Re-arm both air actions on landing (floor only — sensor is below the ball).
+      ballState.canDash = true;
+      ballState.canDoubleJump = true;
+      // Restore gravity if we landed mid dash-float.
+      if (ballState.dashGravityUntilMs > 0) {
+        ballState.body.setGravityScale(1);
+        ballState.dashGravityUntilMs = 0;
+      }
     }
   }
 

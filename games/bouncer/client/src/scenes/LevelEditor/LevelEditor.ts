@@ -1,10 +1,26 @@
 import Phaser from 'phaser';
-import type { LevelDefinition, LevelObject, PlatformDef, PolygonDef, SpawnPointDef } from '@cup/bouncer-shared';
+import type {
+  LevelDefinition,
+  LevelObject,
+  PlatformDef,
+  PolygonDef,
+  SpawnPointDef,
+  CheckpointDef,
+  HazardDef,
+  HazardCatalog,
+} from '@cup/bouncer-shared';
+import { resolveHazardBody } from '@cup/bouncer-shared';
 import EditorTool, { ToolName } from './EditorTool';
 import SpawnPointTool from './SpawnPointTool';
 import PlatformTool from './PlatformTool';
 import PolygonTool from './PolygonTool';
 import GoalTool from './GoalTool';
+import CheckpointTool, { CHECKPOINT_RECT_COLOR, CHECKPOINT_RESPAWN_COLOR } from './CheckpointTool';
+import HazardTool from './HazardTool';
+
+const PLATFORM_FILL = 0x5aa9e6;
+const PLATFORM_STROKE = 0x2e6da4;
+const SPAWN_RADIUS = 26;
 
 type ObjectView = { def: LevelObject; view: Phaser.GameObjects.GameObject };
 
@@ -22,17 +38,45 @@ export class LevelEditorScene extends Phaser.Scene {
     spawnPoint: new SpawnPointTool(),
     polygon: new PolygonTool(),
     goal: new GoalTool(),
+    checkpoint: new CheckpointTool(),
+    hazard: new HazardTool(),
   };
   private isPanning = false;
   private panStartX = 0;
   private panStartY = 0;
+  private hazardCatalog: HazardCatalog;
+  // Right-click-drag to move the selected object. dragOriginalDef is the def at
+  // drag start (never mutated); each move re-derives from it + a grid-snapped delta.
+  private isDraggingObject = false;
+  private dragStartWorld = { x: 0, y: 0 };
+  private dragOriginalDef: LevelObject | null = null;
 
   constructor(
     levelName: string,
     private containerEl: HTMLElement,
+    hazardCatalog: HazardCatalog = {},
   ) {
     super('level-editor');
     this.levelName = levelName;
+    this.hazardCatalog = hazardCatalog;
+  }
+
+  preload() {
+    // Load each hazard's sprite under its catalog key so placed hazards + the
+    // picker can render it. Textures are game-global (shared with the UI scene).
+    for (const entry of Object.values(this.hazardCatalog)) {
+      this.load.image(entry.key, entry.spritePath);
+    }
+  }
+
+  getHazardCatalog(): HazardCatalog {
+    return this.hazardCatalog;
+  }
+
+  /** Selects a hazard from the picker and switches to the hazard tool. */
+  setSelectedHazard(key: string) {
+    (this.tools.hazard as HazardTool).setHazardKey(key);
+    this.setActiveTool('hazard');
   }
 
   fullscreenListener() {
@@ -123,10 +167,23 @@ export class LevelEditorScene extends Phaser.Scene {
 
   private drawObject(obj: LevelObject) {
     if (obj.type === 'platform') {
-      const rect = this.add.rectangle(obj.x, obj.y, obj.width, obj.height, 0x2f7a4f).setOrigin(0.5);
-      rect.setStrokeStyle(1, 0x1d4b31);
+      const rect = this.add.rectangle(obj.x, obj.y, obj.width, obj.height, PLATFORM_FILL).setOrigin(0.5);
+      rect.setStrokeStyle(1, PLATFORM_STROKE);
       rect.setDepth(1);
       return rect;
+    }
+
+    if (obj.type === 'checkpoint') {
+      // Container holds the sensor rect (list[0], used for selection highlight)
+      // plus the respawn marker.
+      const rect = this.add
+        .rectangle(obj.rect.x, obj.rect.y, obj.rect.width, obj.rect.height, CHECKPOINT_RECT_COLOR, 0.35)
+        .setOrigin(0.5);
+      rect.setStrokeStyle(1, CHECKPOINT_RESPAWN_COLOR);
+      const respawn = this.add.circle(obj.respawn.x, obj.respawn.y, 12, CHECKPOINT_RESPAWN_COLOR).setOrigin(0.5);
+      const container = this.add.container(0, 0, [rect, respawn]);
+      container.setDepth(1);
+      return container;
     }
 
     if (obj.type === 'polygon') {
@@ -139,7 +196,7 @@ export class LevelEditorScene extends Phaser.Scene {
     }
 
     if (obj.type === 'spawnPoint') {
-      const circle = this.add.circle(obj.x, obj.y, 26, 0xffffff).setOrigin(0.5);
+      const circle = this.add.circle(obj.x, obj.y, SPAWN_RADIUS, 0xffffff).setOrigin(0.5);
       circle.setDepth(2);
       return circle;
     }
@@ -149,6 +206,47 @@ export class LevelEditorScene extends Phaser.Scene {
       circle.setDepth(2);
       return circle;
     }
+
+    if (obj.type === 'hazard') {
+      return this.drawHazard(obj);
+    }
+  }
+
+  // Container = main visual (sprite/fallback) at list[0] + red body overlay for
+  // collision calibration. The overlay is drawn on top (semi-transparent +
+  // outline) so it stays visible over an opaque sprite.
+  private drawHazard(obj: HazardDef): Phaser.GameObjects.Container {
+    const entry = this.hazardCatalog[obj.hazardKey];
+    const container = this.add.container(0, 0);
+
+    if (entry && this.textures.exists(entry.key)) {
+      const sprite = this.add
+        .image(obj.x, obj.y, entry.key)
+        .setDisplaySize(entry.spriteWidth, entry.spriteHeight)
+        .setOrigin(0.5);
+      container.add(sprite);
+    } else {
+      const placeholder = this.add.rectangle(obj.x, obj.y, 40, 40, 0x888888, 0.6).setOrigin(0.5);
+      container.add(placeholder);
+    }
+
+    if (entry) {
+      const body = resolveHazardBody(entry);
+      const bx = obj.x + body.offsetX;
+      const by = obj.y + body.offsetY;
+      if (body.shape === 'circle') {
+        const c = this.add.circle(bx, by, body.radius, 0xff0000, 0.2);
+        c.setStrokeStyle(1.5, 0xff3030, 0.9);
+        container.add(c);
+      } else {
+        const r = this.add.rectangle(bx, by, body.width, body.height, 0xff0000, 0.2).setOrigin(0.5);
+        r.setStrokeStyle(1.5, 0xff3030, 0.9);
+        container.add(r);
+      }
+    }
+
+    container.setDepth(2);
+    return container;
   }
 
   private drawGrid() {
@@ -194,7 +292,11 @@ export class LevelEditorScene extends Phaser.Scene {
     );
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (pointer.rightButtonDown() && this.trySelectAt(pointer)) return;
+      if (pointer.rightButtonDown()) {
+        // Right-click selects; if something got selected, start dragging it.
+        if (this.trySelectAt(pointer)) this.beginObjectDrag(pointer);
+        return;
+      }
       if (pointer.middleButtonDown() || pointer.event?.shiftKey) {
         this.isPanning = true;
         this.panStartX = pointer.x;
@@ -204,9 +306,15 @@ export class LevelEditorScene extends Phaser.Scene {
 
     this.input.on('pointerup', () => {
       this.isPanning = false;
+      this.isDraggingObject = false;
+      this.dragOriginalDef = null;
     });
 
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (this.isDraggingObject) {
+        this.updateObjectDrag(pointer);
+        return;
+      }
       if (!this.isPanning) return;
       const dx = pointer.x - this.panStartX;
       const dy = pointer.y - this.panStartY;
@@ -218,6 +326,73 @@ export class LevelEditorScene extends Phaser.Scene {
       this.panStartY = pointer.y;
       this.drawGrid();
     });
+  }
+
+  private beginObjectDrag(pointer: Phaser.Input.Pointer) {
+    if (this.selectedIndex === null) return;
+    this.isDraggingObject = true;
+    this.dragStartWorld = { x: pointer.worldX, y: pointer.worldY };
+    // Capture the original def; we never mutate it, so totals stay drift-free.
+    this.dragOriginalDef = this.objects[this.selectedIndex];
+  }
+
+  private updateObjectDrag(pointer: Phaser.Input.Pointer) {
+    if (this.selectedIndex === null || !this.dragOriginalDef) return;
+
+    let dx = pointer.worldX - this.dragStartWorld.x;
+    let dy = pointer.worldY - this.dragStartWorld.y;
+
+    // Free movement by default; hold Shift to snap the object's anchor to the grid.
+    if (pointer.event?.shiftKey) {
+      const anchor = this.getObjectAnchor(this.dragOriginalDef);
+      const snapped = this.snapWorld(anchor.x + dx, anchor.y + dy);
+      dx = snapped.x - anchor.x;
+      dy = snapped.y - anchor.y;
+    }
+
+    const moved = this.translateObject(this.dragOriginalDef, dx, dy);
+    this.objects[this.selectedIndex] = moved;
+
+    // Redraw the view at the new position and keep it highlighted.
+    this.objectViews[this.selectedIndex].view.destroy();
+    const view = this.drawObject(moved);
+    if (view) {
+      this.objectViews[this.selectedIndex] = { def: moved, view };
+      this.updateSelectionHighlight(true);
+    }
+  }
+
+  // Representative point used for grid-snapping a drag (per object type).
+  private getObjectAnchor(def: LevelObject): { x: number; y: number } {
+    switch (def.type) {
+      case 'platform':
+      case 'spawnPoint':
+      case 'goal':
+      case 'hazard':
+        return { x: def.x, y: def.y };
+      case 'polygon':
+        return def.vertices[0] ?? { x: 0, y: 0 };
+      case 'checkpoint':
+        return { x: def.rect.x, y: def.rect.y };
+    }
+  }
+
+  private translateObject(def: LevelObject, dx: number, dy: number): LevelObject {
+    switch (def.type) {
+      case 'platform':
+      case 'spawnPoint':
+      case 'goal':
+      case 'hazard':
+        return { ...def, x: def.x + dx, y: def.y + dy };
+      case 'polygon':
+        return { ...def, vertices: def.vertices.map((v) => ({ x: v.x + dx, y: v.y + dy })) };
+      case 'checkpoint':
+        return {
+          ...def,
+          rect: { ...def.rect, x: def.rect.x + dx, y: def.rect.y + dy },
+          respawn: { x: def.respawn.x + dx, y: def.respawn.y + dy },
+        };
+    }
   }
 
   private onDestroy() {
@@ -246,6 +421,26 @@ export class LevelEditorScene extends Phaser.Scene {
         }
       } else if (def.type === 'polygon') {
         if (this.isPointInPolygon(x, y, def)) {
+          this.setSelectedIndex(i);
+          return true;
+        }
+      } else if (def.type === 'checkpoint') {
+        if (this.isPointInCheckpointRect(x, y, def)) {
+          this.setSelectedIndex(i);
+          return true;
+        }
+      } else if (def.type === 'hazard') {
+        if (this.isPointInHazard(x, y, def)) {
+          this.setSelectedIndex(i);
+          return true;
+        }
+      } else if (def.type === 'spawnPoint') {
+        if (this.isPointInCircle(x, y, def.x, def.y, SPAWN_RADIUS)) {
+          this.setSelectedIndex(i);
+          return true;
+        }
+      } else if (def.type === 'goal') {
+        if (this.isPointInCircle(x, y, def.x, def.y, def.size)) {
           this.setSelectedIndex(i);
           return true;
         }
@@ -280,6 +475,26 @@ export class LevelEditorScene extends Phaser.Scene {
     return x >= platform.x - halfW && x <= platform.x + halfW && y >= platform.y - halfH && y <= platform.y + halfH;
   }
 
+  private isPointInCheckpointRect(x: number, y: number, checkpoint: CheckpointDef) {
+    const { x: cx, y: cy, width, height } = checkpoint.rect;
+    const halfW = width / 2;
+    const halfH = height / 2;
+    return x >= cx - halfW && x <= cx + halfW && y >= cy - halfH && y <= cy + halfH;
+  }
+
+  private isPointInHazard(x: number, y: number, hazard: HazardDef) {
+    const entry = this.hazardCatalog[hazard.hazardKey];
+    const halfW = (entry?.spriteWidth ?? 40) / 2;
+    const halfH = (entry?.spriteHeight ?? 40) / 2;
+    return x >= hazard.x - halfW && x <= hazard.x + halfW && y >= hazard.y - halfH && y <= hazard.y + halfH;
+  }
+
+  private isPointInCircle(x: number, y: number, cx: number, cy: number, radius: number) {
+    const ddx = x - cx;
+    const ddy = y - cy;
+    return ddx * ddx + ddy * ddy <= radius * radius;
+  }
+
   private setSelectedIndex(index: number) {
     if (this.selectedIndex === index) return;
     this.clearSelection();
@@ -304,8 +519,18 @@ export class LevelEditorScene extends Phaser.Scene {
         rect.setFillStyle(0xdb2b2b);
         rect.setStrokeStyle(1, 0x8f1f1f);
       } else {
-        rect.setFillStyle(0x2f7a4f);
-        rect.setStrokeStyle(1, 0x1d4b31);
+        rect.setFillStyle(PLATFORM_FILL);
+        rect.setStrokeStyle(1, PLATFORM_STROKE);
+      }
+    } else if (entry.def.type === 'checkpoint') {
+      const container = entry.view as Phaser.GameObjects.Container;
+      const rect = container.list[0] as Phaser.GameObjects.Rectangle;
+      if (selected) {
+        rect.setFillStyle(0xdb2b2b, 0.45);
+        rect.setStrokeStyle(1, 0x8f1f1f);
+      } else {
+        rect.setFillStyle(CHECKPOINT_RECT_COLOR, 0.35);
+        rect.setStrokeStyle(1, CHECKPOINT_RESPAWN_COLOR);
       }
     } else if (entry.def.type === 'polygon') {
       const poly = entry.view as Phaser.GameObjects.Polygon;
@@ -316,6 +541,18 @@ export class LevelEditorScene extends Phaser.Scene {
         poly.setFillStyle(0x4a90e2);
         poly.setStrokeStyle(2, 0x2e5a8a);
       }
+    } else if (entry.def.type === 'hazard') {
+      const main = (entry.view as Phaser.GameObjects.Container).list[0];
+      if (main instanceof Phaser.GameObjects.Image) {
+        if (selected) main.setTint(0xff7777);
+        else main.clearTint();
+      } else if (main instanceof Phaser.GameObjects.Rectangle) {
+        main.setFillStyle(selected ? 0xdb2b2b : 0x888888, selected ? 0.85 : 0.6);
+      }
+    } else if (entry.def.type === 'spawnPoint') {
+      (entry.view as Phaser.GameObjects.Arc).setFillStyle(selected ? 0xdb2b2b : 0xffffff);
+    } else if (entry.def.type === 'goal') {
+      (entry.view as Phaser.GameObjects.Arc).setFillStyle(selected ? 0xdb2b2b : 0x22dd29);
     }
   }
 

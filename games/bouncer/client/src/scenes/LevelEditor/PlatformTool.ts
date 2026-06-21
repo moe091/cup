@@ -16,7 +16,7 @@ export default class PlatformTool implements EditorTool {
     const start = this.scene.snapWorld(pointer.worldX, pointer.worldY);
     this.start = start;
     this.preview = this.scene.add
-      .rectangle(start.x, start.y, this.scene.gridSize, this.scene.gridSize, 0x2f7a4f, 0.5)
+      .rectangle(start.x, start.y, this.scene.gridSize, this.scene.gridSize, 0x5aa9e6, 0.5)
       .setOrigin(0.5);
   };
 

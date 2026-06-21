@@ -62,6 +62,7 @@ export function resolvePhysicsConfig(partial?: Partial<BouncerPhysicsConfig> | n
   return {
     jumpPower: pickFinite(partial?.jumpPower, DEFAULT_PHYSICS_CONFIG.jumpPower),
     moveAcceleration: pickFinite(partial?.moveAcceleration, DEFAULT_PHYSICS_CONFIG.moveAcceleration),
-    dashPower: pickFinite(partial?.dashPower, DEFAULT_PHYSICS_CONFIG.dashPower),
+    doubleJumpForce: pickFinite(partial?.doubleJumpForce, DEFAULT_PHYSICS_CONFIG.doubleJumpForce),
+    dashXForce: pickFinite(partial?.dashXForce, DEFAULT_PHYSICS_CONFIG.dashXForce),
   };
 }

@@ -53,6 +53,13 @@ export type RemotePlayerStateUpdate = PlayerStateUpdate & {
   serverTimeMs: number;
 };
 
+// Sent client -> server when the local player first crosses a checkpoint.
+// index = creation-order checkpoint index; timeMs = elapsed since round start.
+export type CheckpointReached = {
+  index: number;
+  timeMs: number;
+};
+
 export type PlayerSpawn = {
   playerId: string;
   x: number;
@@ -132,6 +139,11 @@ export type InputState = {
   move: -1 | 0 | 1;
   jumpPressed: boolean;
   jumpHeld: boolean;
+  // Dash: dashPressed is true only on the tick a dash begins; dashX is the A/D
+  // direction at that moment (0 = stall). Optional so non-producing call sites
+  // (e.g. the dormant server input path) can omit them.
+  dashPressed?: boolean;
+  dashX?: -1 | 0 | 1;
 };
 
 export type PlayerInputState = InputState & {
@@ -146,8 +158,13 @@ export type {
   SpawnPointDef,
   PolygonDef,
   GoalDef,
+  CheckpointDef,
+  HazardDef,
   LevelListItem,
 } from './level.js';
+
+export { resolveHazardBody, coerceHazardCatalog, DEFAULT_BODY_SCALE } from './hazards.js';
+export type { HazardBody, HazardCatalogEntry, HazardCatalog, ResolvedHazardBody } from './hazards.js';
 
 export const scaleFactor = 100; //pixels per planck.js unit(meter). Const because this needs to be consistent between client and server - nobody can change it anywhere except here
 export const toWorld = (pixels: number) => pixels / scaleFactor;

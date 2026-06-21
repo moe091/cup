@@ -9,6 +9,9 @@ import type {
   RemotePlayerStateUpdate,
   RoundResultsUpdate,
   MatchResultsUpdate,
+  CheckpointDef,
+  CheckpointReached,
+  HazardCatalog,
 } from '@cup/bouncer-shared';
 import { InputController } from '../misc/InputController';
 import { ParallaxBackground } from '../misc/ParallaxBackground';
@@ -75,6 +78,9 @@ export class GameplayScene extends Phaser.Scene {
   private sendAccumulatorMs = 0;
   private localSeq = 0;
   private jumpPressedQueued = false;
+  // Dash edge + direction captured at key-press, consumed on the next sim tick.
+  private dashQueued = false;
+  private dashDirX: -1 | 0 | 1 = 0;
   // Recent local-ball states (own clock) for delayed self-rendering.
   private ownHistory: Array<{ tMs: number; x: number; y: number; angle: number }> = [];
   private inputState: InputState = { move: 0, jumpHeld: false, jumpPressed: false };
@@ -88,6 +94,20 @@ export class GameplayScene extends Phaser.Scene {
   private running = false;
   private hasReportedFinish = false;
   private finishedOrder: string[] = [];
+
+  // Checkpoints: single-use per player. Tracks which have been reached, the
+  // respawn point of the last one (for step-4 hazard respawns), and the round
+  // start time used to compute reach times.
+  private checkpointDefs: CheckpointDef[] = [];
+  private reachedCheckpoints = new Set<number>();
+  private lastCheckpointRespawn: { x: number; y: number } | null = null;
+  private roundStartMs = 0;
+  private checkpointToastText: Phaser.GameObjects.Text | undefined;
+
+  // Hazards: spinning sprites to animate each frame, and a pending respawn set on
+  // death (applied just after the physics step — never inside the contact callback).
+  private hazardSprites: Array<{ sprite: Phaser.GameObjects.Image; rotationSpeed: number }> = [];
+  private pendingRespawn: { x: number; y: number } | null = null;
   private roundResultsModal: Phaser.GameObjects.Container | null = null;
   private matchResultsModal: Phaser.GameObjects.Container | null = null;
 
@@ -113,6 +133,7 @@ export class GameplayScene extends Phaser.Scene {
     private readonly emit: (name: string, data: unknown) => void,
     private containerEl: HTMLElement,
     config?: BouncerConfigInput,
+    private hazardCatalog: HazardCatalog = {},
   ) {
     super('gameplay');
     this.net = resolveNetConfig(config?.netcode);
@@ -157,6 +178,7 @@ export class GameplayScene extends Phaser.Scene {
 
     this.inputController.onInput(this, this.handleInput.bind(this));
     this.setupDebugHud();
+    this.createCheckpointToast();
 
     this.events.once('destroy', this.onDestroy, this);
 
@@ -178,6 +200,9 @@ export class GameplayScene extends Phaser.Scene {
     this.running = running;
     if (running) {
       this.clearCountdown();
+      // Round clock starts when the round goes live; checkpoint times are
+      // measured from here.
+      this.roundStartMs = performance.now();
     }
   }
 
@@ -255,6 +280,10 @@ export class GameplayScene extends Phaser.Scene {
 
     this.renderLocalPlayer();
     this.renderRemotePlayers();
+
+    for (const h of this.hazardSprites) {
+      h.sprite.angle += (h.rotationSpeed * delta) / 1000;
+    }
 
     netDebug.maybeFlush(performance.now());
     this.updateDebugHud();
@@ -339,6 +368,10 @@ export class GameplayScene extends Phaser.Scene {
     if (input.jumpPressed) {
       this.jumpPressedQueued = true;
     }
+    if (input.dashPressed) {
+      this.dashQueued = true;
+      this.dashDirX = input.dashX ?? 0;
+    }
   }
 
   onRemotePlayerState(update: RemotePlayerStateUpdate) {
@@ -372,6 +405,8 @@ export class GameplayScene extends Phaser.Scene {
 
     this.levelDef = level;
     this.running = false;
+    this.checkpointDefs = level.objects.filter((o): o is CheckpointDef => o.type === 'checkpoint');
+    this.hazardSprites = [];
 
     let minX = 0;
     let minY = 0;
@@ -414,6 +449,23 @@ export class GameplayScene extends Phaser.Scene {
         });
       } else if (obj.type === 'goal') {
         this.add.circle(obj.x, obj.y, obj.size, 0xffffff);
+      } else if (obj.type === 'checkpoint') {
+        const zone = this.add
+          .rectangle(obj.rect.x, obj.rect.y, obj.rect.width, obj.rect.height, 0x66ff99, 0.18)
+          .setDepth(-5);
+        this.levelRects.push(zone);
+      } else if (obj.type === 'hazard') {
+        const entry = this.hazardCatalog[obj.hazardKey];
+        if (entry && this.textures.exists(entry.key)) {
+          const sprite = this.add
+            .image(obj.x, obj.y, entry.key)
+            .setDisplaySize(entry.spriteWidth, entry.spriteHeight)
+            .setOrigin(0.5)
+            .setDepth(-3);
+          this.levelRects.push(sprite);
+          const speed = entry.spriteRotationSpeed ?? 0;
+          if (speed !== 0) this.hazardSprites.push({ sprite, rotationSpeed: speed });
+        }
       }
     });
 
@@ -479,6 +531,7 @@ export class GameplayScene extends Phaser.Scene {
   private stepLocalSimulation() {
     if (!this.engine || !this.running) {
       this.jumpPressedQueued = false;
+      this.dashQueued = false;
       return;
     }
 
@@ -487,10 +540,21 @@ export class GameplayScene extends Phaser.Scene {
       move: this.inputState.move,
       jumpHeld: this.inputState.jumpHeld,
       jumpPressed: this.jumpPressedQueued,
+      dashPressed: this.dashQueued,
+      dashX: this.dashDirX,
     };
 
     this.jumpPressedQueued = false;
+    this.dashQueued = false;
     this.engine.step([input]);
+
+    // Apply a pending hazard respawn AFTER the step (safe — outside the contact
+    // callback). Clearing ownHistory snaps the local ball instead of sliding it.
+    if (this.pendingRespawn) {
+      this.engine.setPlayerPosition(this.playerId, this.pendingRespawn.x, this.pendingRespawn.y);
+      this.ownHistory = [];
+      this.pendingRespawn = null;
+    }
 
     const snapshot = this.engine.getSnapshot();
     const me = snapshot.balls.find((ball) => ball.id === this.playerId);
@@ -612,8 +676,14 @@ export class GameplayScene extends Phaser.Scene {
       return;
     }
 
-    this.engine = new Engine(1 / LOCAL_SIM_HZ, this.onLocalPlayerFinished.bind(this), this.physicsConfig);
-    this.engine.loadLevel(this.levelDef);
+    this.engine = new Engine(
+      1 / LOCAL_SIM_HZ,
+      this.onLocalPlayerFinished.bind(this),
+      this.physicsConfig,
+      this.onLocalCheckpoint.bind(this),
+      this.onLocalHazard.bind(this),
+    );
+    this.engine.loadLevel(this.levelDef, this.hazardCatalog);
     this.engine.spawnPlayerAt(this.playerId, this.mySpawn.x, this.mySpawn.y);
 
     for (const sprite of this.balls.values()) {
@@ -646,8 +716,12 @@ export class GameplayScene extends Phaser.Scene {
     this.localAccumulatorMs = 0;
     this.sendAccumulatorMs = 0;
     this.jumpPressedQueued = false;
+    this.dashQueued = false;
     this.localSeq = 0;
     this.ownHistory = [];
+    this.reachedCheckpoints.clear();
+    this.lastCheckpointRespawn = null;
+    this.pendingRespawn = null;
   }
 
   // Emits the local player's current engine state via the normal player_state
@@ -684,6 +758,75 @@ export class GameplayScene extends Phaser.Scene {
 
     this.hasReportedFinish = true;
     this.emit('player_finished', {});
+  }
+
+  // Fired by the local engine when the local ball enters a checkpoint sensor.
+  // Single-use per player: only the first contact with each checkpoint counts.
+  private onLocalCheckpoint(playerId: string, index: number) {
+    if (playerId !== this.playerId) return;
+    if (this.reachedCheckpoints.has(index)) return;
+    this.reachedCheckpoints.add(index);
+
+    const def = this.checkpointDefs[index];
+    if (def) {
+      this.lastCheckpointRespawn = { x: def.respawn.x, y: def.respawn.y };
+    }
+
+    const timeMs = performance.now() - this.roundStartMs;
+    this.showCheckpointToast(index + 1, timeMs);
+    this.emit('checkpoint_reached', { index, timeMs } satisfies CheckpointReached);
+  }
+
+  // Fired by the local engine when the local ball touches a hazard. Queues a
+  // respawn (applied just after the step) and reports the death for stats.
+  private onLocalHazard(playerId: string) {
+    if (playerId !== this.playerId) return;
+    if (this.pendingRespawn) return; // already dying this tick
+    this.pendingRespawn = this.lastCheckpointRespawn ?? this.mySpawn;
+    this.emit('player_died', {});
+  }
+
+  private createCheckpointToast() {
+    // Wrapped in a zoom-compensated container so it stays a constant on-screen
+    // size + position despite the zoomed-out gameplay camera.
+    const zoom = this.cameras.main.zoom || 1;
+    const comp = 1 / zoom;
+    const cx = this.scale.width / 2;
+    const root = this.add
+      .container(cx * (1 - comp), (this.scale.height / 2) * (1 - comp))
+      .setScrollFactor(0)
+      .setScale(comp)
+      .setDepth(9_500);
+    this.checkpointToastText = this.add
+      .text(cx, this.scale.height * 0.16, '', {
+        fontFamily: 'Arial',
+        fontSize: '40px',
+        color: '#d6ffe0',
+        fontStyle: 'bold',
+        stroke: '#06340f',
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setAlpha(0);
+    root.add(this.checkpointToastText);
+  }
+
+  private showCheckpointToast(number: number, timeMs: number) {
+    if (!this.checkpointToastText) return;
+    this.checkpointToastText.setText(`Checkpoint ${number}: ${this.formatRaceTime(timeMs)}`);
+    this.tweens.killTweensOf(this.checkpointToastText);
+    this.checkpointToastText.setAlpha(1);
+    this.tweens.add({ targets: this.checkpointToastText, alpha: 0, delay: 1400, duration: 600 });
+  }
+
+  // M:SS.cc — e.g. 8420ms -> "0:08.42"
+  private formatRaceTime(ms: number): string {
+    const safeMs = Math.max(0, ms);
+    const minutes = Math.floor(safeMs / 60000);
+    const seconds = Math.floor((safeMs % 60000) / 1000);
+    const centis = Math.floor((safeMs % 1000) / 10);
+    return `${minutes}:${String(seconds).padStart(2, '0')}.${String(centis).padStart(2, '0')}`;
   }
 
   showRoundResultsModal(results: RoundResultsUpdate, isLeader: boolean) {

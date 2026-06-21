@@ -10,6 +10,7 @@ import type {
   FinishOrderUpdate,
   RoundResultsUpdate,
   RoundEndReason,
+  CheckpointReached,
 } from '@cup/bouncer-shared';
 import type { PlayerId, Broadcast, BroadcastExcept } from './types.js';
 import { asPlayerId, asSocketId } from './types.js';
@@ -43,6 +44,11 @@ export class MatchStateMachine {
   private finishTimesMs = new Map<PlayerId, number>();
   private firstFinisherAtMs: number | null = null;
   private roundStartAtMs: number | null = null;
+  // playerId -> (checkpoint index -> client-reported reach time, ms). First
+  // report per checkpoint wins. Recorded for future split-time / scoreboard use.
+  private checkpointTimesMs = new Map<PlayerId, Map<number, number>>();
+  // playerId -> hazard death count this round (for a future round-end scoreboard).
+  private deathsByPlayer = new Map<PlayerId, number>();
   private finishTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
   private countdownHandle: ReturnType<typeof setTimeout> | null = null;
 
@@ -262,6 +268,50 @@ export class MatchStateMachine {
     this.maybeEndRoundIfAllFinished();
   }
 
+  // Records a player's checkpoint reach time (first report per checkpoint wins).
+  // Stored for future split-time / scoreboard features; no broadcast yet.
+  onCheckpointReached(socket: Socket, data: unknown) {
+    if (this.phase !== 'IN_PROGRESS') {
+      return;
+    }
+    const playerId = socket.data.playerId as PlayerId;
+    if (!this.match.getPlayer(playerId)) {
+      return;
+    }
+    if (!data || typeof data !== 'object') {
+      return;
+    }
+    const c = data as Partial<CheckpointReached>;
+    if (!this.isFiniteNumber(c.index) || !this.isFiniteNumber(c.timeMs)) {
+      return;
+    }
+
+    let perPlayer = this.checkpointTimesMs.get(playerId);
+    if (!perPlayer) {
+      perPlayer = new Map<number, number>();
+      this.checkpointTimesMs.set(playerId, perPlayer);
+    }
+    if (perPlayer.has(c.index)) {
+      return; // single-use: keep the first reported time
+    }
+    perPlayer.set(c.index, Math.max(0, c.timeMs));
+    console.log(`[checkpoint] ${playerId} reached CP#${c.index} at ${Math.round(c.timeMs)}ms`);
+  }
+
+  // Records a hazard death (count per player this round) for a future scoreboard.
+  onPlayerDied(socket: Socket) {
+    if (this.phase !== 'IN_PROGRESS') {
+      return;
+    }
+    const playerId = socket.data.playerId as PlayerId;
+    if (!this.match.getPlayer(playerId)) {
+      return;
+    }
+    const next = (this.deathsByPlayer.get(playerId) ?? 0) + 1;
+    this.deathsByPlayer.set(playerId, next);
+    console.log(`[death] ${playerId} died (round deaths: ${next})`);
+  }
+
   destroy() {
     this.clearTimers();
   }
@@ -434,6 +484,8 @@ export class MatchStateMachine {
   private resetRoundRuntime() {
     this.finishedPlayerIds = [];
     this.finishTimesMs.clear();
+    this.checkpointTimesMs.clear();
+    this.deathsByPlayer.clear();
     this.firstFinisherAtMs = null;
     this.roundStartAtMs = null;
     if (this.finishTimeoutHandle) {

@@ -10,6 +10,7 @@ export class LevelEditorUiScene extends Phaser.Scene {
     label: Phaser.GameObjects.Text;
   }> = [];
   private editor?: LevelEditorScene;
+  private hazardPicker?: Phaser.GameObjects.Container;
 
   constructor() {
     super('level-editor-ui');
@@ -34,7 +35,97 @@ export class LevelEditorUiScene extends Phaser.Scene {
 
     this.events.once('shutdown', () => {
       this.editor?.events.off('tool_changed', this.updateToolbarHighlight, this);
+      this.closeHazardPicker();
     });
+  }
+
+  private toggleHazardPicker() {
+    if (this.hazardPicker) {
+      this.closeHazardPicker();
+    } else {
+      this.openHazardPicker();
+    }
+  }
+
+  private closeHazardPicker() {
+    this.hazardPicker?.destroy(true);
+    this.hazardPicker = undefined;
+  }
+
+  private openHazardPicker() {
+    if (!this.editor) return;
+    const entries = Object.values(this.editor.getHazardCatalog());
+
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const areaX = this.toolbarWidth + (w - this.toolbarWidth) / 2; // center of the non-toolbar area
+    const cy = h / 2;
+    const panelW = Math.min(640, w - this.toolbarWidth - 40);
+    const panelH = Math.min(460, h - 40);
+
+    const container = this.add.container(0, 0).setDepth(500);
+
+    const backdrop = this.add.rectangle(w / 2, cy, w, h, 0x000000, 0.5).setInteractive();
+    backdrop.on('pointerup', () => this.closeHazardPicker());
+
+    const panel = this.add.rectangle(areaX, cy, panelW, panelH, 0x161616, 0.98).setInteractive();
+    panel.setStrokeStyle(2, 0x333333);
+
+    const title = this.add
+      .text(areaX, cy - panelH / 2 + 22, 'Select Hazard', { fontSize: '18px', color: '#ffffff' })
+      .setOrigin(0.5);
+
+    container.add([backdrop, panel, title]);
+
+    if (entries.length === 0) {
+      const empty = this.add
+        .text(areaX, cy, 'No hazards in hazards.json', { fontSize: '14px', color: '#aaaaaa' })
+        .setOrigin(0.5);
+      container.add(empty);
+    }
+
+    const cols = 4;
+    const cell = 130;
+    const visibleCols = Math.min(cols, Math.max(1, entries.length));
+    const startX = areaX - (visibleCols * cell) / 2 + cell / 2;
+    const startY = cy - panelH / 2 + 90;
+
+    entries.forEach((entry, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x = startX + col * cell;
+      const y = startY + row * cell;
+
+      const itemBg = this.add
+        .rectangle(x, y, cell - 14, cell - 14, 0x222222)
+        .setStrokeStyle(1, 0x444444)
+        .setInteractive({ useHandCursor: true });
+
+      let icon: Phaser.GameObjects.GameObject;
+      if (this.textures.exists(entry.key)) {
+        const maxDim = 72;
+        const scale = Math.min(maxDim / entry.spriteWidth, maxDim / entry.spriteHeight, 1);
+        icon = this.add
+          .image(x, y - 12, entry.key)
+          .setDisplaySize(entry.spriteWidth * scale, entry.spriteHeight * scale)
+          .setOrigin(0.5);
+      } else {
+        icon = this.add.rectangle(x, y - 12, 60, 60, 0x555555).setOrigin(0.5);
+      }
+
+      const label = this.add
+        .text(x, y + (cell - 14) / 2 - 16, entry.displayName, { fontSize: '12px', color: '#dddddd' })
+        .setOrigin(0.5);
+
+      itemBg.on('pointerup', () => {
+        this.editor?.setSelectedHazard(entry.key);
+        this.closeHazardPicker();
+      });
+
+      container.add([itemBg, icon, label]);
+    });
+
+    this.hazardPicker = container;
   }
 
   private createToolbar() {
@@ -46,6 +137,8 @@ export class LevelEditorUiScene extends Phaser.Scene {
       { tool: 'spawnPoint', label: 'Spawn' },
       { tool: 'polygon', label: 'Poly' },
       { tool: 'goal', label: 'Goal' },
+      { tool: 'checkpoint', label: 'Check' },
+      { tool: 'hazard', label: 'Hazards' },
     ];
 
     const startY = 40;
@@ -63,7 +156,15 @@ export class LevelEditorUiScene extends Phaser.Scene {
       label.setOrigin(0.5);
       label.setDepth(102);
 
-      bg.on('pointerup', () => this.editor?.setActiveTool(item.tool));
+      bg.on('pointerup', () => {
+        // The Hazards button opens the picker instead of directly switching tool;
+        // picking a hazard activates the hazard tool.
+        if (item.tool === 'hazard') {
+          this.toggleHazardPicker();
+        } else {
+          this.editor?.setActiveTool(item.tool);
+        }
+      });
 
       this.toolbarItems.push({ tool: item.tool, bg, label });
     });

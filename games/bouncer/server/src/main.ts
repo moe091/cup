@@ -78,6 +78,8 @@ ioServer.on('connection', (socket) => {
   // Debug RTT/clock-offset probe: echo the client's timestamp + our server time.
   socket.on('cs_ping', (data) => socket.emit('cs_pong', { t0: data?.t0, ts: Date.now() }));
   socket.on('player_finished', () => match.onPlayerFinished(socket));
+  socket.on('checkpoint_reached', (data) => match.onCheckpointReached(socket, data));
+  socket.on('player_died', () => match.onPlayerDied(socket));
   socket.on('set_ready', (data) => match.onSetReady(socket, data));
   socket.on('round_ready', () => match.onRoundReady(socket));
   socket.on('start_match', () => match.onStartMatch(socket));

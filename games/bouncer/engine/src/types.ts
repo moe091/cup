@@ -12,3 +12,7 @@ export type Point = {
 };
 
 export type FinishListener = (playerId: string) => void;
+
+export type CheckpointListener = (playerId: string, checkpointIndex: number) => void;
+
+export type HazardListener = (playerId: string) => void;

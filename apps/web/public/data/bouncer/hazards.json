@@ -1,0 +1,11 @@
+{
+  "sawblade": {
+    "displayName": "Sawblade",
+    "spritePath": "/games/bouncer/hazards/sawblade.png",
+    "spriteWidth": 256,
+    "spriteHeight": 256,
+    "spriteRotationSpeed": 360,
+    "isSensor": true,
+    "body": { "shape": "circle" }
+  }
+}

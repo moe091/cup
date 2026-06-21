@@ -6,8 +6,10 @@ import {
   type BouncerConfigInput,
 } from "@cup/bouncer-client";
 import type { LobbyJoinResponse } from "@cup/shared-types";
+import type { HazardCatalog } from "@cup/bouncer-shared";
 import { buildCsrfHeaders } from "../../../api/csrf";
 import { loadGameConfig } from "../../../config/gameConfig";
+import { loadHazardCatalog } from "../../../config/hazardCatalog";
 
 type Params = { matchId: string };
 
@@ -26,12 +28,14 @@ export function BouncerGame() {
       lobbyInfo: LobbyJoinResponse,
       gameContainerEl: HTMLElement,
       config?: BouncerConfigInput,
+      hazardCatalog?: HazardCatalog,
     ): BouncerConnection {
       const bouncerConnection = connectBouncer(
         lobbyInfo.socketUrl,
         lobbyInfo.ticket,
         gameContainerEl,
         config,
+        hazardCatalog,
       );
       console.log("Got bouncerConnection:", bouncerConnection);
 
@@ -61,8 +65,8 @@ export function BouncerGame() {
     joinLobby()
       .then(async (res) => {
         console.log("Joining lobby with data:", res);
-        const gameConfig = await loadGameConfig();
-        conn = connectToLobby(res, gameEl, gameConfig.bouncer);
+        const [gameConfig, hazardCatalog] = await Promise.all([loadGameConfig(), loadHazardCatalog()]);
+        conn = connectToLobby(res, gameEl, gameConfig.bouncer, hazardCatalog);
       })
       .catch((err) => {
         if (err?.name === "AbortError") return;

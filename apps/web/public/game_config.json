@@ -9,7 +9,8 @@
     "physics": {
       "jumpPower": 1.1,
       "moveAcceleration": 0.025,
-      "dashPower": 2.5
+      "doubleJumpForce": 1.1,
+      "dashXForce": 1.8
     }
   }
 }

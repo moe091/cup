@@ -30,7 +30,24 @@ export type GoalDef = {
   size: number;
 };
 
-export type LevelObject = PlatformDef | PolygonDef | SpawnPointDef | GoalDef;
+export type CheckpointDef = {
+  type: 'checkpoint';
+  name?: string;
+  // The sensor zone players pass through.
+  rect: { x: number; y: number; width: number; height: number };
+  // Where players respawn after a hazard if this was their last checkpoint.
+  respawn: { x: number; y: number };
+};
+
+export type HazardDef = {
+  type: 'hazard';
+  // References a HazardCatalogEntry by key; the catalog supplies sprite + body.
+  hazardKey: string;
+  x: number;
+  y: number;
+};
+
+export type LevelObject = PlatformDef | PolygonDef | SpawnPointDef | GoalDef | CheckpointDef | HazardDef;
 
 export type LevelDefinition = {
   name: string;

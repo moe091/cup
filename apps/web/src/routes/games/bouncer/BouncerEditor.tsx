@@ -5,6 +5,7 @@ import {
 } from "@cup/bouncer-client";
 import { listLevels, type LevelListItem } from "../../../api/bouncer";
 import { buildCsrfHeaders } from "../../../api/csrf";
+import { loadHazardCatalog } from "../../../config/hazardCatalog";
 
 export function BouncerEditor() {
   const editorRef = useRef<BouncerEditorConnection | null>(null);
@@ -40,10 +41,18 @@ export function BouncerEditor() {
 
     editorRef.current?.disconnect();
     el.replaceChildren();
-    editorRef.current = createBouncerEditor(el, "Unnamed");
+
+    let disposed = false;
+    // Fetch the hazard catalog before launching the editor so its preload can
+    // load the hazard sprites.
+    loadHazardCatalog().then((catalog) => {
+      if (disposed || !containerRef.current) return;
+      editorRef.current = createBouncerEditor(containerRef.current, "Unnamed", catalog);
+    });
 
     const container = containerRef.current;
     return () => {
+      disposed = true;
       editorRef.current?.disconnect();
       editorRef.current = null;
       container?.replaceChildren();

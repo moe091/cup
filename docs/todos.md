@@ -1,5 +1,12 @@
 # TODOS
 
+
+### Before sharing with friends:
+- Update chat page to show a prompt to join/browse communities if a user doesn't belong to any communities
+- Add PFP to messageRow in chat
+- Fix toast message pushing entire chat component down, causing it to go off the bottom of the screen
+- refreshing while on chat page on live site causes 403 error
+
 ### High Level:
 - Allow adding friends, joining communities. Add Friends and Communities pages to profile
 - Render pfps in chat
@@ -69,3 +76,21 @@
     - can simply cache in-memory, but should probably wait until next step(implementing redis) and using that
 - Redis to cache a lot of repeated DB requests, such as emoji checks, probably chat history, and likely channel auth checks
 - Possibly remove some db reads/writes around messaging, e.g. validations that won't cause any real problems if they are violated(reply channel validation for example)
+
+
+
+### Bouncer - current plans
+- Add checkpoints and hazards. Checkpoints are sensor objects(potentially invisible) that, when passed through, are set as the 'last crossed checkpoint'. Hazards are sensor objects
+    that, when touched, freeze the balls position and play some kind of dieing/exploding animation(~1s or less) and then instantly teleports the player to the last checkpoing(will
+    need to either add a way in the editor to place a checkpoint rectangle AND add a respawn point correlated with that checkpoint, or just always respawn at the mid-point of the 
+    checkpoint rect). No need for server-side validation, I'm not worrying about anti-cheat for casual minigames like this(at least not yet).
+
+- Improvements/Juice:
+    - Make sawblades actually spin. 
+    - Add some moving and pulsing hazards(lasers?)
+    - pulsing plats
+    - custom non-hazard objects(e.g. windmill)
+    - double jump effect/animation
+    - dash effect/animation
+    - death effect/animation
+    - sound fx: jump, doublejump, dash, death, checkpoint, finish, wall hit, background music

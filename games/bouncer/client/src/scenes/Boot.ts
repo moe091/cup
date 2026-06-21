@@ -1,11 +1,17 @@
 import Phaser from 'phaser';
+import type { HazardCatalog } from '@cup/bouncer-shared';
 
 export class BootScene extends Phaser.Scene {
-  constructor() {
+  constructor(private hazardCatalog: HazardCatalog = {}) {
     super('boot');
   }
 
   preload() {
+    // Load hazard sprites by catalog key so the gameplay scene can render them.
+    for (const entry of Object.values(this.hazardCatalog)) {
+      this.load.image(entry.key, entry.spritePath);
+    }
+
     this.load.image('bg_texture', '/games/bouncer/background.png');
     this.load.image('nebula_blue.png', '/games/bouncer/nebula_blue.png');
     this.load.image('nebula_pink.png', '/games/bouncer/nebula_pink.png');

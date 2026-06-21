@@ -12,6 +12,7 @@ import {
   type MatchResultsUpdate,
   MatchJoinInfo,
   LevelListItem,
+  type HazardCatalog,
 } from '@cup/bouncer-shared';
 import { LevelEditorScene } from './scenes/LevelEditor/LevelEditor';
 import { loadLevelDef } from './api/levels';
@@ -33,6 +34,7 @@ export function connectBouncer(
   ticket: string,
   containerEl: HTMLElement,
   config?: BouncerConfigInput,
+  hazardCatalog?: HazardCatalog,
 ): BouncerConnection {
   let bouncerClient: BouncerClient | null = null;
 
@@ -45,7 +47,7 @@ export function connectBouncer(
   socket.on('connect', () => {
     console.log('Connected to server with socket id:', socket.id);
 
-    if (!bouncerClient) bouncerClient = new BouncerClient(socket, containerEl, config);
+    if (!bouncerClient) bouncerClient = new BouncerClient(socket, containerEl, config, hazardCatalog);
     else console.warn("connectBouncer() - socket.on('connect') :: bouncerClient already exists! Keeping old client.");
   });
 
@@ -124,8 +126,12 @@ export type BouncerEditorConnection = {
   loadExistingLevel: (id: string) => void;
 };
 
-export function createBouncerEditor(containerEl: HTMLElement, levelName: string): BouncerEditorConnection {
-  const editor = new BouncerEditorClient(containerEl, levelName);
+export function createBouncerEditor(
+  containerEl: HTMLElement,
+  levelName: string,
+  hazardCatalog?: HazardCatalog,
+): BouncerEditorConnection {
+  const editor = new BouncerEditorClient(containerEl, levelName, hazardCatalog);
 
   return {
     disconnect: () => editor.destroy(),
