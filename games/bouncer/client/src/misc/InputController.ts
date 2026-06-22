@@ -10,6 +10,12 @@ const EMPTY_STATE: InputState = {
   dashX: 0,
 };
 
+/**
+ * Controls (multiple keys can drive the same action):
+ *  - Move:  A / D  +  ← / →
+ *  - Jump:  W  +  ↑      (grounded jump or mid-air double jump — engine decides)
+ *  - Dash:  Space  +  left mouse click   (none held = stall)
+ */
 export class InputController {
   private disposeInput: () => void = () => {};
   private lastState: InputState = { ...EMPTY_STATE };
@@ -19,10 +25,18 @@ export class InputController {
     if (!keyboard) return this.disposeInput;
     this.disposeInput();
 
-    const left = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
-    const right = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
-    const jump = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    const dash = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
+    const KC = Phaser.Input.Keyboard.KeyCodes;
+    const aKey = keyboard.addKey(KC.A);
+    const dKey = keyboard.addKey(KC.D);
+    const leftArrow = keyboard.addKey(KC.LEFT);
+    const rightArrow = keyboard.addKey(KC.RIGHT);
+    const wKey = keyboard.addKey(KC.W);
+    const upArrow = keyboard.addKey(KC.UP);
+    const spaceKey = keyboard.addKey(KC.SPACE);
+
+    const leftDown = () => aKey.isDown || leftArrow.isDown;
+    const rightDown = () => dKey.isDown || rightArrow.isDown;
+    const jumpDown = () => wKey.isDown || upArrow.isDown;
 
     const emitIfChanged = (next: InputState) => {
       const changed =
@@ -35,57 +49,76 @@ export class InputController {
       handler(next);
     };
 
-    const computeMove = () => {
-      if (left.isDown && !right.isDown) return -1 as const;
-      if (right.isDown && !left.isDown) return 1 as const;
-      return 0 as const;
+    const computeMove = (): -1 | 0 | 1 => {
+      const l = leftDown();
+      const r = rightDown();
+      if (l && !r) return -1;
+      if (r && !l) return 1;
+      return 0;
     };
 
-    // Dash direction is the A/D held at dash time (0 = stall). Read only on dash.
-    const computeDashX = (): -1 | 0 | 1 => (left.isDown === right.isDown ? 0 : left.isDown ? -1 : 1);
+    // Dash direction is the left/right held at dash time (0 = stall).
+    const computeDashX = (): -1 | 0 | 1 => {
+      const l = leftDown();
+      const r = rightDown();
+      return l === r ? 0 : l ? -1 : 1;
+    };
 
     const emitState = (jumpPressed: boolean, dashPressed = false) => {
       emitIfChanged({
         move: computeMove(),
-        jumpHeld: jump.isDown,
+        jumpHeld: jumpDown(),
         jumpPressed,
         dashPressed,
         dashX: dashPressed ? computeDashX() : 0,
       });
     };
 
-    const onLeftDown = () => emitState(false);
-    const onLeftUp = () => emitState(false);
-    const onRightDown = () => emitState(false);
-    const onRightUp = () => emitState(false);
-    // Space: grounded jump or mid-air double jump (engine decides). Edge-triggered.
+    const onMove = () => emitState(false);
     const onJumpDown = () => {
       emitState(true);
       emitIfChanged({ ...EMPTY_STATE, move: computeMove(), jumpHeld: true });
     };
     const onJumpUp = () => emitState(false);
-    // Shift: mid-air dash in the A/D direction (none = stall). Edge-triggered.
+    // Dash is edge-triggered: emit the pressed state (with direction), then clear.
     const onDashDown = () => {
       emitState(false, true);
-      emitIfChanged({ ...EMPTY_STATE, move: computeMove(), jumpHeld: jump.isDown });
+      emitIfChanged({ ...EMPTY_STATE, move: computeMove(), jumpHeld: jumpDown() });
+    };
+    const onPointerDown = (pointer: Phaser.Input.Pointer) => {
+      if (pointer.leftButtonDown()) onDashDown();
     };
 
-    left.on('down', onLeftDown);
-    left.on('up', onLeftUp);
-    right.on('down', onRightDown);
-    right.on('up', onRightUp);
-    jump.on('down', onJumpDown);
-    jump.on('up', onJumpUp);
-    dash.on('down', onDashDown);
+    aKey.on('down', onMove);
+    aKey.on('up', onMove);
+    dKey.on('down', onMove);
+    dKey.on('up', onMove);
+    leftArrow.on('down', onMove);
+    leftArrow.on('up', onMove);
+    rightArrow.on('down', onMove);
+    rightArrow.on('up', onMove);
+    wKey.on('down', onJumpDown);
+    wKey.on('up', onJumpUp);
+    upArrow.on('down', onJumpDown);
+    upArrow.on('up', onJumpUp);
+    spaceKey.on('down', onDashDown);
+    scene.input.on('pointerdown', onPointerDown);
 
     const dispose = () => {
-      left.off('down', onLeftDown);
-      left.off('up', onLeftUp);
-      right.off('down', onRightDown);
-      right.off('up', onRightUp);
-      jump.off('down', onJumpDown);
-      jump.off('up', onJumpUp);
-      dash.off('down', onDashDown);
+      aKey.off('down', onMove);
+      aKey.off('up', onMove);
+      dKey.off('down', onMove);
+      dKey.off('up', onMove);
+      leftArrow.off('down', onMove);
+      leftArrow.off('up', onMove);
+      rightArrow.off('down', onMove);
+      rightArrow.off('up', onMove);
+      wKey.off('down', onJumpDown);
+      wKey.off('up', onJumpUp);
+      upArrow.off('down', onJumpDown);
+      upArrow.off('up', onJumpUp);
+      spaceKey.off('down', onDashDown);
+      scene.input.off('pointerdown', onPointerDown);
       this.disposeInput = () => {};
       this.lastState = { ...EMPTY_STATE };
     };

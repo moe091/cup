@@ -1,30 +1,49 @@
-import { CheckpointListener, FinishListener, HazardListener } from './types.js';
+import {
+  CheckpointListener,
+  DashEventListener,
+  FinishListener,
+  HazardListener,
+  PlayerEventListener,
+} from './types.js';
 import { World } from './world.js';
 import type { BouncerPhysicsConfig } from './config.js';
 import type { LevelDefinition, PlayerInputState, TickSnapshot, HazardCatalog } from '@cup/bouncer-shared';
+
+export type EngineOptions = {
+  physics?: Partial<BouncerPhysicsConfig>;
+  onCheckpoint?: CheckpointListener;
+  onHazard?: HazardListener;
+  onDoubleJump?: PlayerEventListener;
+  onDash?: DashEventListener;
+};
 
 export class Engine {
   private world: World;
   private tick: number = 0;
   private onPlayerFinish: FinishListener;
-  private onCheckpoint?: CheckpointListener;
-  private onHazard?: HazardListener;
+  private options: EngineOptions;
 
   constructor(
     private timestep: number,
     onPlayerFinish: FinishListener,
-    physics?: Partial<BouncerPhysicsConfig>,
-    onCheckpoint?: CheckpointListener,
-    onHazard?: HazardListener,
+    options: EngineOptions = {},
   ) {
-    this.world = new World(physics);
+    this.options = options;
+    this.world = new World(options.physics);
     this.world.setTimestep(timestep);
     this.onPlayerFinish = onPlayerFinish;
     this.world.setFinishListener(onPlayerFinish);
-    this.onCheckpoint = onCheckpoint;
-    if (onCheckpoint) this.world.setCheckpointListener(onCheckpoint);
-    this.onHazard = onHazard;
-    if (onHazard) this.world.setHazardListener(onHazard);
+    this.applyEventListeners();
+  }
+
+  // (Re)binds all optional event listeners to the world. Called on construction
+  // and after loadLevel (resetWorld clears them).
+  private applyEventListeners() {
+    const o = this.options;
+    if (o.onCheckpoint) this.world.setCheckpointListener(o.onCheckpoint);
+    if (o.onHazard) this.world.setHazardListener(o.onHazard);
+    if (o.onDoubleJump) this.world.setDoubleJumpListener(o.onDoubleJump);
+    if (o.onDash) this.world.setDashListener(o.onDash);
   }
 
   step(inputs: PlayerInputState[]) {
@@ -73,10 +92,8 @@ export class Engine {
     console.log('[DEBUG] ENGINE LOADING LEVEL DEF: ', level.name);
     this.world.resetWorld();
     this.world.loadLevel(level, hazardCatalog);
-    if (this.onPlayerFinish) this.world.setFinishListener(this.onPlayerFinish);
-    else console.warn('[Engine.loadLevel] loaded level but no finish listener is set!');
-    if (this.onCheckpoint) this.world.setCheckpointListener(this.onCheckpoint);
-    if (this.onHazard) this.world.setHazardListener(this.onHazard);
+    this.world.setFinishListener(this.onPlayerFinish);
+    this.applyEventListeners();
   }
 }
 

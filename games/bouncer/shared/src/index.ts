@@ -34,8 +34,17 @@ export type TickSnapshot = {
   }>;
 };
 
+// Transient one-shot effects that happened on the tick this packet was sent,
+// packed as a bitmask so remote clients can play the matching VFX.
+export const PLAYER_EVENT = {
+  DOUBLE_JUMP: 1,
+  DASH: 2,
+  DIED: 4,
+} as const;
+
 export type PlayerStateUpdate = {
   seq: number;
+  events?: number; // PLAYER_EVENT bitmask (0/absent = none)
   // Sender's own performance.now() at sample time. Used by remote clients to
   // interpolate on a jitter-free source timeline (the *spacing* between a
   // sender's tMs values is its true snapshot cadence). Cross-machine clock

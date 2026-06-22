@@ -9,6 +9,7 @@ export class LevelSelectorSidebar {
   private container: Phaser.GameObjects.DOMElement | null = null;
   private isCreator: boolean;
   private levelName: string = 'None';
+  private uiScale: number;
 
   constructor(
     scene: Phaser.Scene,
@@ -16,10 +17,12 @@ export class LevelSelectorSidebar {
     isCreator: boolean,
     curLevel: LevelListItem | null,
     onLevelChange?: (level: LevelListItem) => void,
+    uiScale = 1,
   ) {
     this.scene = scene;
     this.allLevels = levels;
     this.isCreator = isCreator;
+    this.uiScale = uiScale;
     if (curLevel) this.levelName = curLevel.name;
 
     this.onLevelChange = onLevelChange || null;
@@ -246,13 +249,15 @@ export class LevelSelectorSidebar {
   }
 
   private create() {
-    // Position on the right side of the screen
-    const x = 960 - 160; // 960 - (320/2) = right third centered
-    const y = 270; // Middle of 540px height
+    // Position on the right side of the screen (design coords are for 960×540,
+    // scaled up by uiScale to fill the actual render resolution).
+    const x = (960 - 160) * this.uiScale; // right third, centered
+    const y = 270 * this.uiScale; // middle of the 540px design height
 
     this.container = this.scene.add.dom(x, y).createFromHTML(this.createHTML());
     this.container.setOrigin(0.5);
     this.container.setScrollFactor(0);
+    this.container.setScale(this.uiScale);
     this.container.setDepth(100);
 
     this.setupEventListeners();

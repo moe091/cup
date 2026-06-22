@@ -1,5 +1,13 @@
 import { TickSnapshot, toPixels, toWorld, resolveHazardBody } from '@cup/bouncer-shared';
-import type { Ball, CheckpointListener, FinishListener, HazardListener, Point } from './types.js';
+import type {
+  Ball,
+  CheckpointListener,
+  DashEventListener,
+  FinishListener,
+  HazardListener,
+  PlayerEventListener,
+  Point,
+} from './types.js';
 import planck from 'planck';
 import type { Body } from 'planck';
 import type { LevelDefinition, HazardCatalog } from '@cup/bouncer-shared';
@@ -48,6 +56,8 @@ export class World {
   private finishListener: FinishListener | null = null;
   private checkpointListener: CheckpointListener | null = null;
   private hazardListener: HazardListener | null = null;
+  private doubleJumpListener: PlayerEventListener | null = null;
+  private dashListener: DashEventListener | null = null;
   private finishedPlayers = new Set<string>();
 
   constructor(physics?: Partial<BouncerPhysicsConfig>) {
@@ -226,6 +236,7 @@ export class World {
     body.applyLinearImpulse(new planck.Vec2(0, -this.doubleJumpForce), body.getWorldCenter(), true);
 
     ballState.canDoubleJump = false;
+    this.doubleJumpListener?.(ballId);
   }
 
   /**
@@ -257,6 +268,7 @@ export class World {
       body.applyLinearImpulse(new planck.Vec2(dirX * this.dashXForce, 0), body.getWorldCenter(), true);
       body.setGravityScale(0); // flat dash...
       ballState.dashGravityUntilMs = this.nowMs() + DASH_GRAVITY_DISABLE_MS; // ...restored by updateDashGravity / on landing
+      this.dashListener?.(ballId, dirX);
     }
 
     ballState.canDash = false;
@@ -516,6 +528,14 @@ export class World {
     this.hazardListener = listener;
   }
 
+  setDoubleJumpListener(listener: PlayerEventListener) {
+    this.doubleJumpListener = listener;
+  }
+
+  setDashListener(listener: DashEventListener) {
+    this.dashListener = listener;
+  }
+
   dumpBodies() {
     let body = this.physics.getBodyList();
 
@@ -552,6 +572,8 @@ export class World {
     this.finishListener = null;
     this.checkpointListener = null;
     this.hazardListener = null;
+    this.doubleJumpListener = null;
+    this.dashListener = null;
 
     this.setupContactListeners();
   }

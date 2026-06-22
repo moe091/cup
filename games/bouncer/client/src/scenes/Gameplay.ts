@@ -13,6 +13,7 @@ import type {
   CheckpointReached,
   HazardCatalog,
 } from '@cup/bouncer-shared';
+import { PLAYER_EVENT } from '@cup/bouncer-shared';
 import { InputController } from '../misc/InputController';
 import { ParallaxBackground } from '../misc/ParallaxBackground';
 import { RemoteSmoother, type SampleMode } from '../misc/RemoteSmoother';
@@ -46,16 +47,17 @@ const PLAYER_BALL_DIAMETER_PX = 52;
 // Nameplate + self-marker placement (world px above the ball center).
 const LABEL_Y_OFFSET = 54;
 const CHEVRON_Y_OFFSET = 92;
-const SELF_COLOR = '#ffd54a'; // gold, for "YOU" label / chevron / trail
-const SELF_TINT = 0xffd54a;
+const SELF_COLOR = '#ffd54a'; // gold, for "YOU" label / chevron
+const SELF_TINT = 0xcc9f2e; // darker gold, for the local ball's trail
+const DEATH_DURATION_MS = 1000; // ball hidden + frozen while the death burst plays
 
 const PLATFORM_GLOW_COLOR = 0xa7d6ff;
 const PLATFORM_BASE_COLOR = 0xcfe9ff;
 const PLATFORM_TOP_HIGHLIGHT_COLOR = 0xe9f7ff;
 const PLATFORM_BOTTOM_SHADE_COLOR = 0x78a7cf;
 const PLATFORM_BASE_ALPHA = 0.8;
-const PLATFORM_FOREGROUND_COLOR = 0x5e88c7;
-// Quick alternates for A/B:
+const PLATFORM_FOREGROUND_COLOR = 0x271e28;
+// Quick alternates for A/B:vv
 // const PLATFORM_FOREGROUND_COLOR = 0x6e97d4;
 // const PLATFORM_FOREGROUND_COLOR = 0x4f79b8;
 
@@ -75,6 +77,7 @@ export class GameplayScene extends Phaser.Scene {
   private levelRects: Phaser.GameObjects.GameObject[] = [];
   private levelPolygons: Phaser.GameObjects.Container[] = [];
   private parallaxBg: ParallaxBackground | null = null;
+  private tiledBg: Phaser.GameObjects.TileSprite | null = null;
   private shadowOffset = { x: 8, y: -10 };
   private engine: Engine | null = null;
   private levelDef: LevelDefinition | null = null;
@@ -112,7 +115,15 @@ export class GameplayScene extends Phaser.Scene {
   // Hazards: spinning sprites to animate each frame, and a pending respawn set on
   // death (applied just after the physics step — never inside the contact callback).
   private hazardSprites: Array<{ sprite: Phaser.GameObjects.Image; rotationSpeed: number }> = [];
-  private pendingRespawn: { x: number; y: number } | null = null;
+  // Death state: while dying the local ball is hidden + frozen (sim paused) and a
+  // burst plays; after DEATH_DURATION_MS it respawns at the last checkpoint.
+  private isDying = false;
+  private deathTimer: Phaser.Time.TimerEvent | undefined;
+  private trailEmitter: Phaser.GameObjects.Particles.ParticleEmitter | undefined;
+  // Bitmask of effects to advertise on the next outgoing player_state packet.
+  private pendingEvents = 0;
+  // Per-remote re-show timers for their death effect.
+  private remoteDeathTimers = new Map<string, Phaser.Time.TimerEvent>();
 
   // Nameplates over each ball + a self-only chevron marker. playerNames is fed
   // from match_status (the scene only knows ids otherwise).
@@ -173,8 +184,12 @@ export class GameplayScene extends Phaser.Scene {
     console.log(`[bouncer-timing] gameplay create() start t=${createStart.toFixed(0)}ms`);
     this.fullscreenListener();
 
-    this.cameras.main.setZoom(0.33);
-    this.cameras.main.setRoundPixels(true);
+    // 0.66 = 0.33 × 2, matching the 2× internal resolution (960→1920) so the
+    // visible world area is identical but rendered with ~4× the pixels.
+    this.cameras.main.setZoom(0.66);
+    // roundPixels off: whole-pixel camera snapping made the tiled background
+    // shimmer/flicker during the smooth camera-follow.
+    this.cameras.main.setRoundPixels(false);
 
     const g = this.add.graphics();
     g.fillStyle(0xffffff, 1);
@@ -306,6 +321,7 @@ export class GameplayScene extends Phaser.Scene {
    * in the past), interpolating between the two straddling sim states. The
    * camera follows this sprite, so the whole view lags by the same amount. */
   private renderLocalPlayer() {
+    if (this.isDying) return; // frozen + hidden during the death effect
     const sprite = this.me ?? this.balls.get(this.playerId);
     if (!sprite) {
       return;
@@ -440,6 +456,8 @@ export class GameplayScene extends Phaser.Scene {
       const sprite = this.createBallSprite(update.playerId, update.x, update.y);
       this.balls.set(update.playerId, sprite);
     }
+
+    if (update.events) this.handleRemoteEvents(update);
   }
 
   onFinishOrderUpdate(update: FinishOrderUpdate) {
@@ -453,6 +471,8 @@ export class GameplayScene extends Phaser.Scene {
     this.levelPolygons = [];
     this.parallaxBg?.destroy();
     this.parallaxBg = null;
+    this.tiledBg?.destroy();
+    this.tiledBg = null;
 
     this.levelDef = level;
     this.running = false;
@@ -522,16 +542,31 @@ export class GameplayScene extends Phaser.Scene {
 
     this.renderUnifiedTerrain(platformRects, polygonDefs, minX, minY, maxX, maxY);
 
-    this.parallaxBg = ParallaxBackground.create(this, {
-      x: minX,
-      y: minY,
-      width: Math.max(1, maxX - minX),
-      height: Math.max(1, maxY - minY),
-      padding: 1200,
-    })
-      .addLayer(-140, 'nebula_red.png', 0.08, 0.95)
-      .addLayer(-130, 'stars_small_1.png', 0.3, 0.9)
-      .addLayer(-120, 'stars_big_1.png', 0.55, 1);
+    // Single repeating background tiled over the level bounds (+ generous padding
+    // so it still fills the view at the level's edges). The parallax setup below
+    // is preserved for later — re-enable it and remove this tiled bg to restore it.
+    const BG_PADDING = 3000;
+    this.tiledBg = this.add
+      .tileSprite(
+        minX - BG_PADDING,
+        minY - BG_PADDING,
+        Math.max(1, maxX - minX) + BG_PADDING * 2,
+        Math.max(1, maxY - minY) + BG_PADDING * 2,
+        'bg',
+      )
+      .setOrigin(0)
+      .setDepth(-100);
+
+    // this.parallaxBg = ParallaxBackground.create(this, {
+    //   x: minX,
+    //   y: minY,
+    //   width: Math.max(1, maxX - minX),
+    //   height: Math.max(1, maxY - minY),
+    //   padding: 1200,
+    // })
+    //   .addLayer(-140, 'nebula_red.png', 0.08, 0.95)
+    //   .addLayer(-130, 'stars_small_1.png', 0.3, 0.9)
+    //   .addLayer(-120, 'stars_big_1.png', 0.55, 1);
 
     this.initializeLocalEngineIfReady();
   }
@@ -571,7 +606,7 @@ export class GameplayScene extends Phaser.Scene {
     const terrainCenterY = terrainY + terrainHeight / 2;
 
     const terrainFill = this.add
-      .rectangle(terrainCenterX, terrainCenterY, terrainWidth, terrainHeight, PLATFORM_FOREGROUND_COLOR, 0.8)
+      .rectangle(terrainCenterX, terrainCenterY, terrainWidth, terrainHeight, PLATFORM_FOREGROUND_COLOR, 1)
       .setDepth(-10)
       .setOrigin(0.5);
     terrainFill.setMask(geometryMask);
@@ -580,7 +615,9 @@ export class GameplayScene extends Phaser.Scene {
   }
 
   private stepLocalSimulation() {
-    if (!this.engine || !this.running) {
+    if (!this.engine || !this.running || this.isDying) {
+      // While dying the sim is paused so the body (and camera) stay at the death
+      // spot until the respawn.
       this.jumpPressedQueued = false;
       this.dashQueued = false;
       return;
@@ -599,12 +636,10 @@ export class GameplayScene extends Phaser.Scene {
     this.dashQueued = false;
     this.engine.step([input]);
 
-    // Apply a pending hazard respawn AFTER the step (safe — outside the contact
-    // callback). Clearing ownHistory snaps the local ball instead of sliding it.
-    if (this.pendingRespawn) {
-      this.engine.setPlayerPosition(this.playerId, this.pendingRespawn.x, this.pendingRespawn.y);
-      this.ownHistory = [];
-      this.pendingRespawn = null;
+    // Death (from a hazard contact during the step) sends its own DIED packet and
+    // then freezes — skip the normal state send this tick.
+    if (this.isDying) {
+      return;
     }
 
     const snapshot = this.engine.getSnapshot();
@@ -639,8 +674,10 @@ export class GameplayScene extends Phaser.Scene {
         angle: me.angle,
         xVel: me.xVel,
         yVel: me.yVel,
+        events: this.pendingEvents,
       };
       this.emit('player_state', update);
+      this.pendingEvents = 0;
     }
   }
 
@@ -728,13 +765,13 @@ export class GameplayScene extends Phaser.Scene {
       return;
     }
 
-    this.engine = new Engine(
-      1 / LOCAL_SIM_HZ,
-      this.onLocalPlayerFinished.bind(this),
-      this.physicsConfig,
-      this.onLocalCheckpoint.bind(this),
-      this.onLocalHazard.bind(this),
-    );
+    this.engine = new Engine(1 / LOCAL_SIM_HZ, this.onLocalPlayerFinished.bind(this), {
+      physics: this.physicsConfig,
+      onCheckpoint: this.onLocalCheckpoint.bind(this),
+      onHazard: this.onLocalHazard.bind(this),
+      onDoubleJump: this.onLocalDoubleJump.bind(this),
+      onDash: this.onLocalDash.bind(this),
+    });
     this.engine.loadLevel(this.levelDef, this.hazardCatalog);
     this.engine.spawnPlayerAt(this.playerId, this.mySpawn.x, this.mySpawn.y);
 
@@ -753,7 +790,8 @@ export class GameplayScene extends Phaser.Scene {
     this.me = meSprite;
     this.cameras.main.startFollow(meSprite, false, 0.4, 0.4);
 
-    const particles = this.add
+    this.trailEmitter?.destroy();
+    this.trailEmitter = this.add
       .particles(0, 0, 'trail_dot', {
         speed: 0,
         lifespan: 400,
@@ -763,7 +801,7 @@ export class GameplayScene extends Phaser.Scene {
         tint: SELF_TINT,
       })
       .setDepth(-1);
-    particles.startFollow(meSprite);
+    this.trailEmitter.startFollow(meSprite);
 
     this.hasReportedFinish = false;
     this.running = false;
@@ -776,7 +814,12 @@ export class GameplayScene extends Phaser.Scene {
     this.ownHistory = [];
     this.reachedCheckpoints.clear();
     this.lastCheckpointRespawn = null;
-    this.pendingRespawn = null;
+    this.isDying = false;
+    this.deathTimer?.remove(false);
+    this.deathTimer = undefined;
+    this.pendingEvents = 0;
+    for (const t of this.remoteDeathTimers.values()) t.remove(false);
+    this.remoteDeathTimers.clear();
   }
 
   // Emits the local player's current engine state via the normal player_state
@@ -832,13 +875,171 @@ export class GameplayScene extends Phaser.Scene {
     this.emit('checkpoint_reached', { index, timeMs } satisfies CheckpointReached);
   }
 
-  // Fired by the local engine when the local ball touches a hazard. Queues a
-  // respawn (applied just after the step) and reports the death for stats.
+  // Fired by the local engine when the local ball touches a hazard. Begins the
+  // death sequence: hide + freeze the ball, play the burst, respawn after a beat.
   private onLocalHazard(playerId: string) {
-    if (playerId !== this.playerId) return;
-    if (this.pendingRespawn) return; // already dying this tick
-    this.pendingRespawn = this.lastCheckpointRespawn ?? this.mySpawn;
+    if (playerId !== this.playerId || this.isDying) return;
+    this.isDying = true;
+
+    const sprite = this.balls.get(this.playerId);
+    const dx = sprite?.x ?? 0;
+    const dy = sprite?.y ?? 0;
+    this.spawnDeathBurst(dx, dy);
+
+    sprite?.setVisible(false);
+    this.ballLabels.get(this.playerId)?.setVisible(false);
+    this.selfChevron?.setVisible(false);
+    this.trailEmitter?.stop();
+
+    // Tell the server (death count) + tell remotes (one-shot DIED packet at the
+    // death spot; normal sending is paused while frozen so we send it directly).
     this.emit('player_died', {});
+    const deathPacket: PlayerStateUpdate = {
+      seq: this.localSeq++,
+      tMs: performance.now(),
+      x: dx,
+      y: dy,
+      angle: sprite?.rotation ?? 0,
+      xVel: 0,
+      yVel: 0,
+      events: PLAYER_EVENT.DIED,
+    };
+    this.emit('player_state', deathPacket);
+
+    this.deathTimer = this.time.delayedCall(DEATH_DURATION_MS, () => this.respawnAfterDeath());
+  }
+
+  // Plays VFX for an OTHER player's advertised events at their ball's position.
+  private handleRemoteEvents(update: RemotePlayerStateUpdate) {
+    if (!update.events) return;
+    const sprite = this.balls.get(update.playerId);
+    const ex = sprite?.x ?? update.x;
+    const ey = sprite?.y ?? update.y;
+    if (update.events & PLAYER_EVENT.DOUBLE_JUMP) this.spawnPuff(ex, ey + 22);
+    if (update.events & PLAYER_EVENT.DASH) this.startDashStreak(update.playerId, Math.sign(update.xVel) || 1);
+    if (update.events & PLAYER_EVENT.DIED) this.playRemoteDeath(update.playerId, ex, ey);
+  }
+
+  private playRemoteDeath(playerId: string, x: number, y: number) {
+    this.spawnDeathBurst(x, y);
+    this.balls.get(playerId)?.setVisible(false);
+    this.ballLabels.get(playerId)?.setVisible(false);
+    this.remoteDeathTimers.get(playerId)?.remove(false);
+    this.remoteDeathTimers.set(
+      playerId,
+      this.time.delayedCall(DEATH_DURATION_MS, () => {
+        this.balls.get(playerId)?.setVisible(true);
+        this.ballLabels.get(playerId)?.setVisible(true);
+        this.remoteDeathTimers.delete(playerId);
+      }),
+    );
+  }
+
+  private respawnAfterDeath() {
+    this.deathTimer = undefined;
+    const respawn = this.lastCheckpointRespawn ?? this.mySpawn;
+    if (respawn && this.engine) {
+      this.engine.setPlayerPosition(this.playerId, respawn.x, respawn.y);
+    }
+    this.ownHistory = [];
+
+    const sprite = this.balls.get(this.playerId);
+    if (sprite && respawn) sprite.setPosition(respawn.x, respawn.y);
+    sprite?.setVisible(true);
+    this.ballLabels.get(this.playerId)?.setVisible(true);
+    this.trailEmitter?.start();
+
+    this.isDying = false; // sim + rendering resume next tick
+  }
+
+  // Fired by the local engine when the local ball performs a mid-air double jump.
+  private onLocalDoubleJump(playerId: string) {
+    if (playerId !== this.playerId) return;
+    this.pendingEvents |= PLAYER_EVENT.DOUBLE_JUMP; // advertise to remotes
+    const s = this.balls.get(this.playerId);
+    if (s) this.spawnPuff(s.x, s.y + 22);
+  }
+
+  // Fired by the local engine on a directional mid-air dash (not a stall).
+  private onLocalDash(playerId: string, dirX: number) {
+    if (playerId !== this.playerId || dirX === 0) return;
+    this.pendingEvents |= PLAYER_EVENT.DASH; // advertise to remotes
+    this.startDashStreak(this.playerId, dirX);
+  }
+
+  // Dirt/smoke poof beneath the ball on a double jump.
+  private spawnPuff(x: number, y: number) {
+    const emitter = this.add
+      .particles(0, 0, 'trail_dot', {
+        x,
+        y,
+        speed: { min: 45, max: 175 },
+        gravityY: 180,
+        scale: { start: 5.5, end: 0 },
+        alpha: { start: 0.75, end: 0 },
+        lifespan: 480,
+        tint: [0x685c43, 0x534734, 0x847860],
+        emitting: false,
+      })
+      .setDepth(-1);
+    emitter.explode(18, x, y);
+    this.time.delayedCall(700, () => emitter.destroy());
+  }
+
+  // Red speed-lines that streak behind a ball over ~0.3s — spawned over time at
+  // the ball's *current* position so they trail along its dash path (works for
+  // local + remote; the ball is followed by id each tick).
+  private startDashStreak(playerId: string, dirX: number) {
+    const behind = -Math.sign(dirX) || -1;
+    const intervalMs = 35;
+    const ticks = 9; // ~0.3s
+    this.time.addEvent({
+      delay: intervalMs,
+      repeat: ticks - 1,
+      startAt: intervalMs, // emit one immediately
+      callback: () => {
+        const s = this.balls.get(playerId);
+        if (!s || !s.visible) return;
+        // Anchor the line's leading edge at the ball center so it only extends
+        // behind: dash-right (dirX>0) -> right edge anchored (originX 1); dash-left -> left edge.
+        const originX = dirX > 0 ? 1 : 0;
+        for (let i = 0; i < 2; i++) {
+          const lx = s.x;
+          const ly = s.y + Phaser.Math.Between(-20, 20);
+          const line = this.add
+            .rectangle(lx, ly, Phaser.Math.Between(120, 280), Phaser.Math.Between(3, 7), 0xc42a2a, 0.9)
+            .setOrigin(originX, 0.5)
+            .setDepth(-1);
+          this.tweens.add({
+            targets: line,
+            x: lx + behind * 160,
+            alpha: 0,
+            duration: Phaser.Math.Between(200, 320),
+            ease: 'Quad.easeOut',
+            onComplete: () => line.destroy(),
+          });
+        }
+      },
+    });
+  }
+
+  // Burst of small black / dark-red orbs from the death location.
+  private spawnDeathBurst(x: number, y: number) {
+    const emitter = this.add
+      .particles(0, 0, 'trail_dot', {
+        x,
+        y,
+        speed: { min: 80, max: 280 },
+        gravityY: 300,
+        scale: { start: 4, end: 0.5 },
+        alpha: { start: 1, end: 0 },
+        lifespan: { min: 600, max: 950 },
+        tint: [0x111111, 0x000000, 0x2a0a0a, 0x6b0f0f],
+        emitting: false,
+      })
+      .setDepth(5);
+    emitter.explode(22, x, y);
+    this.time.delayedCall(1100, () => emitter.destroy());
   }
 
   private createCheckpointToast() {
@@ -1441,6 +1642,8 @@ export class GameplayScene extends Phaser.Scene {
     this.inputController.dispose();
     this.parallaxBg?.destroy();
     this.parallaxBg = null;
+    this.tiledBg?.destroy();
+    this.tiledBg = null;
     this.roundResultsModal?.destroy(true);
     this.roundResultsModal = null;
     this.matchResultsModal?.destroy(true);
@@ -1452,6 +1655,12 @@ export class GameplayScene extends Phaser.Scene {
     this.ballLabels.clear();
     this.selfChevron?.destroy();
     this.selfChevron = undefined;
+    this.deathTimer?.remove(false);
+    this.deathTimer = undefined;
+    this.trailEmitter?.destroy();
+    this.trailEmitter = undefined;
+    for (const t of this.remoteDeathTimers.values()) t.remove(false);
+    this.remoteDeathTimers.clear();
     this.debugText?.destroy();
     this.debugText = undefined;
     netDebug.clear();

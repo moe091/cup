@@ -28,6 +28,9 @@ docker-compose -f docker-compose.prod.yml up -d api
 #### exec docker command(api = container name, node ... = command)y
 docker-compose -f docker-compose.prod.yml exec api node node_modules/.bin/prisma migrate deploy
 
+#### exec db command
+docker exec -i cup-postgres-1 psql -U flowt -d flowt_prod
+
 
 
 ### Data dump

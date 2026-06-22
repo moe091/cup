@@ -73,6 +73,10 @@ export class WaitingRoomScene extends Phaser.Scene {
 
     const isCreator = this.role === 'creator';
 
+    // The DOM UI was designed for a 960×540 canvas; scale it up to whatever the
+    // actual render resolution is so it fills the screen (not the top-left corner).
+    const uiScale = Math.min(this.scale.width / 960, this.scale.height / 540);
+
     // Create waiting room UI (player list + ready button)
     if (!this.waitingRoomUI) {
       this.waitingRoomUI = new WaitingRoomUI(
@@ -80,6 +84,7 @@ export class WaitingRoomScene extends Phaser.Scene {
         isCreator,
         this.onReadyClicked.bind(this),
         isCreator ? this.onScoreGoalSelected.bind(this) : undefined,
+        uiScale,
       );
       this.waitingRoomUI.setScoreGoal(this.scoreGoal, this.scoreGoalLocked);
       this.waitingRoomUI.setReadyButtonVisible(true);
@@ -93,10 +98,11 @@ export class WaitingRoomScene extends Phaser.Scene {
         isCreator,
         this.selectedLevel,
         this.onLevelSelected.bind(this),
+        uiScale,
       );
     } else if (!this.levelSelector && !isCreator) {
       // Non-creators get empty level list
-      this.levelSelector = new LevelSelectorSidebar(this, [], false, this.selectedLevel, undefined);
+      this.levelSelector = new LevelSelectorSidebar(this, [], false, this.selectedLevel, undefined, uiScale);
     }
 
     // Re-apply the last known status so a freshly (re)built UI is populated

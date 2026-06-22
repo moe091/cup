@@ -24,17 +24,20 @@ export class WaitingRoomUI {
   private scoreGoalLocked = false;
   private roundEndInfo: string | null = null;
   private roundEndInfoReady = false;
+  private uiScale: number;
 
   constructor(
     scene: Phaser.Scene,
     isCreator: boolean,
     onReady: () => void,
     onScoreGoalChange?: (scoreGoal: ScoreGoal) => void,
+    uiScale = 1,
   ) {
     this.scene = scene;
     this.isCreator = isCreator;
     this.onReady = onReady;
     this.onScoreGoalChange = onScoreGoalChange ?? null;
+    this.uiScale = uiScale;
     this.injectStyles();
     this.create();
   }
@@ -272,12 +275,13 @@ export class WaitingRoomUI {
   }
 
   private create() {
-    const x = 320;
-    const y = 270;
+    const x = 320 * this.uiScale;
+    const y = 270 * this.uiScale;
 
     this.container = this.scene.add.dom(x, y).createFromHTML(this.createHTML());
     this.container.setOrigin(0.5);
     this.container.setScrollFactor(0);
+    this.container.setScale(this.uiScale);
     this.container.setDepth(100);
 
     this.setupEventListeners();

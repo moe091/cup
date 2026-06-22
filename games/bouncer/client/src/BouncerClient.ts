@@ -54,8 +54,11 @@ export class BouncerClient {
 
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
-      width: 960,
-      height: 540,
+      // Internal render resolution. Higher = sharper when FIT-scaled up to a
+      // fullscreen display. Keep the gameplay camera zoom proportional to this
+      // (zoom = width / ~2909) so the visible world area is unchanged.
+      width: 1920,
+      height: 1080,
       parent: containerEl,
       scale: {
         mode: Phaser.Scale.FIT,

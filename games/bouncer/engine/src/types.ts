@@ -16,3 +16,7 @@ export type FinishListener = (playerId: string) => void;
 export type CheckpointListener = (playerId: string, checkpointIndex: number) => void;
 
 export type HazardListener = (playerId: string) => void;
+
+export type PlayerEventListener = (playerId: string) => void;
+
+export type DashEventListener = (playerId: string, dirX: number) => void;

@@ -17,7 +17,7 @@ import { asPlayerId, asSocketId } from './types.js';
 import { Match } from './match.js';
 import { loadLevelDef } from './api/helpers.js';
 
-const FINISH_TIMEOUT_MS = 30_000;
+const FINISH_TIMEOUT_MS = 120_000;
 const COUNTDOWN_SECONDS = 3;
 // Max time to wait for clients to report their level is built before starting the
 // countdown anyway. Prevents a slow/missing client from stalling the match.
@@ -530,7 +530,8 @@ export class MatchStateMachine {
     ) {
       return null;
     }
-    return { seq: c.seq, tMs: c.tMs, x: c.x, y: c.y, angle: c.angle, xVel: c.xVel, yVel: c.yVel };
+    const events = this.isFiniteNumber(c.events) ? c.events : 0;
+    return { seq: c.seq, tMs: c.tMs, x: c.x, y: c.y, angle: c.angle, xVel: c.xVel, yVel: c.yVel, events };
   }
 
   private isFiniteNumber(value: unknown): value is number {
