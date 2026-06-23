@@ -13,8 +13,8 @@ const EMPTY_STATE: InputState = {
 /**
  * Controls (multiple keys can drive the same action):
  *  - Move:  A / D  +  ← / →
- *  - Jump:  W  +  ↑      (grounded jump or mid-air double jump — engine decides)
- *  - Dash:  Space  +  left mouse click   (none held = stall)
+ *  - Jump:  W  +  ↑  +  Space   (grounded jump or mid-air double jump — engine decides)
+ *  - Dash:  Shift  +  left mouse click   (none held = stall)
  */
 export class InputController {
   private disposeInput: () => void = () => {};
@@ -33,10 +33,11 @@ export class InputController {
     const wKey = keyboard.addKey(KC.W);
     const upArrow = keyboard.addKey(KC.UP);
     const spaceKey = keyboard.addKey(KC.SPACE);
+    const shiftKey = keyboard.addKey(KC.SHIFT);
 
     const leftDown = () => aKey.isDown || leftArrow.isDown;
     const rightDown = () => dKey.isDown || rightArrow.isDown;
-    const jumpDown = () => wKey.isDown || upArrow.isDown;
+    const jumpDown = () => wKey.isDown || upArrow.isDown || spaceKey.isDown;
 
     const emitIfChanged = (next: InputState) => {
       const changed =
@@ -101,7 +102,9 @@ export class InputController {
     wKey.on('up', onJumpUp);
     upArrow.on('down', onJumpDown);
     upArrow.on('up', onJumpUp);
-    spaceKey.on('down', onDashDown);
+    spaceKey.on('down', onJumpDown);
+    spaceKey.on('up', onJumpUp);
+    shiftKey.on('down', onDashDown);
     scene.input.on('pointerdown', onPointerDown);
 
     const dispose = () => {
@@ -117,7 +120,9 @@ export class InputController {
       wKey.off('up', onJumpUp);
       upArrow.off('down', onJumpDown);
       upArrow.off('up', onJumpUp);
-      spaceKey.off('down', onDashDown);
+      spaceKey.off('down', onJumpDown);
+      spaceKey.off('up', onJumpUp);
+      shiftKey.off('down', onDashDown);
       scene.input.off('pointerdown', onPointerDown);
       this.disposeInput = () => {};
       this.lastState = { ...EMPTY_STATE };
