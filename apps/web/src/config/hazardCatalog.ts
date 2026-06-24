@@ -6,14 +6,9 @@ import { coerceHazardCatalog, type HazardCatalog } from "@cup/bouncer-shared";
  * prod). Hand-editable + tunable without a rebuild. Malformed entries are
  * dropped by coerceHazardCatalog; a missing/bad file yields {}.
  */
-let cached: Promise<HazardCatalog> | null = null;
-
 export function loadHazardCatalog(): Promise<HazardCatalog> {
-  if (!cached) {
-    cached = fetch(`${import.meta.env.BASE_URL}data/bouncer/hazards.json`, { cache: "no-store" })
-      .then((res) => (res.ok ? (res.json() as Promise<unknown>) : {}))
-      .then((raw) => coerceHazardCatalog(raw))
-      .catch(() => ({}) as HazardCatalog);
-  }
-  return cached;
+  return fetch(`${import.meta.env.BASE_URL}data/bouncer/hazards.json`, { cache: "no-store" })
+    .then((res) => (res.ok ? (res.json() as Promise<unknown>) : {}))
+    .then((raw) => coerceHazardCatalog(raw))
+    .catch(() => ({}) as HazardCatalog);
 }

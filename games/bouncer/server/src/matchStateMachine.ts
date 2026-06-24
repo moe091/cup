@@ -11,11 +11,16 @@ import type {
   RoundResultsUpdate,
   RoundEndReason,
   CheckpointReached,
+  PickupDef,
+  PickupRemovedPayload,
+  PlayerHeldPickupPayload,
 } from '@cup/bouncer-shared';
 import type { PlayerId, Broadcast, BroadcastExcept } from './types.js';
 import { asPlayerId, asSocketId } from './types.js';
 import { Match } from './match.js';
 import { loadLevelDef } from './api/helpers.js';
+import { PickupManager } from './PickupManager.js';
+import { applyPickupEffect } from './pickupEffects.js';
 
 const FINISH_TIMEOUT_MS = 120_000;
 const COUNTDOWN_SECONDS = 3;
@@ -51,6 +56,7 @@ export class MatchStateMachine {
   private deathsByPlayer = new Map<PlayerId, number>();
   private finishTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
   private countdownHandle: ReturnType<typeof setTimeout> | null = null;
+  private pickupManager: PickupManager | null = null;
 
   // Pre-fetched level for the current selection, so the COUNTDOWN transition is
   // instant instead of blocking on an API fetch.
@@ -332,6 +338,47 @@ export class MatchStateMachine {
     console.log(`[death] ${playerId} died (round deaths: ${next})`);
   }
 
+  /**
+   * A player's local engine fired a pickup sensor. Validate it's still available,
+   * then remove it from the field and assign it to the player.
+   */
+  onPickupCollected(socket: Socket, data: unknown) {
+    if (this.phase !== 'IN_PROGRESS') return;
+    const playerId = socket.data.playerId as PlayerId;
+    if (!this.match.getPlayer(playerId) || !this.pickupManager) return;
+    if (!data || typeof data !== 'object') return;
+
+    const { instanceId } = data as { instanceId?: unknown };
+    if (typeof instanceId !== 'number' || !Number.isFinite(instanceId)) return;
+
+    const pickupKey = this.pickupManager.onPickupCollected(playerId, instanceId);
+    if (!pickupKey) return; // already taken or invalid
+
+    const removedPayload: PickupRemovedPayload = { instanceId };
+    this.broadcast('pickup_removed', removedPayload);
+
+    const heldPayload: PlayerHeldPickupPayload = { pickupKey };
+    socket.emit('player_pickup_held', heldPayload);
+
+    console.log(`[pickup] ${playerId} collected ${pickupKey} (instance ${instanceId})`);
+  }
+
+  /** The player activates their held pickup. */
+  onUsePickup(socket: Socket) {
+    if (this.phase !== 'IN_PROGRESS') return;
+    const playerId = socket.data.playerId as PlayerId;
+    if (!this.match.getPlayer(playerId) || !this.pickupManager) return;
+
+    const effectKey = this.pickupManager.usePickup(playerId);
+    if (!effectKey) return;
+
+    applyPickupEffect(effectKey, this.broadcast, playerId as string, this.match.getPlayerIds() as string[]);
+    // Tell the activating player their held slot is now empty.
+    const clearedPayload: PlayerHeldPickupPayload = { pickupKey: null };
+    socket.emit('player_pickup_held', clearedPayload);
+    console.log(`[pickup] ${playerId} used ${effectKey}`);
+  }
+
   destroy() {
     this.clearTimers();
   }
@@ -372,6 +419,9 @@ export class MatchStateMachine {
 
     this.resetRoundRuntime();
     this.phase = 'COUNTDOWN';
+
+    const pickupDefs = level.objects.filter((o): o is PickupDef => o.type === 'pickup');
+    this.pickupManager = new PickupManager(pickupDefs);
 
     const payload: RoundStartingPayload = { level, spawns: this.match.assignSpawns(level) };
     this.broadcast('round_starting', payload);
@@ -508,6 +558,7 @@ export class MatchStateMachine {
     this.deathsByPlayer.clear();
     this.firstFinisherAtMs = null;
     this.roundStartAtMs = null;
+    this.pickupManager = null;
     if (this.finishTimeoutHandle) {
       clearTimeout(this.finishTimeoutHandle);
       this.finishTimeoutHandle = null;

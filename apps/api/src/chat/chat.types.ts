@@ -22,6 +22,7 @@ export type JoinChannelPayload = {
 export type ChatSocketData = {
   userId?: string;
   authorDisplayName?: string;
+  avatarKey?: string | null;
   room?: string;
 };
 

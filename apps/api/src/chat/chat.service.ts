@@ -297,6 +297,7 @@ export class ChatService {
           select: {
             displayName: true,
             username: true,
+            avatarKey: true,
           },
         },
         replyMessageId: true,
@@ -333,6 +334,7 @@ export class ChatService {
         channelId: row.channelId,
         authorUserId: row.authorUserId,
         authorDisplayName: row.author.displayName ?? row.author.username,
+        authorAvatarKey: row.author.avatarKey,
         replyMessageId: row.replyMessageId,
         body: row.body,
         createdAt: row.createdAt.toISOString(),
@@ -411,18 +413,19 @@ export class ChatService {
     };
   }
 
-  async resolveAuthorDisplayName(userId: string): Promise<string | null> {
+  async resolveAuthorInfo(userId: string): Promise<{ displayName: string; avatarKey: string | null } | null> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
         displayName: true,
         username: true,
+        avatarKey: true,
       },
     });
     if (!user) {
       return null;
     }
-    return user.displayName ?? user.username;
+    return { displayName: user.displayName ?? user.username, avatarKey: user.avatarKey };
   }
 
   //returns display info needed by frontend to render reactions for a single message

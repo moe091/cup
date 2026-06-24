@@ -9,6 +9,9 @@ import type {
   RoundResultsUpdate,
   RoundStartingPayload,
   LevelListItem,
+  PickupRemovedPayload,
+  PlayerHeldPickupPayload,
+  PlayerEffectAppliedPayload,
 } from '@cup/bouncer-shared';
 import type { WaitingRoomScene } from './scenes/WaitingRoom';
 import type { GameplayScene } from './scenes/Gameplay';
@@ -150,6 +153,18 @@ export class ClientMatchFlow {
   onJoinError(reason?: string) {
     const message = reason === 'match_in_progress' ? 'This match is already in progress.' : 'Unable to join match.';
     this.showBlockingMessage(message);
+  }
+
+  onPickupRemoved(data: PickupRemovedPayload) {
+    this.gameplay.onPickupRemoved(data);
+  }
+
+  onPlayerHeldPickup(data: PlayerHeldPickupPayload) {
+    this.gameplay.onPlayerHeldPickup(data);
+  }
+
+  onPlayerEffectApplied(data: PlayerEffectAppliedPayload) {
+    this.gameplay.onPlayerEffectApplied(data);
   }
 
   // ---------------- Scene helpers ---------------- \\

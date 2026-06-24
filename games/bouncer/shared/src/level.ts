@@ -47,7 +47,15 @@ export type HazardDef = {
   y: number;
 };
 
-export type LevelObject = PlatformDef | PolygonDef | SpawnPointDef | GoalDef | CheckpointDef | HazardDef;
+export type PickupDef = {
+  type: 'pickup';
+  // References a PICKUP_CATALOG key.
+  pickupKey: string;
+  x: number;
+  y: number;
+};
+
+export type LevelObject = PlatformDef | PolygonDef | SpawnPointDef | GoalDef | CheckpointDef | HazardDef | PickupDef;
 
 export type LevelDefinition = {
   name: string;

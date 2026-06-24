@@ -10,6 +10,9 @@ import {
   RemotePlayerStateUpdate,
   RoundResultsUpdate,
   RoundStartingPayload,
+  PickupRemovedPayload,
+  PlayerHeldPickupPayload,
+  PlayerEffectAppliedPayload,
 } from '@cup/bouncer-shared';
 import { GameplayScene } from './scenes/Gameplay';
 import { WaitingRoomScene } from './scenes/WaitingRoom';
@@ -152,5 +155,17 @@ export class BouncerClient {
 
   onJoinError(reason?: string) {
     this.flow.onJoinError(reason);
+  }
+
+  onPickupRemoved(data: PickupRemovedPayload) {
+    this.flow.onPickupRemoved(data);
+  }
+
+  onPlayerHeldPickup(data: PlayerHeldPickupPayload) {
+    this.flow.onPlayerHeldPickup(data);
+  }
+
+  onPlayerEffectApplied(data: PlayerEffectAppliedPayload) {
+    this.flow.onPlayerEffectApplied(data);
   }
 }

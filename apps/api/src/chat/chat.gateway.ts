@@ -66,15 +66,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       const userId = decoded.sub;
-      const authorDisplayName = await this.chatService.resolveAuthorDisplayName(userId);
+      const authorInfo = await this.chatService.resolveAuthorInfo(userId);
 
-      if (!authorDisplayName) {
+      if (!authorInfo) {
         socket.disconnect();
         return;
       }
 
       socket.data.userId = userId;
-      socket.data.authorDisplayName = authorDisplayName;
+      socket.data.authorDisplayName = authorInfo.displayName;
+      socket.data.avatarKey = authorInfo.avatarKey;
     } catch {
       socket.disconnect();
     }
@@ -183,6 +184,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         channelId: created.channelId,
         authorUserId: created.authorUserId,
         authorDisplayName,
+        authorAvatarKey: socket.data.avatarKey ?? null,
         replyMessageId: created.replyMessageId,
         body: created.body,
         createdAt: created.createdAt.toISOString(),

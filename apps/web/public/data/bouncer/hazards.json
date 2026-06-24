@@ -6,6 +6,6 @@
     "spriteHeight": 256,
     "spriteRotationSpeed": 360,
     "isSensor": true,
-    "body": { "shape": "circle" }
+    "body": { "shape": "circle", "radius": 108 }
   }
 }

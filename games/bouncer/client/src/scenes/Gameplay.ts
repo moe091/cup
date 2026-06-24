@@ -12,8 +12,13 @@ import type {
   CheckpointDef,
   CheckpointReached,
   HazardCatalog,
+  PickupDef,
+  PickupCatalogEntry,
+  PickupRemovedPayload,
+  PlayerHeldPickupPayload,
+  PlayerEffectAppliedPayload,
 } from '@cup/bouncer-shared';
-import { PLAYER_EVENT } from '@cup/bouncer-shared';
+import { PLAYER_EVENT, PICKUP_CATALOG } from '@cup/bouncer-shared';
 import { InputController } from '../misc/InputController';
 import { ParallaxBackground } from '../misc/ParallaxBackground';
 import { RemoteSmoother, type SampleMode } from '../misc/RemoteSmoother';
@@ -47,6 +52,8 @@ const PLAYER_BALL_DIAMETER_PX = 52;
 // Nameplate + self-marker placement (world px above the ball center).
 const LABEL_Y_OFFSET = 54;
 const CHEVRON_Y_OFFSET = 92;
+// Held pickup icon sits above the chevron (chevron bob peak is CHEVRON_Y_OFFSET - 6).
+const HELD_PICKUP_Y_OFFSET = CHEVRON_Y_OFFSET + 52;
 const SELF_COLOR = '#ffd54a'; // gold, for "YOU" label / chevron
 const SELF_TINT = 0xcc9f2e; // darker gold, for the local ball's trail
 const DEATH_DURATION_MS = 1000; // ball hidden + frozen while the death burst plays
@@ -124,6 +131,16 @@ export class GameplayScene extends Phaser.Scene {
   private pendingEvents = 0;
   // Per-remote re-show timers for their death effect.
   private remoteDeathTimers = new Map<string, Phaser.Time.TimerEvent>();
+
+  // Pickups: field sprites indexed by pickup instanceId.
+  private pickupSprites = new Map<number, Phaser.GameObjects.Container>();
+  // Local player's held pickup key (null = nothing held).
+  private heldPickup: string | null = null;
+  // Icon image rendered above the local ball showing the held pickup.
+  private heldPickupIcon: Phaser.GameObjects.Image | null = null;
+  // Active effect overlays per player.
+  private activeFrozenOverlays = new Map<string, Phaser.GameObjects.Image>();
+  private activeBoostHalos = new Map<string, Phaser.GameObjects.Particles.ParticleEmitter>();
 
   // Nameplates over each ball + a self-only chevron marker. playerNames is fed
   // from match_status (the scene only knows ids otherwise).
@@ -207,6 +224,7 @@ export class GameplayScene extends Phaser.Scene {
     this.createCheckpointToast();
     this.createSelfChevron();
     this.setupRestartKey();
+    this.setupUsePickupInput();
 
     this.events.once('destroy', this.onDestroy, this);
 
@@ -340,6 +358,9 @@ export class GameplayScene extends Phaser.Scene {
       const bob = Math.sin(this.time.now / 300) * 6;
       this.selfChevron.setPosition(sprite.x, sprite.y - CHEVRON_Y_OFFSET + bob).setVisible(true);
     }
+    // Held pickup icon and effect overlays follow the ball.
+    this.heldPickupIcon?.setPosition(sprite.x, sprite.y - HELD_PICKUP_Y_OFFSET);
+    this.activeFrozenOverlays.get(this.playerId)?.setPosition(sprite.x, sprite.y);
   }
 
   private sampleOwnHistory(targetTms: number): { x: number; y: number; angle: number } {
@@ -473,6 +494,8 @@ export class GameplayScene extends Phaser.Scene {
     this.parallaxBg = null;
     this.tiledBg?.destroy();
     this.tiledBg = null;
+    for (const s of this.pickupSprites.values()) s.destroy();
+    this.pickupSprites.clear();
 
     this.levelDef = level;
     this.running = false;
@@ -485,6 +508,7 @@ export class GameplayScene extends Phaser.Scene {
     let maxY = 0;
     const platformRects: PlatformRect[] = [];
     const polygonDefs: PolygonVerts[] = [];
+    let pickupInstanceId = 0;
 
     level.objects.forEach((obj) => {
       if (obj.type === 'platform') {
@@ -536,6 +560,14 @@ export class GameplayScene extends Phaser.Scene {
           this.levelRects.push(sprite);
           const speed = entry.spriteRotationSpeed ?? 0;
           if (speed !== 0) this.hazardSprites.push({ sprite, rotationSpeed: speed });
+        }
+      } else if (obj.type === 'pickup') {
+        const pickupEntry = PICKUP_CATALOG[(obj as PickupDef).pickupKey];
+        if (pickupEntry) {
+          const instanceId = pickupInstanceId++;
+          const container = this.createPickupFieldSprite((obj as PickupDef).x, (obj as PickupDef).y, pickupEntry);
+          this.pickupSprites.set(instanceId, container);
+          this.levelRects.push(container);
         }
       }
     });
@@ -724,6 +756,7 @@ export class GameplayScene extends Phaser.Scene {
       sprite.shadow?.setPosition(sprite.x + 8, sprite.y - 10);
       sprite.setRotation(Phaser.Math.Angle.RotateTo(sprite.rotation, sample.angle, 0.35));
       this.ballLabels.get(playerId)?.setPosition(sprite.x, sprite.y - LABEL_Y_OFFSET);
+      this.activeFrozenOverlays.get(playerId)?.setPosition(sprite.x, sprite.y);
 
       // sample.* = interpolator output (pre this lerp); sprite.* = what's drawn.
       // Comparing the two isolates jitter added by the secondary smoothing pass.
@@ -771,6 +804,7 @@ export class GameplayScene extends Phaser.Scene {
       onHazard: this.onLocalHazard.bind(this),
       onDoubleJump: this.onLocalDoubleJump.bind(this),
       onDash: this.onLocalDash.bind(this),
+      onPickupCollected: this.onLocalPickupCollected.bind(this),
     });
     this.engine.loadLevel(this.levelDef, this.hazardCatalog);
     this.engine.spawnPlayerAt(this.playerId, this.mySpawn.x, this.mySpawn.y);
@@ -820,6 +854,11 @@ export class GameplayScene extends Phaser.Scene {
     this.pendingEvents = 0;
     for (const t of this.remoteDeathTimers.values()) t.remove(false);
     this.remoteDeathTimers.clear();
+    // Clear pickup state for the new round.
+    this.heldPickup = null;
+    this.heldPickupIcon?.destroy();
+    this.heldPickupIcon = null;
+    this.clearAllBallEffects();
   }
 
   // Emits the local player's current engine state via the normal player_state
@@ -1638,6 +1677,143 @@ export class GameplayScene extends Phaser.Scene {
     return this.add.container(0, 0, [glow, base, highlight]);
   }
 
+  // ── Pickup field sprites ──────────────────────────────────────────────────
+
+  private createPickupFieldSprite(x: number, y: number, entry: PickupCatalogEntry): Phaser.GameObjects.Container {
+    const radius = 36;
+    const circle = this.add.arc(0, 0, radius, 0, 360, false, entry.color, 1);
+    const label = this.add
+      .text(0, radius + 14, entry.displayName, {
+        fontFamily: 'Arial',
+        fontSize: '22px',
+        color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4,
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5, 0);
+    const container = this.add.container(x, y, [circle, label]).setDepth(2);
+    this.tweens.add({
+      targets: container,
+      y: y - 14,
+      duration: 950,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1,
+    });
+    return container;
+  }
+
+  // ── Socket event handlers (called by ClientMatchFlow) ────────────────────
+
+  onPickupRemoved(data: PickupRemovedPayload) {
+    const sprite = this.pickupSprites.get(data.instanceId);
+    if (sprite) {
+      sprite.destroy();
+      this.pickupSprites.delete(data.instanceId);
+    }
+    // Disable the engine sensor so no more contact callbacks fire for this pickup.
+    this.engine?.setPickupActive(data.instanceId, false);
+  }
+
+  onPlayerHeldPickup(data: PlayerHeldPickupPayload) {
+    this.heldPickup = data.pickupKey;
+    this.heldPickupIcon?.destroy();
+    this.heldPickupIcon = null;
+    if (data.pickupKey) {
+      const entry = PICKUP_CATALOG[data.pickupKey];
+      if (entry && this.textures.exists(entry.key)) {
+        this.heldPickupIcon = this.add
+          .image(0, 0, entry.key)
+          .setDisplaySize(48, 48)
+          .setOrigin(0.5)
+          .setDepth(6);
+      }
+    }
+  }
+
+  onPlayerEffectApplied(data: PlayerEffectAppliedPayload) {
+    if (data.effectKey === 'freeze') this.applyFreezeEffect(data.playerId, data.durationMs);
+    else if (data.effectKey === 'boost') this.applyBoostEffect(data.playerId, data.durationMs);
+  }
+
+  // ── Effect visuals ────────────────────────────────────────────────────────
+
+  private applyFreezeEffect(playerId: string, durationMs: number) {
+    if (playerId === this.playerId && this.engine) {
+      this.engine.freezePlayer(playerId, durationMs);
+    }
+    // Destroy any existing overlay for this player before adding a new one.
+    this.activeFrozenOverlays.get(playerId)?.destroy();
+    const sprite = this.balls.get(playerId);
+    const overlay = this.add
+      .image(sprite?.x ?? 0, sprite?.y ?? 0, 'fx_frozen')
+      .setDisplaySize(PLAYER_BALL_DIAMETER_PX + 24, PLAYER_BALL_DIAMETER_PX + 24)
+      .setAlpha(0.75)
+      .setDepth(5);
+    this.activeFrozenOverlays.set(playerId, overlay);
+    this.time.delayedCall(durationMs, () => {
+      if (this.activeFrozenOverlays.get(playerId) === overlay) {
+        overlay.destroy();
+        this.activeFrozenOverlays.delete(playerId);
+      }
+    });
+  }
+
+  private applyBoostEffect(playerId: string, durationMs: number) {
+    if (playerId === this.playerId && this.engine) {
+      this.engine.setAccelMultiplier(playerId, 2.5, durationMs);
+    }
+    const sprite = this.balls.get(playerId);
+    if (!sprite) return;
+    this.activeBoostHalos.get(playerId)?.destroy();
+    const halo = this.add
+      .particles(0, 0, 'trail_dot', {
+        speed: { min: 50, max: 110 },
+        scale: { start: 3.5, end: 0 },
+        alpha: { start: 0.7, end: 0 },
+        lifespan: 420,
+        frequency: 28,
+        tint: [0xff3300, 0xff6600, 0xff0000],
+      })
+      .setDepth(-1);
+    halo.startFollow(sprite);
+    this.activeBoostHalos.set(playerId, halo);
+    this.time.delayedCall(durationMs, () => {
+      if (this.activeBoostHalos.get(playerId) === halo) {
+        halo.destroy();
+        this.activeBoostHalos.delete(playerId);
+      }
+    });
+  }
+
+  private clearAllBallEffects() {
+    for (const overlay of this.activeFrozenOverlays.values()) overlay.destroy();
+    this.activeFrozenOverlays.clear();
+    for (const halo of this.activeBoostHalos.values()) halo.destroy();
+    this.activeBoostHalos.clear();
+  }
+
+  // ── Engine callbacks ──────────────────────────────────────────────────────
+
+  private onLocalPickupCollected(playerId: string, instanceId: number) {
+    if (playerId !== this.playerId) return;
+    if (this.heldPickup !== null) return; // already holding — server would reject
+    this.emit('pickup_collected', { instanceId });
+  }
+
+  // ── Input ─────────────────────────────────────────────────────────────────
+
+  private setupUsePickupInput() {
+    const eKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    eKey?.on('down', () => {
+      if (this.heldPickup !== null) this.emit('use_pickup', {});
+    });
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (pointer.rightButtonDown() && this.heldPickup !== null) this.emit('use_pickup', {});
+    });
+  }
+
   onDestroy() {
     this.inputController.dispose();
     this.parallaxBg?.destroy();
@@ -1663,6 +1839,11 @@ export class GameplayScene extends Phaser.Scene {
     this.remoteDeathTimers.clear();
     this.debugText?.destroy();
     this.debugText = undefined;
+    this.heldPickupIcon?.destroy();
+    this.heldPickupIcon = null;
+    for (const s of this.pickupSprites.values()) s.destroy();
+    this.pickupSprites.clear();
+    this.clearAllBallEffects();
     netDebug.clear();
   }
 }

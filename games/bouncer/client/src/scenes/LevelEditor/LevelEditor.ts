@@ -8,8 +8,9 @@ import type {
   CheckpointDef,
   HazardDef,
   HazardCatalog,
+  PickupDef,
 } from '@cup/bouncer-shared';
-import { resolveHazardBody } from '@cup/bouncer-shared';
+import { resolveHazardBody, PICKUP_CATALOG } from '@cup/bouncer-shared';
 import EditorTool, { ToolName } from './EditorTool';
 import SpawnPointTool from './SpawnPointTool';
 import PlatformTool from './PlatformTool';
@@ -17,6 +18,7 @@ import PolygonTool from './PolygonTool';
 import GoalTool from './GoalTool';
 import CheckpointTool, { CHECKPOINT_RECT_COLOR, CHECKPOINT_RESPAWN_COLOR } from './CheckpointTool';
 import HazardTool from './HazardTool';
+import PickupTool from './PickupTool';
 
 const PLATFORM_FILL = 0x5aa9e6;
 const PLATFORM_STROKE = 0x2e6da4;
@@ -40,6 +42,7 @@ export class LevelEditorScene extends Phaser.Scene {
     goal: new GoalTool(),
     checkpoint: new CheckpointTool(),
     hazard: new HazardTool(),
+    pickup: new PickupTool(),
   };
   private isPanning = false;
   private panStartX = 0;
@@ -67,6 +70,10 @@ export class LevelEditorScene extends Phaser.Scene {
     for (const entry of Object.values(this.hazardCatalog)) {
       this.load.image(entry.key, entry.spritePath);
     }
+    // Load pickup icons under their catalog key for the picker and placed sprites.
+    for (const entry of Object.values(PICKUP_CATALOG)) {
+      this.load.image(entry.key, entry.iconPath);
+    }
   }
 
   getHazardCatalog(): HazardCatalog {
@@ -77,6 +84,12 @@ export class LevelEditorScene extends Phaser.Scene {
   setSelectedHazard(key: string) {
     (this.tools.hazard as HazardTool).setHazardKey(key);
     this.setActiveTool('hazard');
+  }
+
+  /** Selects a pickup from the picker and switches to the pickup tool. */
+  setSelectedPickup(key: string) {
+    (this.tools.pickup as PickupTool).setPickupKey(key);
+    this.setActiveTool('pickup');
   }
 
   fullscreenListener() {
@@ -210,6 +223,10 @@ export class LevelEditorScene extends Phaser.Scene {
     if (obj.type === 'hazard') {
       return this.drawHazard(obj);
     }
+
+    if (obj.type === 'pickup') {
+      return this.drawPickup(obj);
+    }
   }
 
   // Container = main visual (sprite/fallback) at list[0] + red body overlay for
@@ -245,6 +262,33 @@ export class LevelEditorScene extends Phaser.Scene {
       }
     }
 
+    container.setDepth(2);
+    return container;
+  }
+
+  private drawPickup(obj: PickupDef): Phaser.GameObjects.Container {
+    const entry = PICKUP_CATALOG[obj.pickupKey];
+    const container = this.add.container(0, 0);
+    const size = 52;
+
+    if (entry && this.textures.exists(entry.key)) {
+      const sprite = this.add.image(obj.x, obj.y, entry.key).setDisplaySize(size, size).setOrigin(0.5);
+      container.add(sprite);
+    } else {
+      const circle = this.add.circle(obj.x, obj.y, size / 2, entry?.color ?? 0x888888);
+      container.add(circle);
+    }
+
+    // Label below the sprite showing the pickup type.
+    const label = this.add
+      .text(obj.x, obj.y + size / 2 + 8, entry?.displayName ?? obj.pickupKey, {
+        fontSize: '13px',
+        color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5, 0);
+    container.add(label);
     container.setDepth(2);
     return container;
   }
@@ -369,6 +413,7 @@ export class LevelEditorScene extends Phaser.Scene {
       case 'spawnPoint':
       case 'goal':
       case 'hazard':
+      case 'pickup':
         return { x: def.x, y: def.y };
       case 'polygon':
         return def.vertices[0] ?? { x: 0, y: 0 };
@@ -383,6 +428,7 @@ export class LevelEditorScene extends Phaser.Scene {
       case 'spawnPoint':
       case 'goal':
       case 'hazard':
+      case 'pickup':
         return { ...def, x: def.x + dx, y: def.y + dy };
       case 'polygon':
         return { ...def, vertices: def.vertices.map((v) => ({ x: v.x + dx, y: v.y + dy })) };
@@ -431,6 +477,11 @@ export class LevelEditorScene extends Phaser.Scene {
         }
       } else if (def.type === 'hazard') {
         if (this.isPointInHazard(x, y, def)) {
+          this.setSelectedIndex(i);
+          return true;
+        }
+      } else if (def.type === 'pickup') {
+        if (this.isPointInCircle(x, y, def.x, def.y, 32)) {
           this.setSelectedIndex(i);
           return true;
         }
@@ -548,6 +599,15 @@ export class LevelEditorScene extends Phaser.Scene {
         else main.clearTint();
       } else if (main instanceof Phaser.GameObjects.Rectangle) {
         main.setFillStyle(selected ? 0xdb2b2b : 0x888888, selected ? 0.85 : 0.6);
+      }
+    } else if (entry.def.type === 'pickup') {
+      const main = (entry.view as Phaser.GameObjects.Container).list[0];
+      if (main instanceof Phaser.GameObjects.Image) {
+        if (selected) main.setTint(0xff7777);
+        else main.clearTint();
+      } else if (main instanceof Phaser.GameObjects.Arc) {
+        const entry2 = PICKUP_CATALOG[(entry.def as PickupDef).pickupKey];
+        main.setFillStyle(selected ? 0xdb2b2b : (entry2?.color ?? 0x888888));
       }
     } else if (entry.def.type === 'spawnPoint') {
       (entry.view as Phaser.GameObjects.Arc).setFillStyle(selected ? 0xdb2b2b : 0xffffff);

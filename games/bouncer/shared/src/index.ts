@@ -159,6 +159,34 @@ export type PlayerInputState = InputState & {
   playerId: string;
 };
 
+// ---- Pickup socket message payloads ----
+
+/** Broadcast to all when a pickup instance is collected and removed from the field. */
+export type PickupRemovedPayload = {
+  instanceId: number;
+};
+
+/** Sent to the collecting player only — what they now hold (null = cleared). */
+export type PlayerHeldPickupPayload = {
+  pickupKey: string | null;
+};
+
+/**
+ * Broadcast to ALL players when an effect activates on someone.
+ * Each client shows the visual on that player's ball.
+ * The affected player additionally applies the physics/gameplay side.
+ */
+export type PlayerEffectAppliedPayload = {
+  playerId: string;
+  effectKey: string;
+  durationMs: number;
+};
+
+/** Broadcast to all at round start/reset — re-activates all pickup instances. */
+export type PickupsResetPayload = {
+  instanceIds: number[];
+};
+
 export type {
   LevelDefinition,
   LevelResponse,
@@ -169,11 +197,15 @@ export type {
   GoalDef,
   CheckpointDef,
   HazardDef,
+  PickupDef,
   LevelListItem,
 } from './level.js';
 
 export { resolveHazardBody, coerceHazardCatalog, DEFAULT_BODY_SCALE } from './hazards.js';
 export type { HazardBody, HazardCatalogEntry, HazardCatalog, ResolvedHazardBody } from './hazards.js';
+
+export { PICKUP_CATALOG } from './pickups.js';
+export type { PickupCatalogEntry } from './pickups.js';
 
 export const scaleFactor = 100; //pixels per planck.js unit(meter). Const because this needs to be consistent between client and server - nobody can change it anywhere except here
 export const toWorld = (pixels: number) => pixels / scaleFactor;

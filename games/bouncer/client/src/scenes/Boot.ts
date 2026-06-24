@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { HazardCatalog } from '@cup/bouncer-shared';
+import { PICKUP_CATALOG } from '@cup/bouncer-shared';
 
 export class BootScene extends Phaser.Scene {
   constructor(private hazardCatalog: HazardCatalog = {}) {
@@ -22,6 +23,10 @@ export class BootScene extends Phaser.Scene {
     this.load.image('stars_big_2.png', '/games/bouncer/stars_big_2.png');
     this.load.image('platform_texture', '/games/bouncer/platform_texture.png');
     this.load.image('bg', '/games/bouncer/bg.png');
+    this.load.image('fx_frozen', '/games/bouncer/effects/frozen.png');
+    for (const entry of Object.values(PICKUP_CATALOG)) {
+      this.load.image(entry.key, entry.iconPath);
+    }
     // Use orb sprites for player balls.
     this.load.image('ball_red', '/games/bouncer/orbs/orb_0001.png');
     this.load.image('ball_green', '/games/bouncer/orbs/orb_0000.png');

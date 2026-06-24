@@ -20,3 +20,5 @@ export type HazardListener = (playerId: string) => void;
 export type PlayerEventListener = (playerId: string) => void;
 
 export type DashEventListener = (playerId: string, dirX: number) => void;
+
+export type PickupCollectedListener = (playerId: string, instanceId: number) => void;

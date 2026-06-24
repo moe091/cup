@@ -13,6 +13,9 @@ import {
   MatchJoinInfo,
   LevelListItem,
   type HazardCatalog,
+  type PickupRemovedPayload,
+  type PlayerHeldPickupPayload,
+  type PlayerEffectAppliedPayload,
 } from '@cup/bouncer-shared';
 import { LevelEditorScene } from './scenes/LevelEditor/LevelEditor';
 import { loadLevelDef } from './api/levels';
@@ -97,6 +100,18 @@ export function connectBouncer(
 
   socket.on('match_results', (data: MatchResultsUpdate) => {
     bouncerClient?.onMatchResultsUpdate(data);
+  });
+
+  socket.on('pickup_removed', (data: PickupRemovedPayload) => {
+    bouncerClient?.onPickupRemoved(data);
+  });
+
+  socket.on('player_pickup_held', (data: PlayerHeldPickupPayload) => {
+    bouncerClient?.onPlayerHeldPickup(data);
+  });
+
+  socket.on('player_effect_applied', (data: PlayerEffectAppliedPayload) => {
+    bouncerClient?.onPlayerEffectApplied(data);
   });
 
   socket.on('disconnect', () => {

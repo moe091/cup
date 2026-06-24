@@ -17,6 +17,7 @@ export type ChatMessageDto = {
   channelId: string;
   authorUserId: string;
   authorDisplayName: string;
+  authorAvatarKey: string | null;
   replyMessageId: string | null;
   body: string;
   createdAt: string;
@@ -58,6 +59,7 @@ export type ChatRealtimeMessage = {
   channelId: string;
   authorUserId: string;
   authorDisplayName: string;
+  authorAvatarKey: string | null;
   replyMessageId: string | null;
   body: string;
   createdAt: string; // ISO

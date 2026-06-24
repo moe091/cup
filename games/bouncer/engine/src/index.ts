@@ -3,6 +3,7 @@ import {
   DashEventListener,
   FinishListener,
   HazardListener,
+  PickupCollectedListener,
   PlayerEventListener,
 } from './types.js';
 import { World } from './world.js';
@@ -15,6 +16,7 @@ export type EngineOptions = {
   onHazard?: HazardListener;
   onDoubleJump?: PlayerEventListener;
   onDash?: DashEventListener;
+  onPickupCollected?: PickupCollectedListener;
 };
 
 export class Engine {
@@ -44,6 +46,7 @@ export class Engine {
     if (o.onHazard) this.world.setHazardListener(o.onHazard);
     if (o.onDoubleJump) this.world.setDoubleJumpListener(o.onDoubleJump);
     if (o.onDash) this.world.setDashListener(o.onDash);
+    if (o.onPickupCollected) this.world.setPickupListener(o.onPickupCollected);
   }
 
   step(inputs: PlayerInputState[]) {
@@ -94,6 +97,26 @@ export class Engine {
     this.world.loadLevel(level, hazardCatalog);
     this.world.setFinishListener(this.onPlayerFinish);
     this.applyEventListeners();
+  }
+
+  /** Freezes a player in place for durationMs (blocks all input + physics). */
+  freezePlayer(playerId: string, durationMs: number) {
+    this.world.freezePlayer(playerId, durationMs);
+  }
+
+  /** Multiplies the player's movement acceleration for durationMs. */
+  setAccelMultiplier(playerId: string, multiplier: number, durationMs: number) {
+    this.world.setAccelMultiplier(playerId, multiplier, durationMs);
+  }
+
+  /** Enables or disables a pickup sensor by instanceId (use false when collected). */
+  setPickupActive(instanceId: number, active: boolean) {
+    this.world.setPickupActive(instanceId, active);
+  }
+
+  /** Restores all collected pickups (call at round start). */
+  resetPickups() {
+    this.world.resetPickups();
   }
 }
 

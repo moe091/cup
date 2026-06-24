@@ -1,6 +1,6 @@
 import { LevelEditorScene } from './LevelEditor';
 
-export type ToolName = 'platform' | 'spawnPoint' | 'polygon' | 'goal' | 'checkpoint' | 'hazard';
+export type ToolName = 'platform' | 'spawnPoint' | 'polygon' | 'goal' | 'checkpoint' | 'hazard' | 'pickup';
 
 export default interface EditorTool {
   name: ToolName;

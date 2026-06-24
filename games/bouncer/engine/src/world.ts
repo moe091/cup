@@ -5,6 +5,7 @@ import type {
   DashEventListener,
   FinishListener,
   HazardListener,
+  PickupCollectedListener,
   PlayerEventListener,
   Point,
 } from './types.js';
@@ -16,9 +17,10 @@ import { DEFAULT_PHYSICS_CONFIG, type BouncerPhysicsConfig } from './config.js';
 
 let gravity = { x: 0, y: 10 };
 
-// How long gravity is disabled on the dashing ball so the dash travels flat
-// before dropping. Kept as a constant (not config) to limit config surface.
 const DASH_GRAVITY_DISABLE_MS = 500;
+
+// Sensor radius for pickup collection zones (pixels → world units).
+const PICKUP_SENSOR_RADIUS_PX = 36;
 
 type BallState = {
   body: Body;
@@ -29,11 +31,20 @@ type BallState = {
   jumpActive: boolean;
   jumpStartedAtMs: number;
   jumpHoldRemainingMs: number;
-  // Air-action availability: true at spawn, consumed on use, re-armed on landing.
   canDash: boolean;
   canDoubleJump: boolean;
-  // When > 0, gravity is disabled on this ball until this timestamp (dash float).
   dashGravityUntilMs: number;
+  // Pickup effects
+  frozenUntilMs: number;          // 0 = not frozen; body is set to 'static' while > 0
+  accelMultiplier: number;        // 1 = normal; applied to move impulse + torque
+  accelMultiplierUntilMs: number; // 0 = no active boost
+};
+
+type PickupBodyEntry = {
+  x: number;
+  y: number;
+  key: string;
+  body: Body | null; // null = collected this round, will be restored on reset
 };
 
 export class World {
@@ -45,7 +56,7 @@ export class World {
   private groundSensorRadius = 0.08;
   private groundSensorOffset = this.ballRadius + 0.04;
   private moveTorque = 0.6;
-  // Tunable via physics config (see config.ts); initialized to defaults.
+  private maxHorizontalSpeed = 10;
   private moveImpulse = DEFAULT_PHYSICS_CONFIG.moveAcceleration;
   private jumpImpulse = DEFAULT_PHYSICS_CONFIG.jumpPower;
   private doubleJumpForce = DEFAULT_PHYSICS_CONFIG.doubleJumpForce;
@@ -58,6 +69,8 @@ export class World {
   private hazardListener: HazardListener | null = null;
   private doubleJumpListener: PlayerEventListener | null = null;
   private dashListener: DashEventListener | null = null;
+  private pickupListener: PickupCollectedListener | null = null;
+  private pickupBodies: Map<number, PickupBodyEntry> = new Map();
   private finishedPlayers = new Set<string>();
 
   constructor(physics?: Partial<BouncerPhysicsConfig>) {
@@ -116,6 +129,18 @@ export class World {
         this.hazardListener?.(playerId);
       }
 
+      const isPickupA = typeof aUser === 'string' && aUser.startsWith('Pickup-');
+      const isPickupB = typeof bUser === 'string' && bUser.startsWith('Pickup-');
+      if ((isBallA && isPickupB) || (isBallB && isPickupA)) {
+        const ballUser = isBallA ? (aUser as string) : (bUser as string);
+        const pickupUser = isPickupA ? (aUser as string) : (bUser as string);
+        const playerId = ballUser.replace('Ball-', '');
+        const instanceId = Number.parseInt(pickupUser.replace('Pickup-', ''), 10);
+        if (this.pickupListener && Number.isFinite(instanceId)) {
+          this.pickupListener(playerId, instanceId);
+        }
+      }
+
       if (groundSensorA && !fixtureBIsSensor && !this.isBallUser(bUser, groundSensorA)) {
         this.addGroundContact(groundSensorA);
       }
@@ -156,15 +181,22 @@ export class World {
       console.error("[Engine.World.applyMoveInput] Tried applying input to ball that doesn't exist: ", ballId, move);
       return;
     }
+    if (ballState.frozenUntilMs > 0) return;
 
     const body = ballState.body;
+    const mult = ballState.accelMultiplier;
+    const groundMult = ballState.grounded ? 3 : 1;
+    const xVel = body.getLinearVelocity().x;
+    const pushingSameDir = (move > 0 && xVel > 0) || (move < 0 && xVel < 0);
+    // Don't add more speed past the cap — but braking (opposite dir) always applies.
+    if (pushingSameDir && Math.abs(xVel) >= this.maxHorizontalSpeed * mult) return;
+    const brakeMult = (move > 0 && xVel < 0) || (move < 0 && xVel > 0) ? 2 : 1;
     body.setAwake(true);
-    body.applyTorque(move * this.moveTorque, true);
-    body.applyLinearImpulse(new planck.Vec2(move * this.moveImpulse, 0), body.getWorldCenter(), true);
+    body.applyTorque(move * this.moveTorque * mult, true);
+    body.applyLinearImpulse(new planck.Vec2(move * this.moveImpulse * mult * groundMult * brakeMult, 0), body.getWorldCenter(), true);
   }
 
-  /** Returns true iff a jump was actually applied (grounded or within coyote
-   * time). Lets the caller fall back to a dash when the jump didn't fire. */
+  /** Returns true iff a jump was actually applied (grounded or within coyote time). */
   applyJump(ballId: string): boolean {
     if (this.finishedPlayers.has(ballId)) return false;
 
@@ -173,6 +205,7 @@ export class World {
       console.error("[Engine.World.applyJump] Tried jumping with ball that doesn't exist: ", ballId);
       return false;
     }
+    if (ballState.frozenUntilMs > 0) return false;
 
     const now = this.nowMs();
     const groundedOrCoyote = ballState.grounded || now - ballState.lastGroundedAtMs <= this.coyoteMs;
@@ -186,8 +219,6 @@ export class World {
     ballState.jumpActive = true;
     ballState.jumpStartedAtMs = now;
     ballState.jumpHoldRemainingMs = this.jumpHoldMs;
-    // Consume coyote so a follow-up Space goes to the double jump (not another
-    // coyote jump) — keeps it to exactly one ground jump + one double jump.
     ballState.lastGroundedAtMs = 0;
     console.log(`[Engine.World.applyJump] Jumped: ${ballId} grounded=${ballState.grounded}`);
     return true;
@@ -198,6 +229,7 @@ export class World {
 
     const ballState = this.balls.get(ballId);
     if (!ballState) return;
+    if (ballState.frozenUntilMs > 0) return;
 
     if (!jumpHeld || !ballState.jumpActive || ballState.jumpHoldRemainingMs <= 0) {
       ballState.jumpActive = false;
@@ -213,25 +245,20 @@ export class World {
     ballState.jumpHoldRemainingMs = Math.max(0, ballState.jumpHoldRemainingMs - dtMs);
   }
 
-  /**
-   * Mid-air double jump: a single upward impulse (no hold-to-go-higher). Cancels
-   * any downward momentum first so a fast fall still launches upward. Allowed
-   * only in the air, once per airtime (re-armed on landing).
-   */
   applyDoubleJump(ballId: string) {
     if (this.finishedPlayers.has(ballId)) return;
 
     const ballState = this.balls.get(ballId);
     if (!ballState) return;
-
-    if (ballState.grounded) return; // air-only (grounded jumps go through applyJump)
-    if (!ballState.canDoubleJump) return; // one per airtime
+    if (ballState.frozenUntilMs > 0) return;
+    if (ballState.grounded) return;
+    if (!ballState.canDoubleJump) return;
 
     const body = ballState.body;
     body.setAwake(true);
     const vel = body.getLinearVelocity();
     if (vel.y > 0) {
-      body.setLinearVelocity(new planck.Vec2(vel.x, 0)); // cancel downward fall
+      body.setLinearVelocity(new planck.Vec2(vel.x, 0));
     }
     body.applyLinearImpulse(new planck.Vec2(0, -this.doubleJumpForce), body.getWorldCenter(), true);
 
@@ -239,12 +266,6 @@ export class World {
     this.doubleJumpListener?.(ballId);
   }
 
-  /**
-   * Mid-air dash: horizontal impulse in the A/D direction (dirX in {-1,0,1}),
-   * cancelling all vertical momentum and disabling gravity briefly for a flat
-   * dash. dirX === 0 = stall (zero all velocity, keep spin). Allowed only in the
-   * air, once per airtime (re-armed on landing).
-   */
   applyDash(ballId: string, dirX: number) {
     if (this.finishedPlayers.has(ballId)) return;
 
@@ -253,34 +274,76 @@ export class World {
       console.error("[Engine.World.applyDash] Tried dashing with ball that doesn't exist: ", ballId);
       return;
     }
-
-    if (ballState.grounded) return; // can't dash on the ground
-    if (!ballState.canDash) return; // one dash per airtime
+    if (ballState.frozenUntilMs > 0) return;
+    if (ballState.grounded) return;
+    if (!ballState.canDash) return;
 
     const body = ballState.body;
     body.setAwake(true);
     const vel = body.getLinearVelocity();
 
     if (dirX === 0) {
-      body.setLinearVelocity(new planck.Vec2(0, 0)); // stall (angular velocity preserved)
+      body.setLinearVelocity(new planck.Vec2(0, 0));
     } else {
-      body.setLinearVelocity(new planck.Vec2(vel.x, 0)); // cancel vertical momentum
+      body.setLinearVelocity(new planck.Vec2(vel.x, 0));
       body.applyLinearImpulse(new planck.Vec2(dirX * this.dashXForce, 0), body.getWorldCenter(), true);
-      body.setGravityScale(0); // flat dash...
-      ballState.dashGravityUntilMs = this.nowMs() + DASH_GRAVITY_DISABLE_MS; // ...restored by updateDashGravity / on landing
+      body.setGravityScale(0);
+      ballState.dashGravityUntilMs = this.nowMs() + DASH_GRAVITY_DISABLE_MS;
       this.dashListener?.(ballId, dirX);
     }
 
     ballState.canDash = false;
   }
 
+  /** Freezes a player in place for durationMs: zeroes velocity, sets body static. */
+  freezePlayer(playerId: string, durationMs: number) {
+    const ballState = this.balls.get(playerId);
+    if (!ballState || this.finishedPlayers.has(playerId)) return;
+    ballState.body.setLinearVelocity(planck.Vec2(0, 0));
+    ballState.body.setAngularVelocity(0);
+    ballState.body.setType('static');
+    ballState.frozenUntilMs = this.nowMs() + durationMs;
+  }
+
+  /** Applies an acceleration multiplier to a player for durationMs. */
+  setAccelMultiplier(playerId: string, multiplier: number, durationMs: number) {
+    const ballState = this.balls.get(playerId);
+    if (!ballState || this.finishedPlayers.has(playerId)) return;
+    ballState.accelMultiplier = multiplier;
+    ballState.accelMultiplierUntilMs = this.nowMs() + durationMs;
+  }
+
+  /**
+   * Enables or disables a pickup sensor body by instanceId.
+   * Disabling destroys the body (collected); enabling recreates it (round reset).
+   */
+  setPickupActive(instanceId: number, active: boolean) {
+    const entry = this.pickupBodies.get(instanceId);
+    if (!entry) return;
+    if (!active && entry.body) {
+      this.physics.destroyBody(entry.body);
+      entry.body = null;
+    } else if (active && !entry.body) {
+      entry.body = this.createPickupSensorBody(instanceId, entry.x, entry.y);
+    }
+  }
+
+  /** Restores all collected pickup sensors (call at round start). */
+  resetPickups() {
+    this.pickupBodies.forEach((entry, instanceId) => {
+      if (!entry.body) {
+        entry.body = this.createPickupSensorBody(instanceId, entry.x, entry.y);
+      }
+    });
+  }
+
   spawnPlayer(playerId: string): boolean {
     for (const spawn of this.spawnPoints) {
       const occupied = Array.from(this.balls.values()).some((ballState) => {
-        const p = ballState.body.getPosition(); // meters
+        const p = ballState.body.getPosition();
         const x = toPixels(p.x);
         const y = toPixels(p.y);
-        return x === spawn.x && y === spawn.y; // just checking if exact position is used(not collision). Good enough
+        return x === spawn.x && y === spawn.y;
       });
 
       if (occupied) continue;
@@ -292,8 +355,8 @@ export class World {
         position: spawnPos,
         fixedRotation: false,
         bullet: false,
-        linearDamping: 0.3,
-        angularDamping: 0.3,
+        linearDamping: 0.18,
+        angularDamping: 0.18,
       });
       body.setUserData('Ball-' + playerId);
       const shape = new planck.Circle(this.ballRadius);
@@ -301,7 +364,7 @@ export class World {
       body.createFixture({
         shape,
         density: 0.8,
-        friction: 0.5,
+        friction: 0.3,
         restitution: 0,
       });
 
@@ -331,17 +394,26 @@ export class World {
         canDash: true,
         canDoubleJump: true,
         dashGravityUntilMs: 0,
+        frozenUntilMs: 0,
+        accelMultiplier: 1,
+        accelMultiplierUntilMs: 0,
       });
       return true;
     }
 
-    return false; // unable to find an open spawn point.
+    return false;
   }
 
   setPlayerPosition(playerId: string, xPixels: number, yPixels: number): boolean {
     const ballState = this.balls.get(playerId);
     if (!ballState) {
       return false;
+    }
+
+    // Unfreeze if currently frozen so the body can move again.
+    if (ballState.frozenUntilMs > 0) {
+      ballState.body.setType('dynamic');
+      ballState.frozenUntilMs = 0;
     }
 
     const worldPos = new planck.Vec2(toWorld(xPixels), toWorld(yPixels));
@@ -363,6 +435,8 @@ export class World {
     ballState.canDoubleJump = true;
     ballState.dashGravityUntilMs = 0;
     ballState.body.setGravityScale(1);
+    ballState.accelMultiplier = 1;
+    ballState.accelMultiplierUntilMs = 0;
 
     return true;
   }
@@ -372,7 +446,6 @@ export class World {
       const pos = ballState.body.getPosition();
       const vel = ballState.body.getLinearVelocity();
       const angle = ballState.body.getAngle();
-      //TODO:: Add rotation to tickSnapshot
 
       return {
         id,
@@ -390,16 +463,37 @@ export class World {
   step() {
     this.updateGroundSensors();
     this.updateDashGravity();
+    this.updateFreeze();
+    this.updateAccelMultiplier();
     this.physics.step(this.timestep);
   }
 
-  /** Restores gravity on any ball whose dash-float window has elapsed. */
   private updateDashGravity() {
     const now = this.nowMs();
     this.balls.forEach((ballState) => {
       if (ballState.dashGravityUntilMs > 0 && now >= ballState.dashGravityUntilMs) {
         ballState.body.setGravityScale(1);
         ballState.dashGravityUntilMs = 0;
+      }
+    });
+  }
+
+  private updateFreeze() {
+    const now = this.nowMs();
+    this.balls.forEach((ballState) => {
+      if (ballState.frozenUntilMs > 0 && now >= ballState.frozenUntilMs) {
+        ballState.body.setType('dynamic');
+        ballState.frozenUntilMs = 0;
+      }
+    });
+  }
+
+  private updateAccelMultiplier() {
+    const now = this.nowMs();
+    this.balls.forEach((ballState) => {
+      if (ballState.accelMultiplierUntilMs > 0 && now >= ballState.accelMultiplierUntilMs) {
+        ballState.accelMultiplier = 1;
+        ballState.accelMultiplierUntilMs = 0;
       }
     });
   }
@@ -411,6 +505,7 @@ export class World {
   loadLevel(level: LevelDefinition, hazardCatalog?: HazardCatalog) {
     this.spawnPoints = [];
     let checkpointIndex = 0;
+    let pickupIndex = 0;
 
     level.objects.forEach((obj) => {
       if (obj.type === 'hazard') {
@@ -429,6 +524,13 @@ export class World {
             ? new planck.Circle(toWorld(body.radius))
             : new planck.Box(toWorld(body.width / 2), toWorld(body.height / 2));
         hazardBody.createFixture({ shape, isSensor: entry.isSensor ?? true });
+        return;
+      }
+
+      if (obj.type === 'pickup') {
+        const instanceId = pickupIndex++;
+        const body = this.createPickupSensorBody(instanceId, obj.x, obj.y);
+        this.pickupBodies.set(instanceId, { x: obj.x, y: obj.y, key: obj.pickupKey, body });
         return;
       }
 
@@ -509,6 +611,7 @@ export class World {
     body.groundContacts = 0;
     body.jumpActive = false;
     body.jumpHoldRemainingMs = 0;
+    body.frozenUntilMs = 0;
     body.groundSensor.setType('static');
 
     if (this.finishListener) {
@@ -536,6 +639,10 @@ export class World {
     this.dashListener = listener;
   }
 
+  setPickupListener(listener: PickupCollectedListener) {
+    this.pickupListener = listener;
+  }
+
   dumpBodies() {
     let body = this.physics.getBodyList();
 
@@ -545,19 +652,6 @@ export class World {
 
       let fixture = body.getFixtureList();
       while (fixture) {
-        const shape = fixture.getShape();
-        const shapeType = shape.getType();
-
-        // if (shapeType === 'circle') {
-        //     console.log('  Fixture', { shape: 'circle', r: shape.getRadius() });
-        // } else if (shapeType === 'polygon') {
-        //     // Often used for boxes; vertices are in body-local coordinates
-        //     const verts = (shape as any).m_vertices ?? (shape as any).getVertices?.();
-        //     console.log('  Fixture', { shape: 'polygon', vertsCount: verts?.length, verts });
-        // } else {
-        //     console.log('  Fixture', { shape: shapeType });
-        // }
-
         fixture = fixture.getNext();
       }
 
@@ -568,12 +662,14 @@ export class World {
   resetWorld() {
     this.balls = new Map<string, BallState>();
     this.spawnPoints = [];
+    this.pickupBodies = new Map();
     this.physics = new planck.World(gravity);
     this.finishListener = null;
     this.checkpointListener = null;
     this.hazardListener = null;
     this.doubleJumpListener = null;
     this.dashListener = null;
+    this.pickupListener = null;
 
     this.setupContactListeners();
   }
@@ -606,10 +702,8 @@ export class World {
       ballState.lastGroundedAtMs = this.nowMs();
       ballState.jumpActive = false;
       ballState.jumpHoldRemainingMs = 0;
-      // Re-arm both air actions on landing (floor only — sensor is below the ball).
       ballState.canDash = true;
       ballState.canDoubleJump = true;
-      // Restore gravity if we landed mid dash-float.
       if (ballState.dashGravityUntilMs > 0) {
         ballState.body.setGravityScale(1);
         ballState.dashGravityUntilMs = 0;
@@ -625,6 +719,19 @@ export class World {
     if (ballState.grounded) {
       ballState.lastGroundedAtMs = this.nowMs();
     }
+  }
+
+  private createPickupSensorBody(instanceId: number, x: number, y: number): Body {
+    const body = this.physics.createBody({
+      type: 'static',
+      position: new planck.Vec2(toWorld(x), toWorld(y)),
+    });
+    body.setUserData(`Pickup-${instanceId}`);
+    body.createFixture({
+      shape: new planck.Circle(toWorld(PICKUP_SENSOR_RADIUS_PX)),
+      isSensor: true,
+    });
+    return body;
   }
 
   private nowMs() {

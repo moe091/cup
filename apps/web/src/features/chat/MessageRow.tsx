@@ -3,6 +3,7 @@ import type { ChatMessageDto, CustomEmojiDto, ReactionEmojiKind } from "@cup/sha
 import { parseChatTextSegments } from "./text/chatTextProcessing";
 import MessageActionMenu, { type MessageActionPickerAnchor } from "./message-actions/MessageActionMenu";
 import EmojiPicker, { type EmojiSelection } from "./emoji/EmojiPicker";
+import { buildS3AssetUrl } from "../../config/s3";
 
 type MessageRowProps = {
   message: ChatMessageDto;
@@ -120,6 +121,9 @@ function MessageRowBase({
     ? parseChatTextSegments(replyTargetMessage.body)
     : null;
 
+  const avatarUrl = buildS3AssetUrl(message.authorAvatarKey);
+  const avatarFallback = message.authorDisplayName.charAt(0).toUpperCase();
+
   return (
     <article
       ref={(element) => {
@@ -153,7 +157,7 @@ function MessageRowBase({
         <button
           type="button"
           onClick={handleJumpToReply}
-          className="mb-0.5 flex max-w-full items-center gap-1 text-left text-[13px] text-[color:var(--muted)] hover:text-[color:var(--text)]"
+          className="mb-0.5 ml-10 flex max-w-full items-center gap-1 text-left text-[13px] text-[color:var(--muted)] hover:text-[color:var(--text)]"
           title={replyPreviewText}
         >
           <span aria-hidden>↪</span>
@@ -193,101 +197,122 @@ function MessageRowBase({
         </button>
       ) : null}
 
-      {showHeader ? (
-        <div className="mb-0.5 flex items-baseline gap-2">
-          <span className="text-[16px] font-semibold text-[color:var(--accent-2)]">{message.authorDisplayName}</span>
-          <span className="text-[12px] text-[color:var(--muted)]">{timestamp}</span>
-          {message.editedAt ? <span className="text-[10px] text-[color:var(--muted)]">(edited)</span> : null}
+      <div className="flex gap-4">
+        <div className="w-[42px] shrink-0">
+          {showHeader ? (
+            avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={message.authorDisplayName}
+                className="h-[42px] w-[42px] rounded-full object-cover"
+                draggable={false}
+              />
+            ) : (
+              <div className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-[color:var(--accent)] text-[14px] font-semibold text-white">
+                {avatarFallback}
+              </div>
+            )
+          ) : null}
         </div>
-      ) : null}
-      <p className="whitespace-pre-wrap text-[15px] leading-5 text-slate-350">
+
+        <div className="min-w-0 flex-1">
+          {showHeader ? (
+            <div className="mb-0.5 flex items-baseline gap-2">
+              <span className="text-[16px] font-semibold text-[color:var(--accent-2)]">{message.authorDisplayName}</span>
+              <span className="text-[12px] text-[color:var(--muted)]">{timestamp}</span>
+              {message.editedAt ? <span className="text-[10px] text-[color:var(--muted)]">(edited)</span> : null}
+            </div>
+          ) : null}
+          <p className="whitespace-pre-wrap text-[15px] leading-5 text-slate-350">
             {message.deletedAt
-          ? "Message deleted"
-          : textSegments.map((segment, index) => {
-              if (segment.kind === "unicodeEmoji") {
+              ? "Message deleted"
+              : textSegments.map((segment, index) => {
+                  if (segment.kind === "unicodeEmoji") {
+                    return (
+                      <span key={`emoji-${index}`} className="inline text-[1.35em] leading-none align-[-0.1em]">
+                        {segment.value}
+                      </span>
+                    );
+                  }
+
+                  if (segment.kind === "customEmojiToken") {
+                    const resolved = resolvedCustomEmojiById.get(segment.id);
+
+                    if (resolved === null) {
+                      return <span key={`missing-custom-${index}`}>[deleted emoji]</span>;
+                    }
+
+                    if (resolved) {
+                      return (
+                        <img
+                          key={`custom-${index}`}
+                          src={resolved.assetUrl}
+                          alt={`:${resolved.name}:`}
+                          title={`:${resolved.name}:`}
+                          className="mx-[1px] inline h-[1.35em] w-[1.35em] align-[-0.2em] object-contain"
+                          draggable={false}
+                        />
+                      );
+                    }
+
+                    return <span key={`custom-token-${index}`}>{segment.value}</span>;
+                  }
+
+                  return <span key={`text-${index}`}>{segment.value}</span>;
+                })}
+          </p>
+
+          {message.reactions.length > 0 ? (
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {message.reactions.map((reaction) => {
+                const reactionKey = `${reaction.emojiKind}:${reaction.emojiValue}`;
+                const isCustom = reaction.emojiKind === "CUSTOM";
+                const customEmoji = isCustom ? resolvedCustomEmojiById.get(reaction.emojiValue) : undefined;
+
                 return (
-                  <span key={`emoji-${index}`} className="inline text-[1.35em] leading-none align-[-0.1em]">
-                    {segment.value}
-                  </span>
+                  <button
+                    key={reactionKey}
+                    type="button"
+                    onClick={() => {
+                      void setReaction({
+                        messageId: message.id,
+                        emojiKind: reaction.emojiKind,
+                        emojiValue: reaction.emojiValue,
+                        active: !reaction.reactedByMe,
+                      }).catch(() => {
+                        // TODO: surface reaction errors in UI
+                      });
+                    }}
+                    title={reaction.reactorDisplayNames.join(", ")}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] transition bg-[color:var(--panel-strong)]
+                      hover:brightness-120 hover:bg-[color:var(--panel)] ${
+                      reaction.reactedByMe
+                        ? "border border-[color:var(--accent)]"
+                        : ""
+                    }`}
+                  >
+                    {isCustom ? (
+                      customEmoji ? (
+                        <img
+                          src={customEmoji.assetUrl}
+                          alt={`:${customEmoji.name}:`}
+                          className="h-6 w-6 object-contain"
+                          draggable={false}
+                        />
+                      ) : (
+                        <span className="text-base leading-none">□</span>
+                      )
+                    ) : (
+                      <span className="text-[20px] leading-none">{reaction.emojiValue}</span>
+                    )}
+                    <span className="text-[12px] text-[color:var(--muted)]">{reaction.count}</span>
+                  </button>
                 );
-              }
-
-              if (segment.kind === "customEmojiToken") {
-                const resolved = resolvedCustomEmojiById.get(segment.id);
-
-                if (resolved === null) {
-                  return <span key={`missing-custom-${index}`}>[deleted emoji]</span>;
-                }
-
-                if (resolved) {
-                  return (
-                    <img
-                      key={`custom-${index}`}
-                      src={resolved.assetUrl}
-                      alt={`:${resolved.name}:`}
-                      title={`:${resolved.name}:`}
-                      className="mx-[1px] inline h-[1.35em] w-[1.35em] align-[-0.2em] object-contain"
-                      draggable={false}
-                    />
-                  );
-                }
-
-                return <span key={`custom-token-${index}`}>{segment.value}</span>;
-              }
-
-              return <span key={`text-${index}`}>{segment.value}</span>;
-            })}
-      </p>
-
-      {message.reactions.length > 0 ? (
-        <div className="mt-1 flex flex-wrap gap-1.5">
-          {message.reactions.map((reaction) => {
-            const reactionKey = `${reaction.emojiKind}:${reaction.emojiValue}`;
-            const isCustom = reaction.emojiKind === "CUSTOM";
-            const customEmoji = isCustom ? resolvedCustomEmojiById.get(reaction.emojiValue) : undefined;
-
-            return (
-              <button
-                key={reactionKey}
-                type="button"
-                onClick={() => {
-                  void setReaction({
-                    messageId: message.id,
-                    emojiKind: reaction.emojiKind,
-                    emojiValue: reaction.emojiValue,
-                    active: !reaction.reactedByMe,
-                  }).catch(() => {
-                    // TODO: surface reaction errors in UI
-                  });
-                }}
-                title={reaction.reactorDisplayNames.join(", ")}
-                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] transition bg-[color:var(--panel-strong)] 
-                  hover:brightness-120 hover:bg-[color:var(--panel)] ${
-                  reaction.reactedByMe
-                    ? "border border-[color:var(--accent)]"
-                    : ""
-                }`}
-              >
-                {isCustom ? (
-                  customEmoji ? (
-                    <img
-                      src={customEmoji.assetUrl}
-                      alt={`:${customEmoji.name}:`}
-                      className="h-6 w-6 object-contain"
-                      draggable={false}
-                    />
-                  ) : (
-                    <span className="text-base leading-none">□</span>
-                  )
-                ) : (
-                  <span className="text-[20px] leading-none">{reaction.emojiValue}</span>
-                )}
-                <span className="text-[12px] text-[color:var(--muted)]">{reaction.count}</span>
-              </button>
-            );
-          })}
+              })}
+            </div>
+          ) : null}
         </div>
-      ) : null}
+      </div>
     </article>
   );
 }
