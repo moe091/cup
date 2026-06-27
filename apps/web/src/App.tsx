@@ -14,6 +14,7 @@ const CommunitySettingsPage = lazy(() => import("./routes/communities/CommunityS
 const GamesLayout = lazy(() => import("./routes/games/GamesLayout"));
 const Browse = lazy(() => import("./routes/games/Browse"));
 const BouncerLayout = lazy(() => import("./routes/games/bouncer/BouncerLayout"));
+const SpellDuelLayout = lazy(() => import("./routes/games/spellduel/SpellDuelLayout"));
 const BouncerLanding = lazy(() =>
   import("./routes/games/bouncer/BouncerLanding").then((module) => ({
     default: module.BouncerLanding,
@@ -27,6 +28,16 @@ const BouncerEditor = lazy(() =>
 const BouncerGame = lazy(() =>
   import("./routes/games/bouncer/BouncerGame").then((module) => ({
     default: module.BouncerGame,
+  })),
+);
+const SpellDuelLanding = lazy(() =>
+  import("./routes/games/spellduel/SpellDuelLanding").then((module) => ({
+    default: module.SpellDuelLanding,
+  })),
+);
+const SpellDuelGame = lazy(() =>
+  import("./routes/games/spellduel/SpellDuelGame").then((module) => ({
+    default: module.SpellDuelGame,
   })),
 );
 const ChatSocketTest = lazy(() => import('./routes/chat/ChatSocketTest'));
@@ -200,6 +211,31 @@ export default function App() {
               </Suspense>
             }
           />
+          <Route
+            path="spellduel"
+            element={
+              <Suspense fallback={null}>
+                <SpellDuelLayout />
+              </Suspense>
+            }
+          >
+            <Route
+              index
+              element={
+                <Suspense fallback={null}>
+                  <SpellDuelLanding />
+                </Suspense>
+              }
+            />
+            <Route
+              path=":matchId"
+              element={
+                <Suspense fallback={null}>
+                  <SpellDuelGame />
+                </Suspense>
+              }
+            />
+          </Route>
           <Route
             path="bouncer"
             element={

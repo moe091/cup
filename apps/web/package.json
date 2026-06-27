@@ -13,6 +13,7 @@
   "dependencies": {
     "@cup/bouncer-client": "workspace:*",
     "@cup/bouncer-shared": "workspace:*",
+    "@cup/spellduel-client": "workspace:*",
     "@cup/shared-types": "workspace:*",
     "@vitejs/plugin-react": "^5.1.2",
     "react": "^19.2.0",
